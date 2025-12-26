@@ -1,6 +1,7 @@
 /**
  * FINANCEQUEST - PAGE: Admin Monitoring
  * /admin/monitoring
+ * Protected by password
  */
 
 'use client';
@@ -8,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -20,14 +22,56 @@ import type { MonitoringData } from '@/types/api';
 export default function AdminMonitoringPage() {
   const { toast } = useToast();
 
+  const [password, setPassword] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [data, setData] = useState<MonitoringData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    
+    if (!password) {
+      toast.error('Veuillez entrer le mot de passe');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/admin/monitoring', {
+        headers: {
+          'Authorization': `Bearer ${password}`,
+        },
+      });
+
+      const response = await res.json();
+
+      if (!res.ok) {
+        toast.error('Mot de passe incorrect');
+        setLoading(false);
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setData(response.data);
+      toast.success('Accès autorisé');
+    } catch (error) {
+      toast.error('Erreur réseau');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function fetchMonitoring() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/admin/monitoring');
+      const res = await fetch('/api/admin/monitoring', {
+        headers: {
+          'Authorization': `Bearer ${password}`,
+        },
+      });
+
       const response = await res.json();
 
       if (!res.ok) {
@@ -44,11 +88,41 @@ export default function AdminMonitoringPage() {
     }
   }
 
-  useEffect(() => {
-    fetchMonitoring();
-  }, []);
+  // Login screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
+        <Card variant="glass" className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">🔒 Admin Access</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <Input
+                type="password"
+                label="Mot de passe administrateur"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Entrez le mot de passe"
+                disabled={loading}
+              />
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full"
+                loading={loading}
+              >
+                Se connecter
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  if (loading) {
+  // Loading state
+  if (loading && !data) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -56,12 +130,13 @@ export default function AdminMonitoringPage() {
     );
   }
 
+  // No data
   if (!data) {
     return null;
   }
 
   // Calculate API usage percentage
-  const apiUsagePercent = ((100 - data.api.marketStackRemaining) / 100) * 100;
+  const apiUsagePercent = ((data.api.marketStackLimit - data.api.marketStackRemaining) / data.api.marketStackLimit) * 100;
   const apiUsageVariant =
     apiUsagePercent < 50 ? 'success' : apiUsagePercent < 80 ? 'warning' : 'danger';
 
@@ -74,7 +149,7 @@ export default function AdminMonitoringPage() {
             <h1 className="text-4xl font-bold text-white mb-2">🔧 Admin Monitoring</h1>
             <p className="text-slate-400">Statistiques système et monitoring</p>
           </div>
-          <Button onClick={fetchMonitoring}>
+          <Button onClick={fetchMonitoring} disabled={loading}>
             Actualiser
           </Button>
         </div>
@@ -88,7 +163,7 @@ export default function AdminMonitoringPage() {
             </CardHeader>
             <CardContent>
               <p className="text-4xl font-bold text-white mb-2">{data.users.total}</p>
-              <p className="text-sm text-slate-400">{data.users.active} actifs</p>
+              <p className="text-sm text-slate-400">{data.users.active} actifs (30j)</p>
             </CardContent>
           </Card>
 
@@ -144,7 +219,7 @@ export default function AdminMonitoringPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-slate-400">Taille totale</span>
+                <span className="text-slate-400">Taille estimée</span>
                 <span className="font-semibold text-white">{data.database.size}</span>
               </div>
               <div className="flex justify-between">
@@ -154,7 +229,7 @@ export default function AdminMonitoringPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Taille cache estimée</span>
+                <span className="text-slate-400">Taille cache (MB)</span>
                 <span className="font-semibold text-white">
                   {data.database.estimatedSizeMB.toFixed(2)} MB
                 </span>

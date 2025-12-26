@@ -101,7 +101,6 @@ const STOCKS: Asset[] = [
   { symbol: 'TGT', name: 'Target Corporation', type: 'stock', category: 'Retail', exchange: 'NYSE' },
   { symbol: 'SBUX', name: 'Starbucks Corporation', type: 'stock', category: 'Retail', exchange: 'NASDAQ' },
   { symbol: 'TJX', name: 'TJX Companies Inc.', type: 'stock', category: 'Retail', exchange: 'NYSE' },
-  { symbol: 'NKE', name: 'Nike Inc.', type: 'stock', category: 'Retail', exchange: 'NYSE' },
   { symbol: 'BABA', name: 'Alibaba Group', type: 'stock', category: 'Retail', exchange: 'NYSE' },
 
   // Matériaux & Chimie (5)

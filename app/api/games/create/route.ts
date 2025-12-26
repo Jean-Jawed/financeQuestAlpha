@@ -9,7 +9,7 @@ import { db } from '@/lib/db';
 import { games } from '@/lib/db/schema';
 import { validateGameCreation } from '@/lib/game/validations';
 import { smartPrefetch } from '@/lib/market/prefetch';
-import { getTodayDate } from '@/lib/utils/dates';
+import { getTodayDate, ensureBusinessDay, formatDateDisplay } from '@/lib/utils/dates';
 import { z } from 'zod';
 import type { CreateGameRequest } from '@/types/api';
 
@@ -46,36 +46,46 @@ export const POST = withAuth(async (req, { userId }) => {
       );
     }
 
-    const { startDate, settings } = validation.data;
+    const { startDate: requestedStartDate, settings } = validation.data;
 
-    // 2. Valider que startDate n'est pas dans le futur
+    // 2. Ajuster au prochain jour ouvré si nécessaire (skip week-ends + fériés)
+    const adjustedStartDate = ensureBusinessDay(requestedStartDate);
+    const wasAdjusted = adjustedStartDate !== requestedStartDate;
+    
+    let adjustmentMessage = '';
+    if (wasAdjusted) {
+      adjustmentMessage = `La date demandée (${formatDateDisplay(requestedStartDate)}) n'est pas un jour ouvré. Votre partie commencera le ${formatDateDisplay(adjustedStartDate)} 📅`;
+      console.log(`[API] Start date adjusted: ${requestedStartDate} → ${adjustedStartDate}`);
+    }
+
+    // 3. Valider que la date ajustée n'est pas dans le futur
     const today = getTodayDate();
-    if (startDate > today) {
+    if (adjustedStartDate > today) {
       return NextResponse.json(
         { error: 'La date de début ne peut pas être dans le futur' },
         { status: 400 }
       );
     }
 
-    // 3. Valider que startDate n'est pas trop ancien (besoin de 30j d'historique)
+    // 4. Valider que startDate n'est pas trop ancien (besoin de 30j d'historique)
     const minDate = new Date();
     minDate.setDate(minDate.getDate() - 365 * 5); // Max 5 ans dans le passé
     const minDateStr = minDate.toISOString().split('T')[0];
     
-    if (startDate < minDateStr) {
+    if (adjustedStartDate < minDateStr) {
       return NextResponse.json(
         { error: 'La date de début ne peut pas être antérieure à 5 ans' },
         { status: 400 }
       );
     }
 
-    // 4. Valider la création du game (date valide, limite 5 games)
-    const validationResult = await validateGameCreation(userId, startDate);
+    // 5. Valider la création du game (date valide, limite 5 games)
+    const validationResult = await validateGameCreation(userId, adjustedStartDate);
     if (!validationResult.valid) {
       return NextResponse.json({ error: validationResult.error }, { status: 400 });
     }
 
-    // 5. Créer le game
+    // 6. Créer le game avec la date ajustée
     const defaultSettings = {
       transaction_fees: 0.25,
       allow_shorting: true,
@@ -87,8 +97,8 @@ export const POST = withAuth(async (req, { userId }) => {
       .insert(games)
       .values({
         userId,
-        startDate,
-        currentDate: startDate,
+        startDate: adjustedStartDate,
+        currentDate: adjustedStartDate,
         initialBalance: '10000.00',
         currentBalance: '10000.00',
         status: 'active',
@@ -98,13 +108,13 @@ export const POST = withAuth(async (req, { userId }) => {
 
     console.log(`[API] Game created: ${newGame.id}`);
 
-    // 6. Pre-fetch les données historiques (30j passés)
+    // 7. Pre-fetch les données historiques (30j passés)
     console.log('[API] Starting smart prefetch (30 days history)...');
-    const prefetchResult = await smartPrefetch(startDate);
+    const prefetchResult = await smartPrefetch(adjustedStartDate);
 
     console.log(`[API] Prefetch complete: ${prefetchResult.strategy}, ${prefetchResult.recordsStored} records`);
 
-    // 7. Retourner le game créé
+    // 8. Retourner le game créé avec message d'ajustement si nécessaire
     return NextResponse.json(
       {
         success: true,
@@ -114,8 +124,11 @@ export const POST = withAuth(async (req, { userId }) => {
             recordsStored: prefetchResult.recordsStored,
             strategy: prefetchResult.strategy,
           },
+          adjustmentMessage: wasAdjusted ? adjustmentMessage : undefined,
         },
-        message: 'Partie créée avec succès',
+        message: wasAdjusted 
+          ? adjustmentMessage 
+          : 'Partie créée avec succès',
       },
       { status: 201 }
     );

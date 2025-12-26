@@ -133,6 +133,20 @@ export async function fetchEOD(
     const response = await fetch(url);
     const json = await response.json();
 
+    // Récupérer les headers rate limit de MarketStack
+    const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
+    const rateLimitLimit = response.headers.get('X-RateLimit-Limit');
+    const rateLimitReset = response.headers.get('X-RateLimit-Reset');
+
+    // Stocker les stats API en DB (async, non-bloquant)
+    if (rateLimitRemaining && rateLimitLimit) {
+      storeApiStats(
+        parseInt(rateLimitRemaining),
+        parseInt(rateLimitLimit),
+        rateLimitReset ? new Date(parseInt(rateLimitReset) * 1000) : null
+      ).catch((err) => console.error('[MarketStack] Error storing API stats:', err));
+    }
+
     // Incrémenter le rate limiter
     rateLimiter.incrementCount();
     console.log(`[MarketStack] Remaining requests: ${rateLimiter.getRemainingRequests()}`);
@@ -265,4 +279,42 @@ function getTodayDate(): string {
  */
 export function getRemainingRequests(): number {
   return rateLimiter.getRemainingRequests();
+}
+
+/**
+ * Stocker les statistiques API en base de données
+ */
+async function storeApiStats(
+  remaining: number,
+  limit: number,
+  resetDate: Date | null
+): Promise<void> {
+  try {
+    const { db } = await import('@/lib/db');
+    const { apiStats } = await import('@/lib/db/schema');
+
+    // Upsert : met à jour si existe, sinon insert
+    await db
+      .insert(apiStats)
+      .values({
+        provider: 'marketstack',
+        requestsRemaining: remaining,
+        requestsLimit: limit,
+        resetDate,
+        lastUpdated: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: apiStats.provider,
+        set: {
+          requestsRemaining: remaining,
+          requestsLimit: limit,
+          resetDate,
+          lastUpdated: new Date(),
+        },
+      });
+
+    console.log(`[MarketStack] API stats stored: ${remaining}/${limit} remaining`);
+  } catch (error) {
+    console.error('[MarketStack] Error storing API stats:', error);
+  }
 }

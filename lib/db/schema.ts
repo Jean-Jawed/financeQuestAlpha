@@ -58,7 +58,7 @@ export const games = pgTable('games', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   startDate: date('start_date').notNull(),
-  currentDate: date('current_game_date').notNull(),
+  currentDate: date('current_game_date').notNull(), // ← Correction: current_game_date
   initialBalance: decimal('initial_balance', { precision: 15, scale: 2 })
     .default('10000.00')
     .notNull(),
@@ -188,6 +188,19 @@ export const leaderboardSnapshots = pgTable('leaderboard_snapshots', {
 });
 
 // ==========================================
+// TABLE: api_stats (Statistiques API externes)
+// ==========================================
+
+export const apiStats = pgTable('api_stats', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  provider: text('provider').notNull(), // 'marketstack'
+  requestsRemaining: integer('requests_remaining').notNull(),
+  requestsLimit: integer('requests_limit').notNull(),
+  resetDate: timestamp('reset_date'), // Quand le quota se reset
+  lastUpdated: timestamp('last_updated').defaultNow().notNull(),
+});
+
+// ==========================================
 // RELATIONS (pour Drizzle queries)
 // ==========================================
 
@@ -275,3 +288,6 @@ export type NewMarketDataCache = typeof marketDataCache.$inferInsert;
 
 export type LeaderboardSnapshot = typeof leaderboardSnapshots.$inferSelect;
 export type NewLeaderboardSnapshot = typeof leaderboardSnapshots.$inferInsert;
+
+export type ApiStats = typeof apiStats.$inferSelect;
+export type NewApiStats = typeof apiStats.$inferInsert;

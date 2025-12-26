@@ -4,6 +4,124 @@
  */
 
 // ==========================================
+// CONSTANTS: US MARKET HOLIDAYS
+// ==========================================
+
+/**
+ * Jours fériés US (bourse fermée)
+ * Liste statique des jours fériés fixes et observés
+ * 
+ * Note: Certains fériés sont mobiles (ex: Thanksgiving = 4e jeudi de novembre)
+ * Pour ces cas, on utilise une fonction de calcul
+ */
+const US_HOLIDAYS_FIXED: Record<string, string[]> = {
+  '2024': [
+    '2024-01-01', // New Year's Day
+    '2024-01-15', // MLK Day
+    '2024-02-19', // Presidents Day
+    '2024-03-29', // Good Friday
+    '2024-05-27', // Memorial Day
+    '2024-06-19', // Juneteenth (observed)
+    '2024-07-04', // Independence Day
+    '2024-09-02', // Labor Day
+    '2024-11-28', // Thanksgiving
+    '2024-12-25', // Christmas
+  ],
+  '2025': [
+    '2025-01-01', // New Year's Day
+    '2025-01-20', // MLK Day
+    '2025-02-17', // Presidents Day
+    '2025-04-18', // Good Friday
+    '2025-05-26', // Memorial Day
+    '2025-06-19', // Juneteenth
+    '2025-07-04', // Independence Day
+    '2025-09-01', // Labor Day
+    '2025-11-27', // Thanksgiving
+    '2025-12-25', // Christmas
+  ],
+  '2026': [
+    '2026-01-01', // New Year's Day
+    '2026-01-19', // MLK Day
+    '2026-02-16', // Presidents Day
+    '2026-04-03', // Good Friday
+    '2026-05-25', // Memorial Day
+    '2026-06-19', // Juneteenth
+    '2026-07-03', // Independence Day (observed)
+    '2026-09-07', // Labor Day
+    '2026-11-26', // Thanksgiving
+    '2026-12-25', // Christmas
+  ],
+};
+
+/**
+ * Vérifier si une date est un jour férié US (bourse fermée)
+ */
+export function isUSHoliday(dateString: string): boolean {
+  const year = dateString.substring(0, 4);
+  const holidays = US_HOLIDAYS_FIXED[year] || [];
+  return holidays.includes(dateString);
+}
+
+// ==========================================
+// BUSINESS DAY LOGIC
+// ==========================================
+
+/**
+ * Vérifier si une date est un jour ouvré (bourse ouverte)
+ * Exclut: week-ends ET jours fériés US
+ * 
+ * @param dateString - Date au format YYYY-MM-DD
+ * @returns true si jour ouvré, false sinon
+ * 
+ * @example
+ * ```ts
+ * isBusinessDay('2025-06-01') // Dimanche → false
+ * isBusinessDay('2025-06-02') // Lundi → true
+ * isBusinessDay('2025-07-04') // Independence Day → false
+ * ```
+ */
+export function isBusinessDay(dateString: string): boolean {
+  const date = parseDate(dateString);
+  
+  // Week-end ?
+  if (isWeekend(date)) {
+    return false;
+  }
+  
+  // Jour férié US ?
+  if (isUSHoliday(dateString)) {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Ajuster une date au prochain jour ouvré si nécessaire
+ * 
+ * @param dateString - Date au format YYYY-MM-DD
+ * @returns Date ajustée au prochain jour ouvré
+ * 
+ * @example
+ * ```ts
+ * ensureBusinessDay('2025-06-01') // Dimanche → '2025-06-02' (Lundi)
+ * ensureBusinessDay('2025-07-04') // Vendredi férié → '2025-07-07' (Lundi)
+ * ensureBusinessDay('2025-06-02') // Lundi → '2025-06-02' (inchangé)
+ * ```
+ */
+export function ensureBusinessDay(dateString: string): string {
+  let current = dateString;
+  let maxIterations = 10; // Sécurité pour éviter boucle infinie
+  
+  while (!isBusinessDay(current) && maxIterations > 0) {
+    current = addDays(current, 1);
+    maxIterations--;
+  }
+  
+  return current;
+}
+
+// ==========================================
 // DATE MANIPULATION
 // ==========================================
 
