@@ -140,7 +140,7 @@ export function AssetList({ gameId, currentDate, allowShorting, onTradeComplete 
             />
 
             <div className="flex gap-2 flex-wrap">
-              {(['all', 'stock', 'crypto', 'bond', 'index'] as const).map((type) => (
+              {(['all', 'stock', 'bond', 'index'] as const).map((type) => (
                 <Button
                   key={type}
                   variant={selectedType === type ? 'primary' : 'ghost'}
