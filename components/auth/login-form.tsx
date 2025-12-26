@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useRefreshSession } from '@/hooks/use-auth';
+import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
 
 // ==========================================
@@ -16,7 +16,6 @@ import Link from 'next/link';
 
 export function LoginForm() {
   const router = useRouter();
-  const refreshSession = useRefreshSession();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,27 +27,41 @@ export function LoginForm() {
     setError('');
     setLoading(true);
 
+    console.log('[LoginForm] Starting login process...');
+    console.log('[LoginForm] Email:', email);
+
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      console.log('[LoginForm] Calling Supabase signInWithPassword...');
+      
+      // Authentification directe côté client
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      const data = await res.json();
+      console.log('[LoginForm] Supabase response:', { data, error: authError });
 
-      if (!res.ok) {
-        setError(data.error || 'Erreur de connexion');
+      if (authError) {
+        console.error('[LoginForm] Auth error:', authError);
+        setError('Email ou mot de passe incorrect');
         setLoading(false);
         return;
       }
 
-      // Rafraîchir la session
-      await refreshSession();
+      if (!data.user) {
+        console.error('[LoginForm] No user in response');
+        setError('Erreur de connexion');
+        setLoading(false);
+        return;
+      }
 
-      // Rediriger vers dashboard
-      router.push('/dashboard');
+      console.log('[LoginForm] Login successful:', data.user.email);
+      console.log('[LoginForm] Redirecting to dashboard...');
+
+      // Redirection avec rechargement complet (pour que middleware charge les cookies)
+      window.location.href = '/dashboard';
     } catch (err) {
+      console.error('[LoginForm] Unexpected error:', err);
       setError('Erreur réseau. Veuillez réessayer.');
       setLoading(false);
     }

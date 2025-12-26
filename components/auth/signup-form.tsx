@@ -7,7 +7,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useRefreshSession } from '@/hooks/use-auth';
+import { supabase } from '@/lib/supabase/client';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
 import Link from 'next/link';
 
 // ==========================================
@@ -16,71 +18,71 @@ import Link from 'next/link';
 
 export function SignupForm() {
   const router = useRouter();
-  const refreshSession = useRefreshSession();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
-
-  // Validation temps réel du mot de passe
-  function validatePassword(pwd: string): string[] {
-    const errors: string[] = [];
-    if (pwd.length < 8) errors.push('Au moins 8 caractères');
-    if (!/[A-Z]/.test(pwd)) errors.push('Au moins une majuscule');
-    if (!/[a-z]/.test(pwd)) errors.push('Au moins une minuscule');
-    if (!/[0-9]/.test(pwd)) errors.push('Au moins un chiffre');
-    return errors;
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    setValidationErrors([]);
     setLoading(true);
 
-    // Validation côté client
-    const pwdErrors = validatePassword(password);
-    if (pwdErrors.length > 0) {
-      setValidationErrors(pwdErrors);
-      setLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+      // 1. Créer le compte Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (data.details) {
-          setValidationErrors(data.details);
+      if (authError) {
+        console.error('[SignupForm] Auth error:', authError);
+        
+        if (authError.message.includes('already registered')) {
+          setError('Cet email est déjà utilisé');
         } else {
-          setError(data.error || 'Erreur lors de l\'inscription');
+          setError(authError.message);
         }
+        
         setLoading(false);
         return;
       }
 
-      // Rafraîchir la session
-      await refreshSession();
+      if (!authData.user) {
+        setError('Erreur lors de la création du compte');
+        setLoading(false);
+        return;
+      }
 
-      // Rediriger vers dashboard
-      router.push('/dashboard');
+      // 2. Créer l'entrée dans notre table users via API
+      const dbRes = await fetch('/api/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: authData.user.id,
+          email,
+          name,
+        }),
+      });
+
+      if (!dbRes.ok) {
+        console.error('[SignupForm] Database error');
+        setError('Compte créé mais erreur lors de l\'initialisation. Veuillez vous connecter.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('[SignupForm] Signup successful:', email);
+
+      // 3. Connexion automatique (Supabase le fait déjà après signUp)
+      // Les cookies sont déjà créés automatiquement
+
+      // 4. Redirection avec rechargement complet
+      window.location.href = '/dashboard';
     } catch (err) {
+      console.error('[SignupForm] Unexpected error:', err);
       setError('Erreur réseau. Veuillez réessayer.');
       setLoading(false);
     }
@@ -99,22 +101,6 @@ export function SignupForm() {
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
             <p className="text-red-400 text-sm">{error}</p>
-          </div>
-        )}
-
-        {/* Validation Errors */}
-        {validationErrors.length > 0 && (
-          <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/50 rounded-lg">
-            <p className="text-yellow-400 text-sm font-medium mb-2">
-              Veuillez corriger les erreurs suivantes :
-            </p>
-            <ul className="list-disc list-inside space-y-1">
-              {validationErrors.map((err, i) => (
-                <li key={i} className="text-yellow-400 text-sm">
-                  {err}
-                </li>
-              ))}
-            </ul>
           </div>
         )}
 
@@ -144,7 +130,7 @@ export function SignupForm() {
             </label>
             <input
               id="email"
-              type="text"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -163,50 +149,20 @@ export function SignupForm() {
               id="password"
               type="password"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setValidationErrors(validatePassword(e.target.value));
-              }}
+              onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
               disabled={loading}
               className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="••••••••"
             />
-            {password && validationErrors.length === 0 && (
-              <p className="mt-2 text-sm text-green-400">✓ Mot de passe valide</p>
-            )}
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-slate-300 mb-2"
-            >
-              Confirmer le mot de passe
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              disabled={loading}
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="••••••••"
-            />
-            {confirmPassword && password === confirmPassword && (
-              <p className="mt-2 text-sm text-green-400">✓ Les mots de passe correspondent</p>
-            )}
-            {confirmPassword && password !== confirmPassword && (
-              <p className="mt-2 text-sm text-red-400">✗ Les mots de passe ne correspondent pas</p>
-            )}
+            <p className="text-xs text-slate-500 mt-1">Minimum 6 caractères</p>
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading || validationErrors.length > 0}
+            disabled={loading}
             className="w-full py-3 px-4 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Création du compte...' : "S'inscrire"}
@@ -216,7 +172,7 @@ export function SignupForm() {
         {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-slate-400 text-sm">
-            Vous avez déjà un compte ?{' '}
+            Déjà un compte ?{' '}
             <Link href="/login" className="text-cyan-400 hover:text-cyan-300 font-medium">
               Se connecter
             </Link>

@@ -15,7 +15,7 @@ import { createServerClient } from '@/lib/supabase/server';
 const PROTECTED_ROUTES = ['/dashboard', '/game', '/admin'];
 
 // Routes publiques (accessibles sans auth)
-const PUBLIC_ROUTES = ['/login', '/signup', '/'];
+const PUBLIC_ROUTES = ['/login', '/signup', '/', '/about'];
 
 // ==========================================
 // RATE LIMITING (Simple in-memory)
@@ -24,7 +24,7 @@ const PUBLIC_ROUTES = ['/login', '/signup', '/'];
 // Map IP -> { count, resetTime }
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
-const RATE_LIMIT = 30; // Requêtes max par fenêtre
+const RATE_LIMIT = 100; // Requêtes max par fenêtre (augmenté de 30 à 100)
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 
 function checkRateLimit(ip: string): boolean {
@@ -57,15 +57,22 @@ function checkRateLimit(ip: string): boolean {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 1. Rate Limiting (sur toutes les routes)
-  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+  // 1. Rate Limiting (SAUF sur routes publiques et API)
+  const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route));
+  const isApiRoute = pathname.startsWith('/api/');
+  const isStaticAsset = pathname.startsWith('/_next/') || pathname.includes('.');
   
-  if (!checkRateLimit(ip)) {
-    console.warn(`[Middleware] Rate limit exceeded for IP: ${ip}`);
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
+  // Appliquer rate limit UNIQUEMENT sur routes protégées
+  if (!isPublicRoute && !isApiRoute && !isStaticAsset) {
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+    
+    if (!checkRateLimit(ip)) {
+      console.warn(`[Middleware] Rate limit exceeded for IP: ${ip}`);
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
   }
 
   // 2. Vérifier si route protégée
@@ -79,16 +86,25 @@ export async function middleware(req: NextRequest) {
 
   // 3. Vérifier authentification pour routes protégées
   try {
+    console.log('[Middleware] Checking auth for:', pathname);
+    
     const supabase = await createServerClient();
     const { data: { user }, error } = await supabase.auth.getUser();
 
+    console.log('[Middleware] Auth result:', { 
+      user: user ? user.email : null, 
+      error: error ? error.message : null 
+    });
+
     // Si non authentifié, rediriger vers login
     if (error || !user) {
+      console.log('[Middleware] Not authenticated, redirecting to login');
       const loginUrl = new URL('/login', req.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
 
+    console.log('[Middleware] Authenticated, allowing access');
     // Authentifié, continuer
     return NextResponse.next();
   } catch (error) {

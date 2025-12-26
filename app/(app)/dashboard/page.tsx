@@ -4,7 +4,7 @@
  */
 
 import { redirect } from 'next/navigation';
-import { getSessionUser } from '@/lib/auth/session';
+import { requireUser } from '@/lib/auth/session';
 import { WelcomeCard } from '@/components/dashboard/welcome-card';
 import { CreateGameCard } from '@/components/dashboard/create-game-card';
 import { GameCard } from '@/components/dashboard/game-card';
@@ -21,9 +21,13 @@ import type { GameWithStats } from '@/types/game';
 // ==========================================
 
 export default async function DashboardPage() {
-  // Vérifier auth
-  const user = await getSessionUser();
-  if (!user) {
+  // Auth déjà vérifiée par middleware - on récupère juste l'user
+  // Si cette ligne échoue, c'est un bug du middleware
+  let user;
+  try {
+    user = await requireUser();
+  } catch (error) {
+    console.error('[Dashboard] Failed to get user despite middleware:', error);
     redirect('/login');
   }
 

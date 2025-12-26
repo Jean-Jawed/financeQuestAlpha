@@ -6,33 +6,24 @@
 import { createBrowserClient } from '@supabase/ssr';
 
 // Vérification variables d'environnement publiques
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl) {
   throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set');
 }
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+if (!supabaseAnonKey) {
   throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
 }
+
+console.log('[Supabase Client] Initializing with URL:', supabaseUrl);
 
 /**
  * Client Supabase pour le browser
  * Usage: composants Client Components uniquement
- * 
- * @example
- * ```tsx
- * 'use client';
- * import { supabase } from '@/lib/supabase/client';
- * 
- * const { data, error } = await supabase.auth.signInWithPassword({
- *   email: 'user@example.com',
- *   password: 'password'
- * });
- * ```
  */
-export const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Helper pour obtenir la session courante
