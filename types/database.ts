@@ -3,6 +3,8 @@
  * Types TypeScript générés depuis le schema Drizzle
  */
 
+import type { User, Game, Achievement, Holding, Transaction } from '@/lib/db/schema';
+
 // Re-export des types depuis schema
 export type {
   User,
@@ -21,7 +23,7 @@ export type {
   NewMarketDataCache,
   LeaderboardSnapshot,
   NewLeaderboardSnapshot,
-} from '../lib/db/schema';
+} from '@/lib/db/schema';
 
 // Types additionnels utiles
 
@@ -87,6 +89,3 @@ export interface UserWithStats extends User {
   totalScore: number;
   bestReturn: number;
 }
-
-// Import des types du schema pour les réutiliser
-import type { Holding, Transaction, Game } from '../lib/db/schema';
