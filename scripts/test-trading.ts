@@ -11,10 +11,10 @@
  * npx tsx scripts/test-trading.ts
  */
 
-import { db } from './lib/db';
-import { games, users } from './lib/db/schema';
+import { db } from '@/lib/db';
+import { games, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { getPrice } from './lib/market/cache';
+import { getPrice } from '@/lib/market/cache';
 
 async function testTradingSystem() {
   console.log('🧪 Testing Trading System\n');
