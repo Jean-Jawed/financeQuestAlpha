@@ -4,7 +4,7 @@
  */
 
 import { redirect } from 'next/navigation';
-import { requireUser } from '@/lib/auth/session';
+import { getSessionUser } from '@/lib/auth/session';
 import { WelcomeCard } from '@/components/dashboard/welcome-card';
 import { CreateGameCard } from '@/components/dashboard/create-game-card';
 import { GameCard } from '@/components/dashboard/game-card';
@@ -17,17 +17,21 @@ import { getRemainingDays } from '@/lib/game/next-day';
 import type { GameWithStats } from '@/types/game';
 
 // ==========================================
+// CONFIG - Force dynamic rendering
+// ==========================================
+
+export const dynamic = 'force-dynamic';
+
+// ==========================================
 // PAGE
 // ==========================================
 
 export default async function DashboardPage() {
-  // Auth déjà vérifiée par middleware - on récupère juste l'user
-  // Si cette ligne échoue, c'est un bug du middleware
-  let user;
-  try {
-    user = await requireUser();
-  } catch (error) {
-    console.error('[Dashboard] Failed to get user despite middleware:', error);
+  // Auth déjà vérifiée par middleware
+  const user = await getSessionUser();
+  
+  if (!user) {
+    console.error('[Dashboard] No user found despite middleware check');
     redirect('/login');
   }
 
