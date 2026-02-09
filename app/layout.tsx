@@ -7,12 +7,7 @@ export const metadata: Metadata = {
   description: 'Apprenez le trading avec des données réelles historiques. Simulez vos investissements et testez vos stratégies sans risque.',
   keywords: 'trading, simulation, bourse, investissement, finance, apprentissage',
   authors: [{ name: 'FinanceQuest' }],
-  
-  // Favicon
-  icons: {
-    icon: '/favicon.ico',
-  },
-  
+
   // Open Graph (Facebook, LinkedIn, WhatsApp)
   openGraph: {
     type: 'website',
@@ -30,7 +25,7 @@ export const metadata: Metadata = {
       },
     ],
   },
-  
+
   // Twitter Card
   twitter: {
     card: 'summary_large_image',
@@ -38,7 +33,7 @@ export const metadata: Metadata = {
     description: 'Apprenez le trading avec des données réelles historiques. Simulez vos investissements et testez vos stratégies sans risque.',
     images: ['/logo_complet_gris.jpg'],
   },
-  
+
   // Métadonnées supplémentaires
   robots: {
     index: true,
