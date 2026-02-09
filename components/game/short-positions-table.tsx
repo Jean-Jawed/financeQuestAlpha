@@ -12,7 +12,6 @@ import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatQuantity } from '@/lib/utils/formatting';
-import { getAsset } from '@/lib/market/assets';
 import type { HoldingWithValue } from '@/types/game';
 
 // ==========================================
@@ -94,7 +93,6 @@ export function ShortPositionsTable({
         <CardContent>
           <div className="space-y-2">
             {shortHoldings.map((short) => {
-              const asset = getAsset(short.symbol);
               const pnl = short.profitLoss; // Pour short, profitLoss = P&L
               const isProfit = pnl > 0;
 
@@ -106,7 +104,7 @@ export function ShortPositionsTable({
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold text-white">{short.symbol}</span>
-                      <span className="text-xs text-slate-500">{asset?.name}</span>
+                      <span className="text-xs text-slate-500">{short.name}</span>
                     </div>
                     <div className="text-sm text-slate-400">
                       {formatQuantity(parseFloat(short.quantity))} × {formatCurrency(parseFloat(short.averageCost))} (emprunt)
@@ -118,9 +116,8 @@ export function ShortPositionsTable({
                       Prix actuel: {formatCurrency(short.currentPrice)}
                     </div>
                     <div
-                      className={`text-sm font-semibold ${
-                        isProfit ? 'text-green-400' : 'text-red-400'
-                      }`}
+                      className={`text-sm font-semibold ${isProfit ? 'text-green-400' : 'text-red-400'
+                        }`}
                     >
                       P&L: {isProfit ? '+' : ''}
                       {formatCurrency(pnl)}

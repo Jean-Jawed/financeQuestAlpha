@@ -8,7 +8,6 @@ import { withAuth } from '@/lib/auth/middleware';
 import { db } from '@/lib/db';
 import { games } from '@/lib/db/schema';
 import { validateGameCreation } from '@/lib/game/validations';
-import { smartPrefetch } from '@/lib/market/prefetch';
 import { getTodayDate, ensureBusinessDay, formatDateDisplay } from '@/lib/utils/dates';
 import { z } from 'zod';
 import type { CreateGameRequest } from '@/types/api';
@@ -51,7 +50,7 @@ export const POST = withAuth(async (req, { userId }) => {
     // 2. Ajuster au prochain jour ouvré si nécessaire (skip week-ends + fériés)
     const adjustedStartDate = ensureBusinessDay(requestedStartDate);
     const wasAdjusted = adjustedStartDate !== requestedStartDate;
-    
+
     let adjustmentMessage = '';
     if (wasAdjusted) {
       adjustmentMessage = `La date demandée (${formatDateDisplay(requestedStartDate)}) n'est pas un jour ouvré. Votre partie commencera le ${formatDateDisplay(adjustedStartDate)} 📅`;
@@ -71,7 +70,7 @@ export const POST = withAuth(async (req, { userId }) => {
     const minDate = new Date();
     minDate.setDate(minDate.getDate() - 365 * 5); // Max 5 ans dans le passé
     const minDateStr = minDate.toISOString().split('T')[0];
-    
+
     if (adjustedStartDate < minDateStr) {
       return NextResponse.json(
         { error: 'La date de début ne peut pas être antérieure à 5 ans' },
@@ -108,26 +107,21 @@ export const POST = withAuth(async (req, { userId }) => {
 
     console.log(`[API] Game created: ${newGame.id}`);
 
-    // 7. Pre-fetch les données historiques (30j passés)
-    console.log('[API] Starting smart prefetch (30 days history)...');
-    const prefetchResult = await smartPrefetch(adjustedStartDate);
-
-    console.log(`[API] Prefetch complete: ${prefetchResult.strategy}, ${prefetchResult.recordsStored} records`);
-
-    // 8. Retourner le game créé avec message d'ajustement si nécessaire
+    // Retourner le game créé avec message d'ajustement si nécessaire
     return NextResponse.json(
       {
         success: true,
         data: {
           game: newGame,
+          // Prefetch info removed as we use direct DB
           prefetchResult: {
-            recordsStored: prefetchResult.recordsStored,
-            strategy: prefetchResult.strategy,
+            recordsStored: 0,
+            strategy: 'db_direct',
           },
           adjustmentMessage: wasAdjusted ? adjustmentMessage : undefined,
         },
-        message: wasAdjusted 
-          ? adjustmentMessage 
+        message: wasAdjusted
+          ? adjustmentMessage
           : 'Partie créée avec succès',
       },
       { status: 201 }

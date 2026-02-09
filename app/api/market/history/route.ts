@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getPriceHistory } from '@/lib/market/cache';
+import { getHistory } from '@/lib/market/prices';
 import { isValidSymbol } from '@/lib/market/assets';
 
 // ==========================================
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       );
     }
 
-    if (!isValidSymbol(symbol)) {
+    if (!(await isValidSymbol(symbol))) {
       return NextResponse.json({ error: 'Symbole invalide' }, { status: 400 });
     }
 
@@ -39,10 +39,10 @@ export async function GET(req: Request) {
       );
     }
 
-    // Récupérer l'historique (depuis cache ou API)
-    const history = await getPriceHistory(symbol, from, to);
+    // Récupérer l'historique (depuis DB)
+    const history = await getHistory(symbol, from, to);
 
-    if (history.length === 0) {
+    if (!history || history.length === 0) {
       return NextResponse.json(
         { error: 'Aucune donnée disponible pour cette période' },
         { status: 404 }
@@ -52,10 +52,10 @@ export async function GET(req: Request) {
     // Formater la réponse
     const formattedHistory = history.map((item) => ({
       date: item.date,
-      open: item.open,
-      high: item.high,
-      low: item.low,
-      close: item.close,
+      open: item.open_price,
+      high: item.high_price,
+      low: item.low_price,
+      close: item.close_price,
       volume: item.volume,
     }));
 

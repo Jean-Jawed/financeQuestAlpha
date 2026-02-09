@@ -13,7 +13,7 @@ import { eq, and } from 'drizzle-orm';
 import { validateSell } from '@/lib/game/validations';
 import { calculateTransactionPreview, calculatePortfolio } from '@/lib/game/calculations';
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
-import { getPrice } from '@/lib/market/cache';
+import { getPrice } from '@/lib/market/prices';
 import { sellSchema, validateTradeInputSafe } from '@/lib/game/trade-schemas';
 
 // ==========================================
@@ -54,13 +54,14 @@ export const POST = withAuth(async (req, { userId }) => {
     }
 
     // 4. Récupérer le prix actuel
-    const currentPrice = await getPrice(symbol, game.currentDate);
-    if (!currentPrice) {
+    const priceData = await getPrice(symbol, game.currentDate);
+    if (!priceData || !priceData.close_price) {
       return NextResponse.json(
         { error: 'Prix non disponible pour cet actif' },
         { status: 404 }
       );
     }
+    const currentPrice = priceData.close_price;
 
     // 5. Récupérer le holding
     const holding = await db.query.holdings.findFirst({
@@ -139,11 +140,11 @@ export const POST = withAuth(async (req, { userId }) => {
           newBalance,
           portfolio: portfolio
             ? {
-                totalValue: portfolio.totalValue,
-                returnPercentage: portfolio.returnPercentage,
-                portfolioValueLong: portfolio.portfolioValueLong,
-                shortPositionsPnl: portfolio.shortPositionsPnl,
-              }
+              totalValue: portfolio.totalValue,
+              returnPercentage: portfolio.returnPercentage,
+              portfolioValueLong: portfolio.portfolioValueLong,
+              shortPositionsPnl: portfolio.shortPositionsPnl,
+            }
             : undefined,
           achievementsUnlocked: achievementsUnlocked.map((a) => ({
             name: a.achievement.name,

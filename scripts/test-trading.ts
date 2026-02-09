@@ -14,7 +14,7 @@
 import { db } from '@/lib/db';
 import { games, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { getPrice } from '@/lib/market/cache';
+import { getPrice } from '@/lib/market/prices';
 
 async function testTradingSystem() {
   console.log('🧪 Testing Trading System\n');
@@ -50,15 +50,14 @@ async function testTradingSystem() {
     // 3. Vérifier prix disponibles
     console.log('📊 Step 3: Checking market data...');
     const testSymbol = 'AAPL';
-    const price = await getPrice(testSymbol, activeGame.currentDate);
+    const priceData = await getPrice(testSymbol, activeGame.currentDate);
 
-    if (!price) {
+    if (!priceData) {
       console.error(`❌ No price data for ${testSymbol} at ${activeGame.currentDate}`);
-      console.log('💡 Run prefetch first: npm run test:prefetch');
       process.exit(1);
     }
 
-    console.log(`✅ Market data OK: ${testSymbol} = ${price}€\n`);
+    console.log(`✅ Market data OK: ${testSymbol} = ${priceData.close_price}€\n`);
 
     // 4. Instructions pour tests manuels
     console.log('📋 Manual Testing Instructions:\n');

@@ -158,9 +158,12 @@ export interface GetAssetsResponse extends ApiResponse {
     assets: Array<{
       symbol: string;
       name: string;
-      type: 'stock' | 'crypto' | 'bond' | 'index';
+      type: string;
       category?: string;
+      market?: string;
+      currency?: string;
     }>;
+    total: number;
   };
 }
 

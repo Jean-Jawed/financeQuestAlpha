@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createMiddlewareClient } from '@/lib/supabase/middleware';
 
 // ==========================================
 // CONFIGURATION
@@ -61,11 +61,11 @@ export async function middleware(req: NextRequest) {
   const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route));
   const isApiRoute = pathname.startsWith('/api/');
   const isStaticAsset = pathname.startsWith('/_next/') || pathname.includes('.');
-  
+
   // Appliquer rate limit UNIQUEMENT sur routes protégées
   if (!isPublicRoute && !isApiRoute && !isStaticAsset) {
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
-    
+
     if (!checkRateLimit(ip)) {
       console.warn(`[Middleware] Rate limit exceeded for IP: ${ip}`);
       return NextResponse.json(
@@ -75,45 +75,40 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // 2. Vérifier si route protégée
+  // 2. Initialiser le client Supabase middleware
+  // Cela crée une réponse initiale et configure les cookies dessus
+  const { supabase, response } = await createMiddlewareClient(req);
+
+  // 3. Vérifier authentification
+  // Note: getUser rafraîchit la session si nécessaire et met à jour les cookies sur 'response'
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  // 4. Gestion des routes protégées
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
 
-  if (!isProtectedRoute) {
-    return NextResponse.next();
-  }
-
-  // 3. Vérifier authentification pour routes protégées
-  try {
-    console.log('[Middleware] Checking auth for:', pathname);
-    
-    const supabase = await createServerClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
-
-    console.log('[Middleware] Auth result:', { 
-      user: user ? user.email : null, 
-      error: error ? error.message : null 
-    });
-
+  if (isProtectedRoute) {
     // Si non authentifié, rediriger vers login
     if (error || !user) {
       console.log('[Middleware] Not authenticated, redirecting to login');
       const loginUrl = new URL('/login', req.url);
       loginUrl.searchParams.set('redirect', pathname);
+      // IMPORTANT: On ne peut pas retourner 'response' ici car c'est une 200/Next, on doit retourner une Redirect
+      // Mais on perdrait les cookies de rafraîchissement potentiels (rare cas edge).
+      // Dans le cas d'une redirection login, c'est acceptable.
       return NextResponse.redirect(loginUrl);
     }
-
     console.log('[Middleware] Authenticated, allowing access');
-    // Authentifié, continuer
-    return NextResponse.next();
-  } catch (error) {
-    console.error('[Middleware] Auth check error:', error);
-    
-    // En cas d'erreur, rediriger vers login par sécurité
-    const loginUrl = new URL('/login', req.url);
-    return NextResponse.redirect(loginUrl);
   }
+
+  // 5. Redirection Login -> Dashboard si déjà connecté
+  if (pathname === '/login' && user) {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
+  }
+
+  // Retourner la réponse modifiée (avec les cookies mis à jour)
+  return response;
 }
 
 // ==========================================

@@ -9,7 +9,6 @@ import { eq } from 'drizzle-orm';
 import { nextBusinessDay, getTodayDate, isAfter } from '@/lib/utils/dates';
 import { calculatePortfolio } from './calculations';
 import { checkAndUnlockAchievements } from './achievements';
-import { prefetchSingleDay } from '@/lib/market/prefetch';
 
 // ==========================================
 // TYPES
@@ -72,12 +71,7 @@ export async function advanceToNextDay(gameId: string): Promise<NextDayResult> {
       };
     }
 
-    // 5. Pre-fetch les données du nouveau jour (BATCH: 1 call pour 85 symboles)
-    console.log(`[NextDay] Pre-fetching data for ${nextDate}`);
-    const prefetchedRecords = await prefetchSingleDay(nextDate);
-    console.log(`[NextDay] Prefetched ${prefetchedRecords} records for ${nextDate}`);
-
-    // 6. Recalculer le portfolio à la nouvelle date (cache = 100% HIT normalement)
+    // 5. Recalculer le portfolio à la nouvelle date
     console.log('[NextDay] Calculating portfolio at new date');
     const portfolioCalc = await calculatePortfolio(gameId, nextDate);
 
@@ -85,7 +79,7 @@ export async function advanceToNextDay(gameId: string): Promise<NextDayResult> {
       return { success: false, error: 'Erreur lors du calcul du portfolio' };
     }
 
-    // 7. Mettre à jour le game
+    // 6. Mettre à jour le game
     await db
       .update(games)
       .set({
@@ -96,11 +90,11 @@ export async function advanceToNextDay(gameId: string): Promise<NextDayResult> {
 
     console.log(`[NextDay] Game updated to ${nextDate}`);
 
-    // 8. Vérifier les achievements
+    // 7. Vérifier les achievements
     console.log('[NextDay] Checking achievements');
     const unlockedAchievements = await checkAndUnlockAchievements(gameId);
 
-    // 9. Retourner le résultat
+    // 8. Retourner le résultat
     return {
       success: true,
       newDate: nextDate,

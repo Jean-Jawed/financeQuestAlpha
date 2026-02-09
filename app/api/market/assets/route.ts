@@ -1,11 +1,10 @@
 /**
  * FINANCEQUEST - API ROUTE: GET ASSETS
- * GET /api/market/assets?type=stock (optionnel)
+ * GET /api/market/assets?type=stock&market=nyse&search=apple
  */
 
 import { NextResponse } from 'next/server';
-import { ALL_ASSETS, getAssetsByType } from '@/lib/market/assets';
-import type { AssetType } from '@/lib/market/assets';
+import { getAssets, getAssetTypes, getMarkets } from '@/lib/market/assets';
 
 // ==========================================
 // API HANDLER
@@ -14,30 +13,58 @@ import type { AssetType } from '@/lib/market/assets';
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get('type') as AssetType | null;
+    const typeParam = searchParams.get('type'); // e.g., 'stock'
+    const marketParam = searchParams.get('market'); // e.g., 'nyse' or ID
+    const searchParam = searchParams.get('search');
+    const limitParam = searchParams.get('limit');
+    const offsetParam = searchParams.get('offset');
 
-    // Si type spécifié, filtrer
-    let assets = ALL_ASSETS;
-    if (type) {
-      if (!['stock', 'crypto', 'bond', 'index'].includes(type)) {
-        return NextResponse.json(
-          { error: 'Type invalide. Types valides: stock, crypto, bond, index' },
-          { status: 400 }
-        );
-      }
-      assets = getAssetsByType(type);
+    // 1. Resolve Type ID
+    let typeId: number | undefined;
+    if (typeParam) {
+      const types = await getAssetTypes();
+      const typeObj = types.find(t =>
+        t.code.toLowerCase() === typeParam.toLowerCase() ||
+        t.id.toString() === typeParam
+      );
+      if (typeObj) typeId = typeObj.id;
     }
+
+    // 2. Resolve Market ID
+    let marketId: number | undefined;
+    if (marketParam) {
+      const markets = await getMarkets();
+      const marketObj = markets.find(m =>
+        m.code.toLowerCase() === marketParam.toLowerCase() ||
+        m.id.toString() === marketParam
+      );
+      if (marketObj) marketId = marketObj.id;
+    }
+
+    // 3. Fetch Assets
+    const assets = await getAssets({
+      type_id: typeId,
+      market_id: marketId,
+      search: searchParam || undefined,
+      limit: limitParam ? parseInt(limitParam) : undefined,
+      offset: offsetParam ? parseInt(offsetParam) : undefined,
+    });
+
+    // 4. Transform for Frontend
+    const mappedAssets = assets.map((asset) => ({
+      symbol: asset.symbol,
+      name: asset.name,
+      type: asset.type?.code.toLowerCase() || 'unknown',
+      category: asset.asset_type_id === 1 ? 'Stocks' : 'Other', // Temporary fallback as 'category' column missing
+      market: asset.market?.code || '',
+      currency: asset.currency?.code || '',
+    }));
 
     return NextResponse.json({
       success: true,
       data: {
-        assets: assets.map((asset) => ({
-          symbol: asset.symbol,
-          name: asset.name,
-          type: asset.type,
-          category: asset.category,
-        })),
-        total: assets.length,
+        assets: mappedAssets,
+        total: mappedAssets.length, // Ideally use a count query for total
       },
     });
   } catch (error) {

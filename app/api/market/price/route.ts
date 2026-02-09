@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getPrice } from '@/lib/market/cache';
+import { getPrice } from '@/lib/market/prices';
 import { isValidSymbol } from '@/lib/market/assets';
 
 // ==========================================
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
       );
     }
 
-    if (!isValidSymbol(symbol)) {
+    if (!(await isValidSymbol(symbol))) {
       return NextResponse.json({ error: 'Symbole invalide' }, { status: 400 });
     }
 
@@ -38,10 +38,10 @@ export async function GET(req: Request) {
       );
     }
 
-    // Récupérer le prix (depuis cache ou API)
-    const price = await getPrice(symbol, date);
+    // Récupérer le prix (depuis DB)
+    const priceData = await getPrice(symbol, date);
 
-    if (price === null) {
+    if (!priceData) {
       return NextResponse.json(
         { error: 'Prix non disponible pour cette date' },
         { status: 404 }
@@ -53,7 +53,8 @@ export async function GET(req: Request) {
       data: {
         symbol,
         date,
-        price,
+        price: priceData.close_price,
+        volume: priceData.volume,
       },
     });
   } catch (error) {

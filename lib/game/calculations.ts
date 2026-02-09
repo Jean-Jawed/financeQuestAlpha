@@ -6,28 +6,9 @@
 import { db } from '@/lib/db';
 import { games, holdings } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { getPrice, batchGetPrices } from '@/lib/market/cache';
-import type { Game, Holding } from '@/types/database';
-
-// ==========================================
-// TYPES
-// ==========================================
-
-export interface PortfolioCalculation {
-  currentBalance: number;
-  portfolioValueLong: number;
-  shortPositionsPnl: number;
-  totalValue: number;
-  returnPercentage: number;
-  score: number;
-}
-
-export interface HoldingWithValue extends Holding {
-  currentPrice: number;
-  currentValue: number;
-  profitLoss: number;
-  profitLossPercentage: number;
-}
+import { getLatestPrices } from '@/lib/market/prices';
+import { getAssetsMap } from '@/lib/market/assets';
+import type { PortfolioCalculation, HoldingWithValue } from '@/types/game';
 
 // ==========================================
 // PORTFOLIO CALCULATIONS
@@ -72,17 +53,20 @@ export async function calculatePortfolio(
       };
     }
 
-    // 3. Récupérer les prix actuels pour tous les symboles (BATCH = 1 call ou cache HIT)
+    // 3. Récupérer les prix actuels pour tous les symboles (BATCH DB Query)
     const symbols = [...new Set(allHoldings.map((h) => h.symbol))];
-    const prices = await batchGetPrices(symbols, currentDate);
+    console.log(`next-day : prices update for ${symbols.length} symbols at ${currentDate}`);
+    const pricesMap = await getLatestPrices(symbols, currentDate);
 
     // 4. Calculer la valeur des positions long
     let portfolioValueLong = 0;
     const longHoldings = allHoldings.filter((h) => !h.isShort);
 
     for (const holding of longHoldings) {
-      const currentPrice = prices.get(holding.symbol);
-      if (currentPrice) {
+      const priceData = pricesMap.get(holding.symbol);
+      const currentPrice = priceData ? priceData.close_price : 0;
+
+      if (currentPrice > 0) {
         const value = parseFloat(holding.quantity) * currentPrice;
         portfolioValueLong += value;
       }
@@ -93,8 +77,10 @@ export async function calculatePortfolio(
     const shortHoldings = allHoldings.filter((h) => h.isShort);
 
     for (const holding of shortHoldings) {
-      const currentPrice = prices.get(holding.symbol);
-      if (currentPrice) {
+      const priceData = pricesMap.get(holding.symbol);
+      const currentPrice = priceData ? priceData.close_price : 0;
+
+      if (currentPrice > 0) {
         // P&L short = (prix d'emprunt - prix actuel) × quantité
         const pnl =
           (parseFloat(holding.averageCost) - currentPrice) *
@@ -112,7 +98,6 @@ export async function calculatePortfolio(
     const returnPercentage = ((totalValue - initialBalance) / initialBalance) * 100;
 
     // 8. Calculer le score (pour leaderboard)
-    // score = floor(((total_value - initial_balance) / initial_balance) × 1000)
     const score = Math.floor(returnPercentage * 10);
 
     return {
@@ -150,18 +135,25 @@ export async function calculateHoldingsValues(
       return [];
     }
 
-    // 2. Récupérer les prix actuels (BATCH = 1 call ou cache HIT)
+    // 2. Récupérer les prix actuels (BATCH DB Query)
     const symbols = [...new Set(allHoldings.map((h) => h.symbol))];
-    const prices = await batchGetPrices(symbols, currentDate);
+    const [pricesMap, assetsMap] = await Promise.all([
+      getLatestPrices(symbols, currentDate),
+      getAssetsMap(symbols)
+    ]);
 
     // 3. Calculer pour chaque holding
     const holdingsWithValues: HoldingWithValue[] = [];
 
     for (const holding of allHoldings) {
-      const currentPrice = prices.get(holding.symbol);
-      if (!currentPrice) {
-        console.warn(`[Calculations] No price found for ${holding.symbol}`);
-        continue;
+      const priceData = pricesMap.get(holding.symbol);
+      const assetData = assetsMap.get(holding.symbol);
+      const currentPrice = priceData ? priceData.close_price : 0;
+      const assetName = assetData ? assetData.name : holding.symbol;
+
+      if (currentPrice === 0) {
+        console.warn(`[Calculations] No price found for ${holding.symbol} at ${currentDate}`);
+        // On continue quand même avec prix 0 pour ne pas bloquer l'UI
       }
 
       const quantity = parseFloat(holding.quantity);
@@ -172,8 +164,9 @@ export async function calculateHoldingsValues(
 
       if (holding.isShort) {
         // Position short : P&L = (prix d'emprunt - prix actuel) × quantité
+        // Si prix actuel est 0 (pas de donnée), P&L est faussé mais on garde 0 pour currentPrice
         profitLoss = (averageCost - currentPrice) * quantity;
-        currentValue = profitLoss; // Pour positions short, "value" = P&L
+        currentValue = profitLoss;
       } else {
         // Position long : valeur = prix actuel × quantité
         currentValue = currentPrice * quantity;
@@ -184,7 +177,15 @@ export async function calculateHoldingsValues(
         averageCost > 0 ? (profitLoss / (averageCost * quantity)) * 100 : 0;
 
       holdingsWithValues.push({
-        ...holding,
+        id: holding.id,
+        gameId: holding.gameId,
+        symbol: holding.symbol,
+        quantity: holding.quantity,
+        averageCost: holding.averageCost,
+        isShort: holding.isShort,
+        createdAt: holding.createdAt,
+        updatedAt: holding.updatedAt,
+        name: assetName,
         currentPrice,
         currentValue,
         profitLoss,

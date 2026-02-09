@@ -12,7 +12,6 @@ import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatQuantity, formatPercentage } from '@/lib/utils/formatting';
-import { getAsset } from '@/lib/market/assets';
 import type { HoldingWithValue } from '@/types/game';
 
 // ==========================================
@@ -97,7 +96,6 @@ export function HoldingsTable({ holdings, gameId, onTradeComplete }: HoldingsTab
         <CardContent>
           <div className="space-y-2">
             {longHoldings.map((holding) => {
-              const asset = getAsset(holding.symbol);
               const isProfit = holding.profitLoss > 0;
 
               return (
@@ -108,7 +106,7 @@ export function HoldingsTable({ holdings, gameId, onTradeComplete }: HoldingsTab
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold text-white">{holding.symbol}</span>
-                      <span className="text-xs text-slate-500">{asset?.name}</span>
+                      <span className="text-xs text-slate-500">{holding.name}</span>
                     </div>
                     <div className="text-sm text-slate-400">
                       {formatQuantity(parseFloat(holding.quantity))} × {formatCurrency(parseFloat(holding.averageCost))}
@@ -120,9 +118,8 @@ export function HoldingsTable({ holdings, gameId, onTradeComplete }: HoldingsTab
                       {formatCurrency(holding.currentValue)}
                     </div>
                     <div
-                      className={`text-sm ${
-                        isProfit ? 'text-green-400' : 'text-red-400'
-                      }`}
+                      className={`text-sm ${isProfit ? 'text-green-400' : 'text-red-400'
+                        }`}
                     >
                       {isProfit ? '+' : ''}
                       {formatCurrency(holding.profitLoss)} ({formatPercentage(holding.profitLossPercentage, 2, true)})

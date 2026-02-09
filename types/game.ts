@@ -9,6 +9,15 @@ import type { Game, Holding, Transaction } from './database';
 // GAME TYPES
 // ==========================================
 
+export interface PortfolioCalculation {
+  currentBalance: number;
+  portfolioValueLong: number;
+  shortPositionsPnl: number;
+  totalValue: number;
+  returnPercentage: number;
+  score: number;
+}
+
 export interface GameWithStats extends Game {
   portfolioValue: number;
   shortPositionsPnl: number;
@@ -30,6 +39,7 @@ export interface GameSettings {
 // ==========================================
 
 export interface HoldingWithValue extends Holding {
+  name: string;
   currentPrice: number;
   currentValue: number;
   profitLoss: number;

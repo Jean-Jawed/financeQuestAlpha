@@ -13,7 +13,7 @@ import { eq, and } from 'drizzle-orm';
 import { validateCover } from '@/lib/game/validations';
 import { calculateTransactionPreview, calculatePortfolio } from '@/lib/game/calculations';
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
-import { getPrice } from '@/lib/market/cache';
+import { getPrice } from '@/lib/market/prices';
 import { coverSchema, validateTradeInputSafe } from '@/lib/game/trade-schemas';
 
 // ==========================================
@@ -47,13 +47,14 @@ export const POST = withAuth(async (req, { userId }) => {
     await requireOwnership(userId, game.userId);
 
     // 3. Récupérer le prix actuel
-    const currentPrice = await getPrice(symbol, game.currentDate);
-    if (!currentPrice) {
+    const priceData = await getPrice(symbol, game.currentDate);
+    if (!priceData || !priceData.close_price) {
       return NextResponse.json(
         { error: 'Prix non disponible pour cet actif' },
         { status: 404 }
       );
     }
+    const currentPrice = priceData.close_price;
 
     // 4. Valider l'ordre cover
     const transactionFees = game.settings.transaction_fees;
@@ -154,11 +155,11 @@ export const POST = withAuth(async (req, { userId }) => {
           pnl: pnl.toFixed(2),
           portfolio: portfolio
             ? {
-                totalValue: portfolio.totalValue,
-                returnPercentage: portfolio.returnPercentage,
-                portfolioValueLong: portfolio.portfolioValueLong,
-                shortPositionsPnl: portfolio.shortPositionsPnl,
-              }
+              totalValue: portfolio.totalValue,
+              returnPercentage: portfolio.returnPercentage,
+              portfolioValueLong: portfolio.portfolioValueLong,
+              shortPositionsPnl: portfolio.shortPositionsPnl,
+            }
             : undefined,
           achievementsUnlocked: achievementsUnlocked.map((a) => ({
             name: a.achievement.name,

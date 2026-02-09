@@ -209,10 +209,19 @@ async function checkSpecificTrade(
   minCount: number
 ): Promise<boolean> {
   // Import dynamique pour éviter circular dependency
-  const { ALL_ASSETS } = await import('@/lib/market/assets');
+  const { getAssets, getAssetTypes } = await import('@/lib/market/assets');
+
+  // Récupérer le type ID correspondant au code (ex: 'stock' -> STOCK -> 1)
+  if (!assetType) return false;
+
+  const types = await getAssetTypes();
+  const typeObj = types.find(t => t.code && t.code.toLowerCase() === assetType.toLowerCase());
+
+  if (!typeObj) return false;
 
   // Filtrer les symboles par type
-  const symbolsOfType = ALL_ASSETS.filter((a) => a.type === assetType).map((a) => a.symbol);
+  const assetsOfType = await getAssets({ type_id: typeObj.id });
+  const symbolsOfType = assetsOfType.map((a) => a.symbol);
 
   if (symbolsOfType.length === 0) return false;
 
