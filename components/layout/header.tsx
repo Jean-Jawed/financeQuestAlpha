@@ -6,6 +6,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,13 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-lg" />
+            <Image 
+              src="/logo_small.png" 
+              alt="FinanceQuest Logo" 
+              width={32} 
+              height={32} 
+              className="rounded-lg object-contain"
+            />
             <span className="text-xl font-bold text-white">FinanceQuest</span>
           </Link>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 
@@ -24,7 +25,13 @@ export function MobileNav({ isOpen, onClose, navItems }: MobileNavProps) {
     <div className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-slate-900/80 backdrop-blur-lg md:hidden animate-in fade-in slide-in-from-top-2 duration-200 shadow-2xl shadow-black/50 border-b border-slate-800 pb-4">
       <div className="flex h-16 items-center justify-between px-4 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-lg" />
+          <Image 
+            src="/logo_small.png" 
+            alt="FinanceQuest Logo" 
+            width={32} 
+            height={32} 
+            className="rounded-lg object-contain"
+          />
           <span className="text-xl font-bold text-white">FinanceQuest</span>
         </div>
         <button
