@@ -15,6 +15,7 @@ import { calculateTransactionPreview, calculatePortfolio } from '@/lib/game/calc
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
 import { getPrice } from '@/lib/market/prices';
 import { coverSchema, validateTradeInputSafe } from '@/lib/game/trade-schemas';
+import { ValidationError } from '@/lib/utils/errors';
 
 // ==========================================
 // API HANDLER
@@ -56,85 +57,99 @@ export const POST = withAuth(async (req, { userId }) => {
     }
     const currentPrice = priceData.close_price;
 
-    // 4. Valider l'ordre cover
+    // 4 à 10 : dans une transaction SQL. Le verrou FOR UPDATE sur la partie
+    // sérialise les ordres concurrents : impossible de couvrir deux fois
+    // la même position.
     const transactionFees = game.settings.transaction_fees;
-    const validationResult = await validateCover(
-      gameId,
-      symbol,
-      quantity,
-      currentPrice,
-      transactionFees
-    );
 
-    if (!validationResult.valid) {
-      return NextResponse.json({ error: validationResult.error }, { status: 400 });
-    }
+    const { newBalance, updatedHolding, transaction, pnl } = await db.transaction(async (tx) => {
+      const [lockedGame] = await tx
+        .select()
+        .from(games)
+        .where(eq(games.id, gameId))
+        .for('update');
 
-    // 5. Récupérer le holding short
-    const shortHolding = await db.query.holdings.findFirst({
-      where: and(eq(holdings.gameId, gameId), eq(holdings.symbol, symbol), eq(holdings.isShort, true)),
-    });
-
-    if (!shortHolding) {
-      return NextResponse.json({ error: 'Position short non trouvée' }, { status: 404 });
-    }
-
-    // 6. Calculer les montants
-    const preview = calculateTransactionPreview('cover', quantity, currentPrice, transactionFees);
-
-    // 7. Calculer le P&L
-    const averageCost = parseFloat(shortHolding.averageCost);
-    const pnl = (averageCost - currentPrice) * quantity;
-
-    console.log(
-      `[API] Cover P&L: (${averageCost} - ${currentPrice}) × ${quantity} = ${pnl.toFixed(2)}`
-    );
-
-    // 8. Mettre à jour le solde
-    const newBalance = parseFloat(game.currentBalance) + preview.balanceChange;
-
-    await db
-      .update(games)
-      .set({
-        currentBalance: newBalance.toFixed(2),
-        updatedAt: new Date(),
-      })
-      .where(eq(games.id, gameId));
-
-    // 9. Mettre à jour ou supprimer le holding short
-    const remainingQuantity = parseFloat(shortHolding.quantity) - quantity;
-    let updatedHolding;
-
-    if (remainingQuantity <= 0.00000001) {
-      // Supprimer le holding si quantité = 0
-      await db.delete(holdings).where(eq(holdings.id, shortHolding.id));
-      updatedHolding = null;
-    } else {
-      // Réduire la quantité
-      [updatedHolding] = await db
-        .update(holdings)
-        .set({
-          quantity: remainingQuantity.toFixed(8),
-          updatedAt: new Date(),
-        })
-        .where(eq(holdings.id, shortHolding.id))
-        .returning();
-    }
-
-    // 10. Enregistrer la transaction
-    const [transaction] = await db
-      .insert(transactions)
-      .values({
+      // 4. Valider l'ordre cover (après obtention du verrou)
+      const validationResult = await validateCover(
         gameId,
         symbol,
-        type: 'cover',
-        quantity: quantity.toFixed(8),
-        price: currentPrice.toFixed(2),
-        fee: preview.feeAmount.toFixed(2),
-        total: preview.total.toFixed(2),
-        transactionDate: game.currentDate,
-      })
-      .returning();
+        quantity,
+        currentPrice,
+        transactionFees
+      );
+
+      if (!validationResult.valid) {
+        throw new ValidationError(validationResult.error ?? 'Ordre invalide');
+      }
+
+      // 5. Récupérer le holding short
+      const shortHolding = await tx.query.holdings.findFirst({
+        where: and(eq(holdings.gameId, gameId), eq(holdings.symbol, symbol), eq(holdings.isShort, true)),
+      });
+
+      if (!shortHolding) {
+        throw new ValidationError('Position short non trouvée');
+      }
+
+      // 6. Calculer les montants
+      const preview = calculateTransactionPreview('cover', quantity, currentPrice, transactionFees);
+
+      // 7. Calculer le P&L
+      const averageCost = parseFloat(shortHolding.averageCost);
+      const pnl = (averageCost - currentPrice) * quantity;
+
+      console.log(
+        `[API] Cover P&L: (${averageCost} - ${currentPrice}) × ${quantity} = ${pnl.toFixed(2)}`
+      );
+
+      // 8. Mettre à jour le solde
+      const newBalance = parseFloat(lockedGame.currentBalance) + preview.balanceChange;
+
+      await tx
+        .update(games)
+        .set({
+          currentBalance: newBalance.toFixed(2),
+          updatedAt: new Date(),
+        })
+        .where(eq(games.id, gameId));
+
+      // 9. Mettre à jour ou supprimer le holding short
+      const remainingQuantity = parseFloat(shortHolding.quantity) - quantity;
+      let updatedHolding;
+
+      if (remainingQuantity <= 0.00000001) {
+        // Supprimer le holding si quantité = 0
+        await tx.delete(holdings).where(eq(holdings.id, shortHolding.id));
+        updatedHolding = null;
+      } else {
+        // Réduire la quantité
+        [updatedHolding] = await tx
+          .update(holdings)
+          .set({
+            quantity: remainingQuantity.toFixed(8),
+            updatedAt: new Date(),
+          })
+          .where(eq(holdings.id, shortHolding.id))
+          .returning();
+      }
+
+      // 10. Enregistrer la transaction
+      const [transaction] = await tx
+        .insert(transactions)
+        .values({
+          gameId,
+          symbol,
+          type: 'cover',
+          quantity: quantity.toFixed(8),
+          price: currentPrice.toFixed(6),
+          fee: preview.feeAmount.toFixed(2),
+          total: preview.total.toFixed(2),
+          transactionDate: lockedGame.currentDate,
+        })
+        .returning();
+
+      return { newBalance, updatedHolding, transaction, pnl };
+    });
 
     console.log(`[API] Cover executed: ${quantity} ${symbol} @ ${currentPrice}, P&L: ${pnl.toFixed(2)}`);
 
@@ -171,6 +186,10 @@ export const POST = withAuth(async (req, { userId }) => {
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     console.error('[API] Cover error:', error);
 
     if (error instanceof Error && error.message === 'Forbidden: You do not own this resource') {

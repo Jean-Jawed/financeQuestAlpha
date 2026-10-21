@@ -126,10 +126,15 @@ export async function searchAssets(query: string, limit = 20): Promise<Asset[]> 
 
 /**
  * Vérifier si un symbole est valide (existe en base)
+ *
+ * @param requireActive - true pour ouvrir une position (buy/short) : refuse les
+ *   actifs désactivés (sans prix ou prix corrompus). Une position existante
+ *   reste toujours fermable (sell/cover).
  */
-export async function isValidSymbol(symbol: string): Promise<boolean> {
+export async function isValidSymbol(symbol: string, requireActive = false): Promise<boolean> {
   const asset = await getAssetBySymbol(symbol);
-  return asset !== null;
+  if (asset === null) return false;
+  return requireActive ? asset.is_active : true;
 }
 
 /**

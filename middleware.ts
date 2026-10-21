@@ -14,9 +14,6 @@ import { createMiddlewareClient } from '@/lib/supabase/middleware';
 // Routes protégées (nécessitent authentification)
 const PROTECTED_ROUTES = ['/dashboard', '/game', '/admin'];
 
-// Routes publiques (accessibles sans auth)
-const PUBLIC_ROUTES = ['/login', '/signup', '/', '/about'];
-
 // ==========================================
 // RATE LIMITING (Simple in-memory)
 // ==========================================
@@ -26,9 +23,32 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 const RATE_LIMIT = 100; // Requêtes max par fenêtre (augmenté de 30 à 100)
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_ENTRIES = 10_000; // Au-delà, purge des fenêtres expirées
+
+/**
+ * IP du client : x-real-ip (posé par Vercel), sinon la première IP
+ * de x-forwarded-for (les suivantes sont celles des proxies)
+ */
+function getClientIp(req: NextRequest): string {
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  if (forwardedFor) return forwardedFor.split(',')[0].trim();
+
+  return '127.0.0.1';
+}
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
+
+  // Éviter que la Map grossisse indéfiniment
+  if (rateLimitMap.size > RATE_LIMIT_MAX_ENTRIES) {
+    for (const [key, value] of rateLimitMap) {
+      if (now > value.resetTime) rateLimitMap.delete(key);
+    }
+  }
+
   const record = rateLimitMap.get(ip);
 
   // Si pas d'entrée ou fenêtre expirée, reset
@@ -57,14 +77,17 @@ function checkRateLimit(ip: string): boolean {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 1. Rate Limiting (SAUF sur routes publiques et API)
-  const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route));
+  // 1. Rate Limiting : API (routes coûteuses : trades, next-day, leaderboard…)
+  //    et pages protégées. Les pages publiques et les assets statiques sont exclus.
+  //    ⚠ Compteur en mémoire : propre à chaque instance serverless. C'est un
+  //    garde-fou minimal ; pour une vraie protection, utiliser le rate limiting
+  //    du Vercel Firewall (WAF) ou Upstash Ratelimit.
   const isApiRoute = pathname.startsWith('/api/');
+  const isProtectedPage = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
   const isStaticAsset = pathname.startsWith('/_next/') || pathname.includes('.');
 
-  // Appliquer rate limit UNIQUEMENT sur routes protégées
-  if (!isPublicRoute && !isApiRoute && !isStaticAsset) {
-    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+  if ((isApiRoute || isProtectedPage) && !isStaticAsset) {
+    const ip = getClientIp(req);
 
     if (!checkRateLimit(ip)) {
       console.warn(`[Middleware] Rate limit exceeded for IP: ${ip}`);

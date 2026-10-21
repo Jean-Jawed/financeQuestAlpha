@@ -15,6 +15,7 @@ import { calculateTransactionPreview, calculatePortfolio } from '@/lib/game/calc
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
 import { getPrice } from '@/lib/market/prices';
 import { buySchema, validateTradeInputSafe } from '@/lib/game/trade-schemas';
+import { ValidationError } from '@/lib/utils/errors';
 
 // ==========================================
 // API HANDLER
@@ -56,86 +57,100 @@ export const POST = withAuth(async (req, { userId }) => {
     }
     const currentPrice = priceData.close_price;
 
-    // 4. Valider l'ordre d'achat
+    // 4 à 8 : dans une transaction SQL. Le verrou FOR UPDATE sur la partie
+    // sérialise les ordres concurrents (double-clic, onglets multiples) :
+    // le second attend la fin du premier et voit le solde à jour.
     const transactionFees = game.settings.transaction_fees;
-    const validationResult = await validateBuy(
-      gameId,
-      symbol,
-      quantity,
-      currentPrice,
-      transactionFees
-    );
 
-    if (!validationResult.valid) {
-      return NextResponse.json({ error: validationResult.error }, { status: 400 });
-    }
+    const { newBalance, updatedHolding, transaction } = await db.transaction(async (tx) => {
+      const [lockedGame] = await tx
+        .select()
+        .from(games)
+        .where(eq(games.id, gameId))
+        .for('update');
 
-    // 5. Calculer les montants
-    const preview = calculateTransactionPreview('buy', quantity, currentPrice, transactionFees);
+      // 4. Valider l'ordre d'achat (après obtention du verrou)
+      const validationResult = await validateBuy(
+        gameId,
+        symbol,
+        quantity,
+        currentPrice,
+        transactionFees
+      );
 
-    // 6. Mettre à jour le solde
-    const newBalance = parseFloat(game.currentBalance) + preview.balanceChange;
+      if (!validationResult.valid) {
+        throw new ValidationError(validationResult.error ?? 'Ordre invalide');
+      }
 
-    await db
-      .update(games)
-      .set({
-        currentBalance: newBalance.toFixed(2),
-        updatedAt: new Date(),
-      })
-      .where(eq(games.id, gameId));
+      // 5. Calculer les montants
+      const preview = calculateTransactionPreview('buy', quantity, currentPrice, transactionFees);
 
-    // 7. Créer ou mettre à jour le holding
-    const existingHolding = await db.query.holdings.findFirst({
-      where: and(eq(holdings.gameId, gameId), eq(holdings.symbol, symbol), eq(holdings.isShort, false)),
-    });
+      // 6. Mettre à jour le solde
+      const newBalance = parseFloat(lockedGame.currentBalance) + preview.balanceChange;
 
-    let updatedHolding;
-
-    if (existingHolding) {
-      // Mettre à jour holding existant (average cost)
-      const totalQuantity = parseFloat(existingHolding.quantity) + quantity;
-      const totalCost =
-        parseFloat(existingHolding.quantity) * parseFloat(existingHolding.averageCost) +
-        quantity * currentPrice;
-      const newAverageCost = totalCost / totalQuantity;
-
-      [updatedHolding] = await db
-        .update(holdings)
+      await tx
+        .update(games)
         .set({
-          quantity: totalQuantity.toFixed(8),
-          averageCost: newAverageCost.toFixed(2),
+          currentBalance: newBalance.toFixed(2),
           updatedAt: new Date(),
         })
-        .where(eq(holdings.id, existingHolding.id))
-        .returning();
-    } else {
-      // Créer nouveau holding
-      [updatedHolding] = await db
-        .insert(holdings)
+        .where(eq(games.id, gameId));
+
+      // 7. Créer ou mettre à jour le holding
+      const existingHolding = await tx.query.holdings.findFirst({
+        where: and(eq(holdings.gameId, gameId), eq(holdings.symbol, symbol), eq(holdings.isShort, false)),
+      });
+
+      let updatedHolding;
+
+      if (existingHolding) {
+        // Mettre à jour holding existant (average cost)
+        const totalQuantity = parseFloat(existingHolding.quantity) + quantity;
+        const totalCost =
+          parseFloat(existingHolding.quantity) * parseFloat(existingHolding.averageCost) +
+          quantity * currentPrice;
+        const newAverageCost = totalCost / totalQuantity;
+
+        [updatedHolding] = await tx
+          .update(holdings)
+          .set({
+            quantity: totalQuantity.toFixed(8),
+            averageCost: newAverageCost.toFixed(6),
+            updatedAt: new Date(),
+          })
+          .where(eq(holdings.id, existingHolding.id))
+          .returning();
+      } else {
+        // Créer nouveau holding
+        [updatedHolding] = await tx
+          .insert(holdings)
+          .values({
+            gameId,
+            symbol,
+            quantity: quantity.toFixed(8),
+            averageCost: currentPrice.toFixed(6),
+            isShort: false,
+          })
+          .returning();
+      }
+
+      // 8. Enregistrer la transaction
+      const [transaction] = await tx
+        .insert(transactions)
         .values({
           gameId,
           symbol,
+          type: 'buy',
           quantity: quantity.toFixed(8),
-          averageCost: currentPrice.toFixed(2),
-          isShort: false,
+          price: currentPrice.toFixed(6),
+          fee: preview.feeAmount.toFixed(2),
+          total: preview.total.toFixed(2),
+          transactionDate: lockedGame.currentDate,
         })
         .returning();
-    }
 
-    // 8. Enregistrer la transaction
-    const [transaction] = await db
-      .insert(transactions)
-      .values({
-        gameId,
-        symbol,
-        type: 'buy',
-        quantity: quantity.toFixed(8),
-        price: currentPrice.toFixed(2),
-        fee: preview.feeAmount.toFixed(2),
-        total: preview.total.toFixed(2),
-        transactionDate: game.currentDate,
-      })
-      .returning();
+      return { newBalance, updatedHolding, transaction };
+    });
 
     console.log(`[API] Buy executed: ${quantity} ${symbol} @ ${currentPrice}`);
 
@@ -171,6 +186,10 @@ export const POST = withAuth(async (req, { userId }) => {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     console.error('[API] Buy error:', error);
 
     if (error instanceof Error && error.message === 'Forbidden: You do not own this resource') {

@@ -1,10 +1,16 @@
 /**
  * FINANCEQUEST - DRIZZLE SCHEMA
- * Définitions TypeScript des 8 tables Supabase PostgreSQL
+ * Définitions TypeScript des 6 tables Supabase PostgreSQL (projet FinanceQuest)
+ *
+ * Doit refléter la base réelle : les statuts / types sont des colonnes `text`
+ * avec contrainte CHECK (pas des enums Postgres), et `users.id` référence
+ * `auth.users.id` (profil créé par le trigger `on_auth_user_created`).
+ * Voir docs/reviewOct2026/sql/02_projet_A_structure.sql
  */
 
 import {
   pgTable,
+  pgSchema,
   uuid,
   text,
   timestamp,
@@ -12,40 +18,59 @@ import {
   date,
   boolean,
   integer,
-  bigint,
   jsonb,
-  pgEnum,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // ==========================================
-// ENUMS
+// VALEURS AUTORISÉES (contraintes CHECK en base)
 // ==========================================
 
-export const gameStatusEnum = pgEnum('game_status', ['active', 'paused', 'completed']);
+export const GAME_STATUSES = ['active', 'paused', 'completed'] as const;
 
-export const transactionTypeEnum = pgEnum('transaction_type', ['buy', 'sell', 'short', 'cover']);
+export const TRANSACTION_TYPES = ['buy', 'sell', 'short', 'cover'] as const;
 
-export const criteriaTypeEnum = pgEnum('criteria_type', [
+export const CRITERIA_TYPES = [
   'first_transaction',
   'asset_count',
   'portfolio_value',
   'return_percentage',
   'specific_trade',
-]);
+  'transaction_count',
+  'short_profit',
+  'hold_duration',
+  'swing_trade',
+  'balanced_portfolio',
+  'sector_focus',
+  'profitable_trades',
+  'perfect_timing',
+  'comeback',
+  'days_played',
+] as const;
 
-export const periodTypeEnum = pgEnum('period_type', ['all_time', 'monthly', 'weekly']);
+// ==========================================
+// TABLE: auth.users (gérée par Supabase Auth, référencée uniquement)
+// Non exportée : sinon le client Drizzle la confond avec public.users (même nom)
+// ==========================================
+
+const authSchema = pgSchema('auth');
+
+const authUsers = authSchema.table('users', {
+  id: uuid('id').primaryKey(),
+});
 
 // ==========================================
 // TABLE: users
 // ==========================================
 
 export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id')
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // ==========================================
@@ -63,7 +88,7 @@ export const games = pgTable('games', {
     .default('10000.00')
     .notNull(),
   currentBalance: decimal('current_balance', { precision: 15, scale: 2 }).notNull(),
-  status: gameStatusEnum('status').default('active').notNull(),
+  status: text('status', { enum: GAME_STATUSES }).default('active').notNull(),
   settings: jsonb('settings')
     .$type<{
       transaction_fees: number;
@@ -76,8 +101,8 @@ export const games = pgTable('games', {
       allow_leverage: false,
     })
     .notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // ==========================================
@@ -91,10 +116,10 @@ export const holdings = pgTable('holdings', {
     .references(() => games.id, { onDelete: 'cascade' }),
   symbol: text('symbol').notNull(),
   quantity: decimal('quantity', { precision: 15, scale: 8 }).notNull(),
-  averageCost: decimal('average_cost', { precision: 15, scale: 2 }).notNull(),
+  averageCost: decimal('average_cost', { precision: 18, scale: 6 }).notNull(),
   isShort: boolean('is_short').default(false).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // ==========================================
@@ -107,13 +132,13 @@ export const transactions = pgTable('transactions', {
     .notNull()
     .references(() => games.id, { onDelete: 'cascade' }),
   symbol: text('symbol').notNull(),
-  type: transactionTypeEnum('type').notNull(),
+  type: text('type', { enum: TRANSACTION_TYPES }).notNull(),
   quantity: decimal('quantity', { precision: 15, scale: 8 }).notNull(),
-  price: decimal('price', { precision: 15, scale: 2 }).notNull(),
+  price: decimal('price', { precision: 18, scale: 6 }).notNull(),
   fee: decimal('fee', { precision: 15, scale: 2 }).default('0').notNull(),
   total: decimal('total', { precision: 15, scale: 2 }).notNull(),
   transactionDate: date('transaction_date').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // ==========================================
@@ -124,11 +149,11 @@ export const achievements = pgTable('achievements', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull().unique(),
   description: text('description').notNull(),
-  criteriaType: criteriaTypeEnum('criteria_type').notNull(),
+  criteriaType: text('criteria_type', { enum: CRITERIA_TYPES }).notNull(),
   criteriaValue: jsonb('criteria_value').notNull(),
   points: integer('points').default(0).notNull(),
   icon: text('icon'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // ==========================================
@@ -146,58 +171,7 @@ export const userAchievements = pgTable('user_achievements', {
   achievementId: uuid('achievement_id')
     .notNull()
     .references(() => achievements.id, { onDelete: 'cascade' }),
-  unlockedAt: timestamp('unlocked_at').defaultNow().notNull(),
-});
-
-// ==========================================
-// TABLE: market_data_cache
-// ==========================================
-
-export const marketDataCache = pgTable('market_data_cache', {
-  symbol: text('symbol').notNull(),
-  date: date('date').notNull(),
-  open: decimal('open', { precision: 15, scale: 4 }),
-  high: decimal('high', { precision: 15, scale: 4 }),
-  low: decimal('low', { precision: 15, scale: 4 }),
-  close: decimal('close', { precision: 15, scale: 4 }).notNull(),
-  volume: bigint('volume', { mode: 'number' }),
-  cachedAt: timestamp('cached_at').defaultNow().notNull(),
-});
-
-// ==========================================
-// TABLE: leaderboard_snapshots
-// ==========================================
-
-export const leaderboardSnapshots = pgTable('leaderboard_snapshots', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  gameId: uuid('game_id')
-    .notNull()
-    .references(() => games.id, { onDelete: 'cascade' }),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  userName: text('user_name').notNull(),
-  totalValue: decimal('total_value', { precision: 15, scale: 2 }).notNull(),
-  returnPercentage: decimal('return_percentage', { precision: 10, scale: 4 }).notNull(),
-  score: integer('score').notNull(),
-  periodType: periodTypeEnum('period_type').notNull(),
-  periodKey: text('period_key').notNull(),
-  rank: integer('rank'),
-  snapshotDate: date('snapshot_date').defaultNow().notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
-
-// ==========================================
-// TABLE: api_stats (Statistiques API externes)
-// ==========================================
-
-export const apiStats = pgTable('api_stats', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  provider: text('provider').notNull(), // 'marketstack'
-  requestsRemaining: integer('requests_remaining').notNull(),
-  requestsLimit: integer('requests_limit').notNull(),
-  resetDate: timestamp('reset_date'), // Quand le quota se reset
-  lastUpdated: timestamp('last_updated').defaultNow().notNull(),
+  unlockedAt: timestamp('unlocked_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // ==========================================
@@ -207,7 +181,6 @@ export const apiStats = pgTable('api_stats', {
 export const usersRelations = relations(users, ({ many }) => ({
   games: many(games),
   userAchievements: many(userAchievements),
-  leaderboardSnapshots: many(leaderboardSnapshots),
 }));
 
 export const gamesRelations = relations(games, ({ one, many }) => ({
@@ -218,7 +191,6 @@ export const gamesRelations = relations(games, ({ one, many }) => ({
   holdings: many(holdings),
   transactions: many(transactions),
   userAchievements: many(userAchievements),
-  leaderboardSnapshots: many(leaderboardSnapshots),
 }));
 
 export const holdingsRelations = relations(holdings, ({ one }) => ({
@@ -250,17 +222,6 @@ export const userAchievementsRelations = relations(userAchievements, ({ one }) =
   }),
 }));
 
-export const leaderboardSnapshotsRelations = relations(leaderboardSnapshots, ({ one }) => ({
-  user: one(users, {
-    fields: [leaderboardSnapshots.userId],
-    references: [users.id],
-  }),
-  game: one(games, {
-    fields: [leaderboardSnapshots.gameId],
-    references: [games.id],
-  }),
-}));
-
 // ==========================================
 // TYPES INFÉRÉS
 // ==========================================
@@ -282,12 +243,3 @@ export type NewAchievement = typeof achievements.$inferInsert;
 
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type NewUserAchievement = typeof userAchievements.$inferInsert;
-
-export type MarketDataCache = typeof marketDataCache.$inferSelect;
-export type NewMarketDataCache = typeof marketDataCache.$inferInsert;
-
-export type LeaderboardSnapshot = typeof leaderboardSnapshots.$inferSelect;
-export type NewLeaderboardSnapshot = typeof leaderboardSnapshots.$inferInsert;
-
-export type ApiStats = typeof apiStats.$inferSelect;
-export type NewApiStats = typeof apiStats.$inferInsert;

@@ -94,6 +94,29 @@ export async function requireAuth(): Promise<string> {
 }
 
 /**
+ * Vérifier que l'utilisateur courant est administrateur
+ * Le rôle est lu dans app_metadata (modifiable uniquement côté serveur,
+ * attribué par docs/reviewOct2026/sql/02_projet_A_structure.sql)
+ *
+ * @returns 'ok' | 'unauthenticated' | 'forbidden'
+ */
+export async function checkAdmin(): Promise<'ok' | 'unauthenticated' | 'forbidden'> {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return 'unauthenticated';
+    }
+
+    return user.app_metadata?.role === 'admin' ? 'ok' : 'forbidden';
+  } catch (error) {
+    console.error('[Auth] Error checking admin role:', error);
+    return 'unauthenticated';
+  }
+}
+
+/**
  * Obtenir l'utilisateur courant avec erreur si non authentifié
  */
 export async function requireUser(): Promise<SessionUser> {
@@ -126,9 +149,13 @@ export async function signUp(
     const supabase = await createServerClient();
 
     // 1. Créer le compte Supabase Auth
+    // Le profil public.users est créé par le trigger `on_auth_user_created`
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: { name: name.trim() },
+      },
     });
 
     if (error) {
@@ -140,16 +167,7 @@ export async function signUp(
       return { success: false, error: 'Failed to create user' };
     }
 
-    // 2. Créer l'entrée dans notre table users
-    await db.insert(users).values({
-      id: data.user.id,
-      email,
-      name,
-    });
-
-    console.log(`[Auth] User created: ${email}`);
-
-    // 3. Se connecter automatiquement après signup
+    // 2. Se connecter automatiquement après signup
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -163,13 +181,13 @@ export async function signUp(
       };
     }
 
-    // 4. Récupérer l'utilisateur complet
+    // 3. Récupérer l'utilisateur complet
     const sessionUser = await getSessionUser();
 
     if (!sessionUser) {
-      return { 
-        success: false, 
-        error: 'Account created but session failed. Please try logging in.' 
+      return {
+        success: false,
+        error: 'Account created but session failed. Please try logging in.'
       };
     }
 

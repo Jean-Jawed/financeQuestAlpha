@@ -8,8 +8,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
 import Link from 'next/link';
 
 // ==========================================
@@ -54,14 +52,17 @@ export function SignupForm() {
 
     try {
       // 1. Créer le compte Supabase Auth
+      // Le profil public.users est créé par le trigger `on_auth_user_created`
+      // à partir de options.data.name (voir docs/reviewOct2026/sql/02_projet_A_structure.sql)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: { name: name.trim() },
+        },
       });
 
       if (authError) {
-        console.error('[SignupForm] Auth error:', authError);
-        
         if (authError.message.includes('already registered')) {
           setError('Cet email est déjà utilisé');
         } else {
@@ -78,30 +79,10 @@ export function SignupForm() {
         return;
       }
 
-      // 2. Créer l'entrée dans notre table users via API
-      const dbRes = await fetch('/api/users/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: authData.user.id,
-          email,
-          name,
-        }),
-      });
-
-      if (!dbRes.ok) {
-        console.error('[SignupForm] Database error');
-        setError('Compte créé mais erreur lors de l\'initialisation. Veuillez vous connecter.');
-        setLoading(false);
-        return;
-      }
-
-      console.log('[SignupForm] Signup successful:', email);
-
-      // 3. Connexion automatique (Supabase le fait déjà après signUp)
+      // 2. Connexion automatique (Supabase le fait déjà après signUp)
       // Les cookies sont déjà créés automatiquement
 
-      // 4. Redirection avec rechargement complet
+      // 3. Redirection avec rechargement complet
       window.location.href = '/dashboard';
     } catch (err) {
       console.error('[SignupForm] Unexpected error:', err);
@@ -139,6 +120,7 @@ export function SignupForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              maxLength={50}
               disabled={loading}
               className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Votre nom"

@@ -1,9 +1,6 @@
 {
+  "regions": ["arn1"],
   "crons": [
-    {
-      "path": "/api/cron/update-cache",
-      "schedule": "0 2 * * *"
-    },
     {
       "path": "/api/cron/cleanup-games",
       "schedule": "0 3 * * 0"

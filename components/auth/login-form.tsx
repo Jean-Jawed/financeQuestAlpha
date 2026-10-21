@@ -49,36 +49,25 @@ export function LoginForm() {
     setError('');
     setLoading(true);
 
-    console.log('[LoginForm] Starting login process...');
-    console.log('[LoginForm] Email:', email);
-
     try {
-      console.log('[LoginForm] Calling Supabase signInWithPassword...');
-      
       // Authentification directe côté client
+      // (ne jamais logger `data` : il contient access_token et refresh_token)
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('[LoginForm] Supabase response:', { data, error: authError });
-
       if (authError) {
-        console.error('[LoginForm] Auth error:', authError);
         setError('Email ou mot de passe incorrect');
         setLoading(false);
         return;
       }
 
       if (!data.user) {
-        console.error('[LoginForm] No user in response');
         setError('Erreur de connexion');
         setLoading(false);
         return;
       }
-
-      console.log('[LoginForm] Login successful:', data.user.email);
-      console.log('[LoginForm] Redirecting to dashboard...');
 
       // Redirection avec rechargement complet (pour que middleware charge les cookies)
       window.location.href = '/dashboard';

@@ -1,99 +1,66 @@
 /**
  * FINANCEQUEST - API ROUTE: Admin Monitoring
  * GET /api/admin/monitoring
- * Protected by ADMIN_PASSWORD
+ * Réservé aux comptes ayant le rôle `admin` (app_metadata)
  */
 
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users, games, marketDataCache, apiStats } from '@/lib/db/schema';
+import { users, games, transactions } from '@/lib/db/schema';
 import { eq, sql, count } from 'drizzle-orm';
+import { marketDb } from '@/lib/market/db';
+import { checkAdmin } from '@/lib/auth/session';
 import type { MonitoringData } from '@/types/api';
 
 // ==========================================
 // API HANDLER
 // ==========================================
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    // 1. Vérifier le mot de passe admin
-    const authHeader = req.headers.get('authorization');
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    // 1. Vérifier le rôle admin
+    const access = await checkAdmin();
 
-    if (!adminPassword) {
-      return NextResponse.json(
-        { error: 'Admin access not configured' },
-        { status: 503 }
-      );
+    if (access === 'unauthenticated') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Format attendu: "Bearer PASSWORD"
-    const providedPassword = authHeader?.replace('Bearer ', '');
-
-    if (providedPassword !== adminPassword) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (access === 'forbidden') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // 2. Collecter les statistiques
-    console.log('[Admin] Fetching monitoring data...');
-
-    // Users stats
-    const totalUsersResult = await db
-      .select({ count: count() })
-      .from(users);
-    const totalUsers = totalUsersResult[0];
-
-    const activeUsersResult = await db
-      .select({ count: count() })
-      .from(users)
-      .where(sql`${users.updatedAt} > NOW() - INTERVAL '30 days'`);
-    const activeUsers = activeUsersResult[0];
-
-    // Games stats
-    const totalGamesResult = await db
-      .select({ count: count() })
-      .from(games);
-    const totalGames = totalGamesResult[0];
-
-    const activeGamesResult = await db
-      .select({ count: count() })
-      .from(games)
-      .where(eq(games.status, 'active'));
-    const activeGames = activeGamesResult[0];
-
-    // Cache stats
-    const cacheStatsResult = await db
-      .select({
-        totalRecords: count(),
-        uniqueSymbols: sql<number>`COUNT(DISTINCT ${marketDataCache.symbol})`,
-        oldestDate: sql<string>`MIN(${marketDataCache.date})`,
-        newestDate: sql<string>`MAX(${marketDataCache.date})`,
-      })
-      .from(marketDataCache);
-    const cacheStats = cacheStatsResult[0];
-
-    // Database size (estimation)
-    const estimatedSizeMB = (cacheStats.totalRecords * 0.5) / 1024; // ~0.5KB par record
-
-    // API stats (MarketStack) - Lire depuis DB
-    const latestApiStats = await db.query.apiStats.findFirst({
-      where: sql`${apiStats.provider} = 'marketstack'`,
-      orderBy: sql`${apiStats.lastUpdated} DESC`,
-    });
-
-    const marketStackLimit = latestApiStats?.requestsLimit || 10000;
-    const marketStackRemaining = latestApiStats?.requestsRemaining || 10000;
+    // 2. Collecter les statistiques (requêtes indépendantes en parallèle)
+    const [
+      [totalUsers],
+      [activeUsers],
+      [totalGames],
+      [activeGames],
+      [totalTransactions],
+      [pricesStats],
+      [assetsStats],
+      settingsRows,
+    ] = await Promise.all([
+      db.select({ count: count() }).from(users),
+      db
+        .select({ count: count() })
+        .from(users)
+        .where(sql`${users.updatedAt} > NOW() - INTERVAL '30 days'`),
+      db.select({ count: count() }).from(games),
+      db.select({ count: count() }).from(games).where(eq(games.status, 'active')),
+      db.select({ count: count() }).from(transactions),
+      marketDb`
+        SELECT MIN(date)::text AS oldest_date, MAX(date)::text AS newest_date, COUNT(*)::int AS total_rows
+        FROM prices
+      `,
+      marketDb`
+        SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE is_active)::int AS active
+        FROM assets
+      `,
+      marketDb`SELECT value FROM settings WHERE key = 'last_data_update'`,
+    ]);
 
     // 3. Construire la réponse
     const data: MonitoringData = {
-      database: {
-        size: `${estimatedSizeMB.toFixed(2)} MB`,
-        cacheRecords: cacheStats.totalRecords,
-        estimatedSizeMB,
-      },
       users: {
         total: totalUsers.count,
         active: activeUsers.count,
@@ -102,19 +69,18 @@ export async function GET(req: Request) {
         total: totalGames.count,
         active: activeGames.count,
       },
-      cache: {
-        totalRecords: cacheStats.totalRecords,
-        uniqueSymbols: cacheStats.uniqueSymbols,
-        oldestDate: cacheStats.oldestDate,
-        newestDate: cacheStats.newestDate,
+      transactions: {
+        total: totalTransactions.count,
       },
-      api: {
-        marketStackRemaining,
-        marketStackLimit,
+      prices: {
+        oldestDate: pricesStats.oldest_date,
+        newestDate: pricesStats.newest_date,
+        totalRows: pricesStats.total_rows,
+        assetsTotal: assetsStats.total,
+        assetsActive: assetsStats.active,
+        lastDataUpdate: settingsRows[0]?.value ?? null,
       },
     };
-
-    console.log('[Admin] Monitoring data collected');
 
     return NextResponse.json({
       success: true,

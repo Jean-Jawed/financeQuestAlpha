@@ -4,7 +4,7 @@
  */
 
 import { db } from '../lib/db/index';
-import { users, games, marketDataCache } from '../lib/db/schema';
+import { users, games, holdings } from '../lib/db/schema';
 
 async function testConnection() {
   try {
@@ -20,10 +20,10 @@ async function testConnection() {
     const gamesResult = await db.select().from(games).limit(5);
     console.log(`✅ Found ${gamesResult.length} games`);
 
-    // Test 3: Query simple sur market_data_cache
-    console.log('\n📊 Test 3: Fetching market_data_cache table...');
-    const cacheResult = await db.select().from(marketDataCache).limit(5);
-    console.log(`✅ Found ${cacheResult.length} cached records`);
+    // Test 3: Query simple sur holdings
+    console.log('\n📊 Test 3: Fetching holdings table...');
+    const holdingsResult = await db.select().from(holdings).limit(5);
+    console.log(`✅ Found ${holdingsResult.length} holdings`);
 
     console.log('\n✅ ✅ ✅ DATABASE CONNECTION SUCCESSFUL ✅ ✅ ✅\n');
     

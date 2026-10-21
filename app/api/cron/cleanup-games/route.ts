@@ -18,10 +18,17 @@ import { lt, and, eq } from 'drizzle-orm';
 export async function GET(req: Request) {
   try {
     // Vérifier le header d'authentification Vercel Cron
-    const authHeader = req.headers.get('authorization');
-    const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
+    // Sans CRON_SECRET, l'en-tête attendu serait « Bearer undefined » : on refuse
+    const cronSecret = process.env.CRON_SECRET;
 
-    if (authHeader !== expectedAuth) {
+    if (!cronSecret) {
+      console.error('[Cron] CRON_SECRET is not set: request refused');
+      return NextResponse.json({ error: 'Cron not configured' }, { status: 503 });
+    }
+
+    const authHeader = req.headers.get('authorization');
+
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

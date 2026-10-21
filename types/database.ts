@@ -19,10 +19,6 @@ export type {
   NewAchievement,
   UserAchievement,
   NewUserAchievement,
-  MarketDataCache,
-  NewMarketDataCache,
-  LeaderboardSnapshot,
-  NewLeaderboardSnapshot,
 } from '@/lib/db/schema';
 
 // Types additionnels utiles

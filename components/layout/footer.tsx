@@ -18,14 +18,6 @@ export function Footer() {
             Jawed TAHIR
           </a>
         </p>
-        <p className="text-slate-500 text-xs">
-          <a
-            href="/admin/monitoring"
-            className="hover:text-slate-400 transition-colors"
-          >
-            Admin
-          </a>
-        </p>
       </div>
     </footer>
   );

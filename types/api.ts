@@ -221,11 +221,6 @@ export interface GetLeaderboardResponse extends ApiResponse {
 // ==========================================
 
 export interface MonitoringData {
-  database: {
-    size: string;
-    cacheRecords: number;
-    estimatedSizeMB: number;
-  };
   users: {
     total: number;
     active: number;
@@ -234,15 +229,16 @@ export interface MonitoringData {
     total: number;
     active: number;
   };
-  cache: {
-    totalRecords: number;
-    uniqueSymbols: number;
+  transactions: {
+    total: number;
+  };
+  prices: {
     oldestDate: string | null;
     newestDate: string | null;
-  };
-  api: {
-    marketStackRemaining: number;
-    marketStackLimit: number;
+    totalRows: number;
+    assetsTotal: number;
+    assetsActive: number;
+    lastDataUpdate: string | null;
   };
 }
 

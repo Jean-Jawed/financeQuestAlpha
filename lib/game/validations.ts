@@ -39,7 +39,7 @@ export async function validateBuy(
     }
 
     // 2. Vérifier que le symbole est valide
-    if (!isValidSymbol(symbol)) {
+    if (!(await isValidSymbol(symbol, true))) {
       return { valid: false, error: 'Symbole invalide' };
     }
 
@@ -109,7 +109,7 @@ export async function validateSell(
     }
 
     // 2. Vérifier que le symbole est valide
-    if (!isValidSymbol(symbol)) {
+    if (!(await isValidSymbol(symbol))) {
       return { valid: false, error: 'Symbole invalide' };
     }
 
@@ -184,7 +184,7 @@ export async function validateShort(
     }
 
     // 3. Vérifier que le symbole est valide
-    if (!isValidSymbol(symbol)) {
+    if (!(await isValidSymbol(symbol, true))) {
       return { valid: false, error: 'Symbole invalide' };
     }
 
@@ -254,7 +254,7 @@ export async function validateCover(
     }
 
     // 2. Vérifier que le symbole est valide
-    if (!isValidSymbol(symbol)) {
+    if (!(await isValidSymbol(symbol))) {
       return { valid: false, error: 'Symbole invalide' };
     }
 

@@ -15,6 +15,7 @@ import { calculateTransactionPreview, calculatePortfolio } from '@/lib/game/calc
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
 import { getPrice } from '@/lib/market/prices';
 import { sellSchema, validateTradeInputSafe } from '@/lib/game/trade-schemas';
+import { ValidationError } from '@/lib/utils/errors';
 
 // ==========================================
 // API HANDLER
@@ -46,14 +47,7 @@ export const POST = withAuth(async (req, { userId }) => {
 
     await requireOwnership(userId, game.userId);
 
-    // 3. Valider l'ordre de vente
-    const validationResult = await validateSell(gameId, symbol, quantity);
-
-    if (!validationResult.valid) {
-      return NextResponse.json({ error: validationResult.error }, { status: 400 });
-    }
-
-    // 4. Récupérer le prix actuel
+    // 3. Récupérer le prix actuel
     const priceData = await getPrice(symbol, game.currentDate);
     if (!priceData || !priceData.close_price) {
       return NextResponse.json(
@@ -63,64 +57,85 @@ export const POST = withAuth(async (req, { userId }) => {
     }
     const currentPrice = priceData.close_price;
 
-    // 5. Récupérer le holding
-    const holding = await db.query.holdings.findFirst({
-      where: and(eq(holdings.gameId, gameId), eq(holdings.symbol, symbol), eq(holdings.isShort, false)),
-    });
-
-    if (!holding) {
-      return NextResponse.json({ error: 'Position non trouvée' }, { status: 404 });
-    }
-
-    // 6. Calculer les montants
+    // 4 à 9 : dans une transaction SQL. Le verrou FOR UPDATE sur la partie
+    // sérialise les ordres concurrents : impossible de vendre deux fois
+    // la même position.
     const transactionFees = game.settings.transaction_fees;
-    const preview = calculateTransactionPreview('sell', quantity, currentPrice, transactionFees);
 
-    // 7. Mettre à jour le solde
-    const newBalance = parseFloat(game.currentBalance) + preview.balanceChange;
+    const { newBalance, updatedHolding, transaction } = await db.transaction(async (tx) => {
+      const [lockedGame] = await tx
+        .select()
+        .from(games)
+        .where(eq(games.id, gameId))
+        .for('update');
 
-    await db
-      .update(games)
-      .set({
-        currentBalance: newBalance.toFixed(2),
-        updatedAt: new Date(),
-      })
-      .where(eq(games.id, gameId));
+      // 4. Valider l'ordre de vente (après obtention du verrou)
+      const validationResult = await validateSell(gameId, symbol, quantity);
 
-    // 8. Mettre à jour ou supprimer le holding
-    const remainingQuantity = parseFloat(holding.quantity) - quantity;
-    let updatedHolding;
+      if (!validationResult.valid) {
+        throw new ValidationError(validationResult.error ?? 'Ordre invalide');
+      }
 
-    if (remainingQuantity <= 0.00000001) {
-      // Supprimer le holding si quantité = 0
-      await db.delete(holdings).where(eq(holdings.id, holding.id));
-      updatedHolding = null;
-    } else {
-      // Réduire la quantité
-      [updatedHolding] = await db
-        .update(holdings)
+      // 5. Récupérer le holding
+      const holding = await tx.query.holdings.findFirst({
+        where: and(eq(holdings.gameId, gameId), eq(holdings.symbol, symbol), eq(holdings.isShort, false)),
+      });
+
+      if (!holding) {
+        throw new ValidationError('Position non trouvée');
+      }
+
+      // 6. Calculer les montants
+      const preview = calculateTransactionPreview('sell', quantity, currentPrice, transactionFees);
+
+      // 7. Mettre à jour le solde
+      const newBalance = parseFloat(lockedGame.currentBalance) + preview.balanceChange;
+
+      await tx
+        .update(games)
         .set({
-          quantity: remainingQuantity.toFixed(8),
+          currentBalance: newBalance.toFixed(2),
           updatedAt: new Date(),
         })
-        .where(eq(holdings.id, holding.id))
-        .returning();
-    }
+        .where(eq(games.id, gameId));
 
-    // 9. Enregistrer la transaction
-    const [transaction] = await db
-      .insert(transactions)
-      .values({
-        gameId,
-        symbol,
-        type: 'sell',
-        quantity: quantity.toFixed(8),
-        price: currentPrice.toFixed(2),
-        fee: preview.feeAmount.toFixed(2),
-        total: preview.total.toFixed(2),
-        transactionDate: game.currentDate,
-      })
-      .returning();
+      // 8. Mettre à jour ou supprimer le holding
+      const remainingQuantity = parseFloat(holding.quantity) - quantity;
+      let updatedHolding;
+
+      if (remainingQuantity <= 0.00000001) {
+        // Supprimer le holding si quantité = 0
+        await tx.delete(holdings).where(eq(holdings.id, holding.id));
+        updatedHolding = null;
+      } else {
+        // Réduire la quantité
+        [updatedHolding] = await tx
+          .update(holdings)
+          .set({
+            quantity: remainingQuantity.toFixed(8),
+            updatedAt: new Date(),
+          })
+          .where(eq(holdings.id, holding.id))
+          .returning();
+      }
+
+      // 9. Enregistrer la transaction
+      const [transaction] = await tx
+        .insert(transactions)
+        .values({
+          gameId,
+          symbol,
+          type: 'sell',
+          quantity: quantity.toFixed(8),
+          price: currentPrice.toFixed(6),
+          fee: preview.feeAmount.toFixed(2),
+          total: preview.total.toFixed(2),
+          transactionDate: lockedGame.currentDate,
+        })
+        .returning();
+
+      return { newBalance, updatedHolding, transaction };
+    });
 
     console.log(`[API] Sell executed: ${quantity} ${symbol} @ ${currentPrice}`);
 
@@ -156,6 +171,10 @@ export const POST = withAuth(async (req, { userId }) => {
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     console.error('[API] Sell error:', error);
 
     if (error instanceof Error && error.message === 'Forbidden: You do not own this resource') {
