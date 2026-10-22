@@ -10,6 +10,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { TradeTicket } from '@/components/game/trade-ticket';
 import { useI18n } from '@/lib/i18n/client';
+import { getScenario } from '@/lib/game/scenarios';
 import { cn } from '@/lib/utils/cn';
 import type { HoldingWithValue } from '@/types/game';
 import type { GameState } from '@/types/game';
@@ -25,6 +26,8 @@ interface PositionsPanelProps {
   /** Devise de la partie */
   currency: string;
   feeRate: number;
+  /** Scénario de la partie : la vente ou le rachat peuvent être interdits */
+  scenario: string;
   /** Appelé avec l'état de la partie renvoyé par l'ordre */
   onTradeComplete: (state?: GameState) => void;
 }
@@ -37,11 +40,14 @@ function PositionRow({
   holding,
   currency,
   actionLabel,
+  lockedLabel,
   onAction,
 }: {
   holding: HoldingWithValue;
   currency: string;
   actionLabel: string;
+  /** Fermeture interdite par le scénario : le motif remplace le bouton */
+  lockedLabel?: string;
   onAction: () => void;
 }) {
   const { m, f, fmt } = useI18n();
@@ -76,13 +82,19 @@ function PositionRow({
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={onAction}
-        className="col-span-2 justify-self-start font-label text-xs font-semibold uppercase tracking-label text-brass transition-colors hover:text-brass-bright"
-      >
-        {actionLabel} →
-      </button>
+      {lockedLabel ? (
+        <p className="col-span-2 font-label text-xs font-semibold uppercase tracking-label text-paper-faint">
+          {lockedLabel}
+        </p>
+      ) : (
+        <button
+          type="button"
+          onClick={onAction}
+          className="col-span-2 justify-self-start font-label text-xs font-semibold uppercase tracking-label text-brass transition-colors hover:text-brass-bright"
+        >
+          {actionLabel} →
+        </button>
+      )}
     </li>
   );
 }
@@ -97,8 +109,10 @@ export function PositionsPanel({
   currentDate,
   currency,
   feeRate,
+  scenario,
   onTradeComplete,
 }: PositionsPanelProps) {
+  const allowed = getScenario(scenario).rules.actions;
   const { m, fmt } = useI18n();
   const t = m.game.positions;
   const [selected, setSelected] = useState<HoldingWithValue | null>(null);
@@ -135,6 +149,7 @@ export function PositionsPanel({
                     holding={holding}
                     currency={currency}
                     actionLabel={t.sell}
+                    lockedLabel={allowed.includes('sell') ? undefined : t.locked}
                     onAction={() => setSelected(holding)}
                   />
                 ))}
@@ -154,6 +169,7 @@ export function PositionsPanel({
                     holding={holding}
                     currency={currency}
                     actionLabel={t.cover}
+                    lockedLabel={allowed.includes('cover') ? undefined : t.locked}
                     onAction={() => setSelected(holding)}
                   />
                 ))}

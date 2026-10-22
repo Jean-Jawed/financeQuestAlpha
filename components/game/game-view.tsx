@@ -19,7 +19,16 @@ import { TransactionHistory } from '@/components/game/transaction-history';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n/client';
 import { preloadSounds } from '@/lib/sound';
-import type { GameState, GameWithStats, PortfolioSummary as PortfolioType, HoldingWithValue } from '@/types/game';
+import { getScenario } from '@/lib/game/scenarios';
+import { EndControls } from '@/components/game/end-controls';
+import { GameSummary } from '@/components/game/game-summary';
+import type {
+  GameState,
+  GameSummary as GameSummaryData,
+  GameWithStats,
+  PortfolioSummary as PortfolioType,
+  HoldingWithValue,
+} from '@/types/game';
 import type { Transaction } from '@/types/database';
 
 // ==========================================
@@ -36,12 +45,14 @@ export function GameView({ gameId }: { gameId: string }) {
   const [portfolio, setPortfolio] = useState<PortfolioType | null>(null);
   const [holdings, setHoldings] = useState<HoldingWithValue[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [summary, setSummary] = useState<GameSummaryData | null>(null);
 
   function applyState(state: GameState) {
     setGame(state.game);
     setPortfolio(state.portfolio);
     setHoldings(state.holdings);
     setTransactions(state.recentTransactions);
+    setSummary(state.summary);
   }
 
   // Après un ordre ou une séance : l'API renvoie l'état à jour ; sinon, relire
@@ -102,6 +113,23 @@ export function GameView({ gameId }: { gameId: string }) {
   }
 
   const serial = game.id.replace(/-/g, '').slice(0, 8).toUpperCase();
+  const scenario = getScenario(game.scenario);
+  const scenarioName = (m.scenarios[scenario.id as keyof typeof m.scenarios] as { name: string }).name;
+
+  // Partie terminée : le bilan, puis le livre d'ordres
+  if (game.status === 'completed') {
+    return (
+      <div className="container mx-auto space-y-10 px-4 py-10">
+        <GameSummary
+          state={{ game, portfolio, holdings, recentTransactions: transactions, summary }}
+        />
+        <div className="mx-auto max-w-3xl">
+          <TransactionHistory transactions={transactions} currency={game.currency} />
+        </div>
+        <MedalOverlay />
+      </div>
+    );
+  }
 
   // Bande du jour : variation de séance des titres détenus
   const tickerItems = holdings
@@ -126,7 +154,11 @@ export function GameView({ gameId }: { gameId: string }) {
               {fmt(m.game.openedOn, { date: f.date(game.startDate) })}
             </h1>
           </div>
-          <dl className="flex gap-6 text-right">
+          <dl className="flex flex-wrap gap-6 text-right">
+            <div>
+              <dt className="label text-[10px]">{m.scenarios.label}</dt>
+              <dd className="font-display text-paper">{scenarioName}</dd>
+            </div>
             <div>
               <dt className="label text-[10px]">{m.game.serial}</dt>
               <dd className="num text-paper">{fmt(m.game.serialValue, { serial })}</dd>
@@ -149,11 +181,13 @@ export function GameView({ gameId }: { gameId: string }) {
               gameId={game.id}
               currentDate={game.currentDate}
               startDate={game.startDate}
-              endDate={game.dataEndDate ?? game.currentDate}
+              endDate={scenario.rules.period?.end ?? game.dataEndDate ?? game.currentDate}
               totalValue={portfolio.totalValue}
               currency={game.currency}
               onDayAdvanced={handleActionDone}
             />
+
+            <EndControls gameId={game.id} sessionsPlayed={game.sessionsPlayed} onEnded={handleActionDone} />
 
             <PortfolioSummary portfolio={portfolio} currency={game.currency} />
 
@@ -163,6 +197,7 @@ export function GameView({ gameId }: { gameId: string }) {
               currentDate={game.currentDate}
               currency={game.currency}
               feeRate={game.settings.transaction_fees}
+              scenario={game.scenario}
               onTradeComplete={handleActionDone}
             />
           </div>
@@ -174,6 +209,7 @@ export function GameView({ gameId }: { gameId: string }) {
               currentDate={game.currentDate}
               currency={game.currency}
               allowShorting={game.settings.allow_shorting}
+              scenario={game.scenario}
               feeRate={game.settings.transaction_fees}
               availableCash={portfolio.availableCash}
               onTradeComplete={handleActionDone}

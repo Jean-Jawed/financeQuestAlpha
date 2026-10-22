@@ -1,13 +1,16 @@
 /**
  * FINANCEQUEST - API ROUTE: Leaderboard
- * GET /api/leaderboard?period=all_time&limit=50
+ * GET /api/leaderboard?scenario=libre&period=all_time&limit=50
+ *
+ * La meilleure partie terminée de chaque joueur dans le scénario, au rendement.
+ * Les abandons et les parties de moins de MIN_SESSIONS_TO_RETIRE séances n'y
+ * figurent pas. Une seule requête : les valeurs finales sont enregistrées en fin de partie.
  */
 
 import { NextResponse } from 'next/server';
+import { sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { games, users } from '@/lib/db/schema';
-import { eq, desc, and, gte } from 'drizzle-orm';
-import { calculatePortfolio } from '@/lib/game/calculations';
+import { DEFAULT_SCENARIO, isScenarioId, MIN_SESSIONS_TO_RETIRE } from '@/lib/game/scenarios';
 import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
@@ -16,106 +19,92 @@ import { getApiI18n } from '@/lib/i18n/server';
 
 type Period = 'all_time' | 'monthly' | 'weekly';
 
+const PERIOD_DAYS: Record<Period, number | null> = {
+  all_time: null,
+  monthly: 30,
+  weekly: 7,
+};
+
+type Row = {
+  game_id: string;
+  user_name: string;
+  final_value: string;
+  final_return: string;
+  currency: string;
+  sessions_played: number;
+  ended_at: string;
+};
+
 // ==========================================
 // API HANDLER
 // ==========================================
 
 export async function GET(req: Request) {
-  const { api, fmt, f } = await getApiI18n();
+  const { api } = await getApiI18n();
 
   try {
     const { searchParams } = new URL(req.url);
     const period = (searchParams.get('period') || 'all_time') as Period;
+    const scenario = searchParams.get('scenario') || DEFAULT_SCENARIO;
     const limit = parseInt(searchParams.get('limit') || '50');
 
     // Validation
-    if (!['all_time', 'monthly', 'weekly'].includes(period)) {
+    if (!(period in PERIOD_DAYS)) {
       return NextResponse.json({ error: api.invalidPeriod }, { status: 400 });
     }
 
-    if (limit < 1 || limit > 100) {
+    if (!isScenarioId(scenario)) {
+      return NextResponse.json({ error: api.invalidScenario }, { status: 400 });
+    }
+
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
       return NextResponse.json({ error: api.invalidLimit }, { status: 400 });
     }
 
-    // Date filters
-    let dateFilter;
-    const now = new Date();
+    // Parties terminées sur la période (date de fin), meilleure par joueur
+    const days = PERIOD_DAYS[period];
+    const since = days === null ? sql`` : sql`AND g.ended_at >= now() - make_interval(days => ${days})`;
 
-    switch (period) {
-      case 'weekly':
-        const weekAgo = new Date(now);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        dateFilter = gte(games.updatedAt, weekAgo);
-        break;
+    const rows = await db.execute<Row>(sql`
+      SELECT * FROM (
+        SELECT DISTINCT ON (g.user_id)
+          g.id AS game_id, u.name AS user_name, g.final_value, g.final_return,
+          g.currency, g.sessions_played, g.ended_at
+        FROM games g
+        JOIN users u ON u.id = g.user_id
+        WHERE g.status = 'completed'
+          AND g.end_reason <> 'abandoned'
+          AND g.sessions_played >= ${MIN_SESSIONS_TO_RETIRE}
+          AND g.scenario = ${scenario}
+          ${since}
+        ORDER BY g.user_id, g.final_return DESC, g.ended_at ASC
+      ) best
+      ORDER BY best.final_return DESC, best.ended_at ASC
+      LIMIT ${limit}
+    `);
 
-      case 'monthly':
-        const monthAgo = new Date(now);
-        monthAgo.setMonth(monthAgo.getMonth() - 1);
-        dateFilter = gte(games.updatedAt, monthAgo);
-        break;
-
-      case 'all_time':
-      default:
-        dateFilter = undefined;
-        break;
-    }
-
-    // Récupérer les games actifs
-    const activeGames = await db.query.games.findMany({
-      where: dateFilter ? and(eq(games.status, 'active'), dateFilter) : eq(games.status, 'active'),
-      with: {
-        user: true,
-      },
-      orderBy: [desc(games.updatedAt)],
-      limit: limit * 2, // Fetch plus pour compenser les erreurs de calcul
+    const entries = [...rows].map((row, index) => {
+      const returnPercentage = parseFloat(row.final_return);
+      return {
+        rank: index + 1,
+        gameId: row.game_id,
+        userName: row.user_name,
+        totalValue: parseFloat(row.final_value),
+        currency: row.currency,
+        returnPercentage,
+        score: Math.floor(returnPercentage * 10),
+        sessionsPlayed: Number(row.sessions_played),
+        endedAt: row.ended_at,
+      };
     });
-
-    // Calculer les scores pour chaque game
-    const entries = await Promise.all(
-      activeGames.map(async (game) => {
-        try {
-          const portfolio = await calculatePortfolio(game.id, game.currentDate);
-
-          if (!portfolio) {
-            console.warn(`[Leaderboard] Could not calculate portfolio for game ${game.id}`);
-            return null;
-          }
-
-          return {
-            gameId: game.id,
-            userName: game.user.name,
-            totalValue: portfolio.totalValue,
-            currency: game.currency,
-            returnPercentage: portfolio.returnPercentage,
-            score: portfolio.score,
-            startDate: game.startDate,
-            currentDate: game.currentDate,
-          };
-        } catch (error) {
-          console.error(`[Leaderboard] Error calculating game ${game.id}:`, error);
-          return null;
-        }
-      })
-    );
-
-    // Filtrer les null et trier par score
-    const validEntries = entries
-      .filter((entry) => entry !== null)
-      .sort((a, b) => b!.score - a!.score)
-      .slice(0, limit);
-
-    // Ajouter les rangs
-    const rankedEntries = validEntries.map((entry, index) => ({
-      rank: index + 1,
-      ...entry,
-    }));
 
     return NextResponse.json({
       success: true,
       data: {
         period,
-        entries: rankedEntries,
-        total: rankedEntries.length,
+        scenario,
+        entries,
+        total: entries.length,
       },
     });
   } catch (error) {

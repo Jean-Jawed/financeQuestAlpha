@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { PerformanceBadge, GameStatusBadge } from '@/components/ui/badge';
 import { Rosette, GuillocheBand } from '@/components/brand/guilloche';
 import { useI18n } from '@/lib/i18n/client';
+import { getScenario } from '@/lib/game/scenarios';
+import { cn } from '@/lib/utils/cn';
 import type { GameWithStats } from '@/types/game';
 
 // ==========================================
@@ -27,11 +29,17 @@ export function GameCard({ game }: GameCardProps) {
   const { m, f, fmt, href } = useI18n();
   const t = m.dashboard.gameCard;
   const serial = game.id.replace(/-/g, '').slice(0, 8).toUpperCase();
+  const scenario = getScenario(game.scenario);
+  const scenarioName = (m.scenarios[scenario.id as keyof typeof m.scenarios] as { name: string }).name;
+  const ended = game.status === 'completed';
 
   return (
     <Link
       href={href(`/game/${game.id}`)}
-      className="certificate group relative flex flex-col overflow-hidden p-6 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-brass"
+      className={cn(
+        'certificate group relative flex flex-col overflow-hidden p-6 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-brass',
+        ended && 'opacity-80 hover:opacity-100'
+      )}
     >
       <Rosette
         size={260}
@@ -43,7 +51,9 @@ export function GameCard({ game }: GameCardProps) {
       {/* En-tête du titre */}
       <div className="relative flex items-start justify-between gap-4">
         <div>
-          <p className="label text-[10px] text-brass">{fmt(t.serial, { serial })}</p>
+          <p className="label text-[10px] text-brass">
+            {scenarioName} · {fmt(t.serial, { serial })}
+          </p>
           <h3 className="mt-1 font-display text-xl font-semibold text-paper">
             {fmt(t.session, { date: f.date(game.startDate) })}
           </h3>
@@ -55,11 +65,13 @@ export function GameCard({ game }: GameCardProps) {
 
       {/* Valeur */}
       <div className="relative">
-        <p className="label">{t.netValue}</p>
+        <p className="label">{ended ? t.finalReturn : t.netValue}</p>
         <p className="num mt-1 text-3xl font-semibold text-paper">{f.currency(game.totalValue, game.currency)}</p>
         <div className="mt-2 flex items-center gap-3">
           <PerformanceBadge value={game.returnPercentage} />
-          <span className="label text-[10px]">{t.sinceOpening}</span>
+          <span className="label text-[10px]">
+            {ended && game.endedAt ? fmt(t.ended, { date: f.dateShort(new Date(game.endedAt).toISOString().slice(0, 10)) }) : t.sinceOpening}
+          </span>
         </div>
       </div>
 
@@ -80,7 +92,7 @@ export function GameCard({ game }: GameCardProps) {
       </dl>
 
       <span className="relative mt-6 inline-flex items-center gap-2 self-start font-label text-sm font-semibold uppercase tracking-label text-brass transition-colors group-hover:text-brass-bright">
-        {t.resume}
+        {ended ? t.summary : t.resume}
         <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
       </span>
     </Link>

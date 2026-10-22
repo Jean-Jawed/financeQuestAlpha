@@ -117,6 +117,20 @@ export interface GameState {
   portfolio: PortfolioSummary;
   holdings: HoldingWithValue[];
   recentTransactions: Transaction[];
+  /** Bilan, pour une partie terminée */
+  summary: GameSummary | null;
+}
+
+/** Bilan de fin de partie */
+export interface GameSummary {
+  ordersCount: number;
+  feesPaid: number;
+  /** Indice du scénario sur la même période (en devise d'origine) */
+  benchmark: { symbol: string; name: string; returnPercentage: number } | null;
+  /** Rang parmi les meilleures parties de chaque joueur du scénario */
+  rank: { rank: number; total: number } | null;
+  /** Abandon ou moins de séances que le minimum : hors classement */
+  ranked: boolean;
 }
 
 export interface PortfolioHistory {

@@ -44,6 +44,11 @@ export const server = {
     alreadyAdvanced: 'La partie a déjà avancé. Rechargez la page.',
     invalidCredentials: 'Email ou mot de passe incorrect',
     emailTaken: 'Cet email est déjà utilisé',
+    scenarioAction: 'Ce scénario n’autorise pas cet ordre',
+    scenarioAsset: 'Cet actif n’est pas négociable dans ce scénario',
+    retireTooEarly: 'Retraite possible après {min} séances ({remaining} restantes)',
+    gameEnded: 'Cette partie est terminée',
+    invalidScenario: 'Scénario inconnu',
     // Messages de succès
     buyDone: 'Achat exécuté : {quantity} {symbol}',
     sellDone: 'Vente exécutée : {quantity} {symbol}',

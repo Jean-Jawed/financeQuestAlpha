@@ -4,17 +4,25 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getAssetTypes, getMarkets } from '@/lib/market/assets';
+import { getAssetTypes, getMarkets, getScenarioFilterIds } from '@/lib/market/assets';
+import { getScenario } from '@/lib/game/scenarios';
 import { getApiI18n } from '@/lib/i18n/server';
 
-export async function GET() {
+export async function GET(req: Request) {
     const { api, server } = await getApiI18n();
 
     try {
-        const [types, markets] = await Promise.all([
+        // Scénario de la partie : ne proposer que les types et places qu'il autorise
+        const rules = getScenario(new URL(req.url).searchParams.get('scenario') ?? 'libre').rules;
+        const restricted = Boolean(rules.assetTypes || rules.markets);
+
+        const [allTypes, allMarkets, allowed] = await Promise.all([
             getAssetTypes(),
-            getMarkets()
+            getMarkets(),
+            restricted ? getScenarioFilterIds(rules.assetTypes, rules.markets) : null,
         ]);
+        const types = allowed ? allTypes.filter((t) => allowed.typeIds.has(t.id)) : allTypes;
+        const markets = allowed ? allMarkets.filter((m) => allowed.marketIds.has(m.id)) : allMarkets;
 
         return NextResponse.json({
             success: true,

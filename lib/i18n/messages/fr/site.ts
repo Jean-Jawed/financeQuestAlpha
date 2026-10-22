@@ -20,7 +20,7 @@ export const site = {
     faqDescription:
       'Tout savoir sur FinanceQuest : gratuité, origine des cours, déroulement d’une partie, vente à découvert, devises, classement.',
     leaderboardTitle: 'Classement des joueurs',
-    leaderboardDescription: 'Le tableau d’honneur de FinanceQuest : les meilleurs rendements des parties en cours.',
+    leaderboardDescription: 'Le tableau d’honneur de FinanceQuest : les meilleures parties terminées, scénario par scénario.',
     loginTitle: 'Connexion',
     signupTitle: 'Créer un compte',
     signupDescription: 'Créez votre compte FinanceQuest gratuitement et recevez votre capital de départ fictif.',
@@ -150,7 +150,7 @@ export const site = {
       },
       {
         q: 'Comment se déroule une partie ?',
-        a: 'Vous choisissez une date de départ et une devise de jeu, puis vous recevez votre capital. Vous passez des ordres d’achat, de vente ou de vente à découvert, exécutés au cours de clôture du jour. Quand vous êtes prêt, vous clôturez la séance : les cours du jour de bourse suivant tombent et votre portefeuille est réévalué.',
+        a: 'Vous choisissez un scénario, une date de départ et une devise de jeu, puis vous recevez votre capital. Vous passez des ordres d’achat, de vente ou de vente à découvert, exécutés au cours de clôture du jour. Quand vous êtes prêt, vous clôturez la séance : les cours du jour de bourse suivant tombent et votre portefeuille est réévalué. Après 20 séances, vous pouvez prendre votre retraite : vos positions sont soldées et votre résultat est figé.',
       },
       {
         q: 'Quels actifs peut-on acheter ?',
@@ -166,7 +166,7 @@ export const site = {
       },
       {
         q: 'Comment fonctionne le classement ?',
-        a: 'Les parties en cours sont classées au rendement : la progression en pourcentage de la valeur du portefeuille depuis l’ouverture. Les succès débloqués rapportent des points affichés sur votre profil, sans changer le rang.',
+        a: 'Chaque scénario a son classement. Y figure la meilleure partie terminée de chaque joueur, classée au rendement : la progression en pourcentage de la valeur du portefeuille entre l’ouverture et la retraite. Les parties abandonnées ou de moins de 20 séances n’y figurent pas.',
       },
       {
         q: 'Est-ce que le jeu apprend vraiment à investir ?',

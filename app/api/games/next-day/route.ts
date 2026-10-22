@@ -68,6 +68,7 @@ export const POST = withAuth(async (req, { userId }) => {
         newDate: result.newDate,
         state: result.state,
         achievementsUnlocked: result.achievementsUnlocked || [],
+        endReason: result.endReason ?? null,
       },
       message: fmt(api.advanced, { date: f.date(result.newDate!) }),
     });

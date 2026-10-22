@@ -10,6 +10,7 @@ import { games } from '@/lib/db/schema';
 import { validateGameCreation } from '@/lib/game/validations';
 import { getPriceCoverage, getTradingDateOnOrAfter } from '@/lib/market/calendar';
 import { DEFAULT_GAME_CURRENCY, GAME_CURRENCIES, STARTING_CAPITAL } from '@/lib/game/currency';
+import { DEFAULT_SCENARIO, SCENARIO_IDS, getScenario, latestStartDate } from '@/lib/game/scenarios';
 import { z } from 'zod';
 import type { CreateGameRequest } from '@/types/api';
 import { getApiI18n } from '@/lib/i18n/server';
@@ -19,8 +20,10 @@ import { getApiI18n } from '@/lib/i18n/server';
 // ==========================================
 
 const createGameSchema = z.object({
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD'),
+  // Ignorée pour un scénario à période imposée (départ fixe)
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD').optional(),
   currency: z.enum(GAME_CURRENCIES).default(DEFAULT_GAME_CURRENCY),
+  scenario: z.enum(SCENARIO_IDS).default(DEFAULT_SCENARIO),
   settings: z
     .object({
       transaction_fees: z.number().min(0).max(5).optional(),
@@ -50,7 +53,13 @@ export const POST = withAuth(async (req, { userId }) => {
       );
     }
 
-    const { startDate: requestedStartDate, currency, settings } = validation.data;
+    const { currency, scenario, settings } = validation.data;
+    const { period } = getScenario(scenario).rules;
+    const requestedStartDate = period?.start ?? validation.data.startDate;
+
+    if (!requestedStartDate) {
+      return NextResponse.json({ error: api.validationFailed }, { status: 400 });
+    }
 
     // 2. Vérifier que la date est dans la plage couverte par la base prix,
     //    puis l'ajuster au premier jour de bourse disponible (week-ends et
@@ -61,10 +70,13 @@ export const POST = withAuth(async (req, { userId }) => {
         ? await getTradingDateOnOrAfter(requestedStartDate)
         : null;
 
-    if (!adjustedStartDate || adjustedStartDate >= coverage.end) {
+    // Hors période imposée, il faut pouvoir jouer assez de séances pour prendre sa retraite
+    const lastStart = period ? coverage.end : latestStartDate(coverage.end);
+
+    if (!adjustedStartDate || adjustedStartDate >= coverage.end || (!period && adjustedStartDate > lastStart)) {
       return NextResponse.json(
         {
-          error: fmt(api.startDateRange, { start: f.date(coverage.start), end: f.date(coverage.end) }),
+          error: fmt(api.startDateRange, { start: f.date(coverage.start), end: f.date(lastStart) }),
         },
         { status: 400 }
       );
@@ -102,6 +114,7 @@ export const POST = withAuth(async (req, { userId }) => {
         initialBalance: startingCapital,
         currentBalance: startingCapital,
         currency,
+        scenario,
         status: 'active',
         settings: defaultSettings,
       })

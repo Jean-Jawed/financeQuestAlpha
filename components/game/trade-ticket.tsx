@@ -15,6 +15,7 @@ import { showMedals } from '@/components/game/achievement-medal';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n/client';
 import { playSound } from '@/lib/sound';
+import { TRADE_ACTIONS, type TradeAction } from '@/lib/game/scenarios';
 import { cn } from '@/lib/utils/cn';
 import type { GameState } from '@/types/game';
 
@@ -22,7 +23,7 @@ import type { GameState } from '@/types/game';
 // TYPES
 // ==========================================
 
-export type TradeAction = 'buy' | 'short' | 'sell' | 'cover';
+export type { TradeAction };
 
 export interface TicketAsset {
   symbol: string;
@@ -40,6 +41,8 @@ interface TradeTicketProps {
   /** 'open' : achat ou vente à découvert ; 'sell' / 'cover' : fermer une position */
   mode: 'open' | 'sell' | 'cover';
   allowShorting?: boolean;
+  /** Ordres autorisés par le scénario de la partie */
+  allowedActions?: readonly TradeAction[];
   /** Quantité détenue (sell / cover) */
   heldQuantity?: number;
   /** Coût moyen dans la devise de la partie (sell / cover) */
@@ -79,6 +82,7 @@ export function TradeTicket({
   asset,
   mode,
   allowShorting = false,
+  allowedActions = TRADE_ACTIONS,
   heldQuantity,
   averageCost,
   availableCash,
@@ -88,7 +92,11 @@ export function TradeTicket({
   const { toast } = useToast();
   const { m, f, fmt } = useI18n();
   const t = m.game.ticket;
-  const [action, setAction] = useState<TradeAction>(mode === 'open' ? 'buy' : mode);
+  // Sens proposés à l'ouverture : achat et vente à découvert, selon le scénario
+  const openActions = (['buy', 'short'] as const).filter(
+    (value) => allowedActions.includes(value) && (value === 'buy' || allowShorting)
+  );
+  const [action, setAction] = useState<TradeAction>(mode === 'open' ? (openActions[0] ?? 'buy') : mode);
   const [quantity, setQuantity] = useState(heldQuantity ? String(heldQuantity) : '');
   const [quote, setQuote] = useState<QuoteState | null>(null);
   const [quoteError, setQuoteError] = useState(false);
@@ -192,15 +200,14 @@ export function TradeTicket({
     <Modal isOpen onClose={() => !loading && onClose()} title={`${asset.symbol} · ${asset.name}`} size="lg">
       <div className="relative space-y-5">
         {/* Choix du sens (ouverture seulement) */}
-        {mode === 'open' && (
+        {mode === 'open' && openActions.length > 1 && (
           <div className="grid grid-cols-2 gap-1 rounded border border-line bg-ink p-1" role="tablist">
-            {(['buy', 'short'] as const).map((value) => (
+            {openActions.map((value) => (
               <button
                 key={value}
                 type="button"
                 role="tab"
                 aria-selected={action === value}
-                disabled={value === 'short' && !allowShorting}
                 onClick={() => setAction(value)}
                 className={cn(
                   'h-9 rounded-sm font-label text-sm font-semibold uppercase tracking-label transition-colors disabled:opacity-40',

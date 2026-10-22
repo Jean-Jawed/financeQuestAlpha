@@ -14,6 +14,10 @@ export interface AssetFilters {
   market_id?: number;
   search?: string;
   symbols?: string[];
+  /** Codes de types autorisés (asset_types.code), pour les scénarios */
+  type_codes?: readonly string[];
+  /** Codes de places autorisées (markets.code), pour les scénarios */
+  market_codes?: readonly string[];
   limit?: number;
   offset?: number;
 }
@@ -51,6 +55,14 @@ export async function getAssets(filters: AssetFilters = {}): Promise<Asset[]> {
 
   if (filters.symbols && filters.symbols.length > 0) {
     query = marketDb`${query} AND a.symbol IN ${marketDb(filters.symbols)}`;
+  }
+
+  if (filters.type_codes && filters.type_codes.length > 0) {
+    query = marketDb`${query} AND t.code IN ${marketDb([...filters.type_codes])}`;
+  }
+
+  if (filters.market_codes && filters.market_codes.length > 0) {
+    query = marketDb`${query} AND m.code IN ${marketDb([...filters.market_codes])}`;
   }
 
   if (filters.search) {
@@ -135,6 +147,31 @@ export async function isValidSymbol(symbol: string, requireActive = false): Prom
   const asset = await getAssetBySymbol(symbol);
   if (asset === null) return false;
   return requireActive ? asset.is_active : true;
+}
+
+/**
+ * Types et places représentés parmi les actifs actifs autorisés par un scénario
+ * (filtres de la cote : ne pas proposer un type ou une place sans valeur)
+ */
+export async function getScenarioFilterIds(
+  typeCodes?: readonly string[],
+  marketCodes?: readonly string[]
+): Promise<{ typeIds: Set<number>; marketIds: Set<number> }> {
+  let query = marketDb`
+    SELECT DISTINCT a.asset_type_id AS type_id, a.market_id
+    FROM assets a
+    JOIN asset_types t ON t.id = a.asset_type_id
+    LEFT JOIN markets m ON m.id = a.market_id
+    WHERE a.is_active
+  `;
+  if (typeCodes && typeCodes.length > 0) query = marketDb`${query} AND t.code IN ${marketDb([...typeCodes])}`;
+  if (marketCodes && marketCodes.length > 0) query = marketDb`${query} AND m.code IN ${marketDb([...marketCodes])}`;
+
+  const rows = await query;
+  return {
+    typeIds: new Set(rows.map((row) => Number(row.type_id))),
+    marketIds: new Set(rows.filter((row) => row.market_id !== null).map((row) => Number(row.market_id))),
+  };
 }
 
 /**

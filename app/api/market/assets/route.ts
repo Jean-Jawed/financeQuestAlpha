@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { getAssets, getAssetTypes, getMarkets } from '@/lib/market/assets';
 import { getQuotes } from '@/lib/market/prices';
 import { isGameCurrency } from '@/lib/game/currency';
+import { getScenario } from '@/lib/game/scenarios';
 import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
@@ -26,6 +27,8 @@ export async function GET(req: Request) {
     const offsetParam = searchParams.get('offset');
     const dateParam = searchParams.get('date');
     const currencyParam = searchParams.get('currency');
+    // Scénario de la partie : seules les valeurs qu'il autorise
+    const scenarioRules = getScenario(searchParams.get('scenario') ?? 'libre').rules;
     const withQuotes =
       dateParam !== null && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) && isGameCurrency(currencyParam);
 
@@ -56,6 +59,8 @@ export async function GET(req: Request) {
       type_id: typeId,
       market_id: marketId,
       search: searchParam || undefined,
+      type_codes: scenarioRules.assetTypes,
+      market_codes: scenarioRules.markets,
       limit: limitParam ? parseInt(limitParam) : undefined,
       offset: offsetParam ? parseInt(offsetParam) : undefined,
     });

@@ -14,6 +14,7 @@ import { validateCover } from '@/lib/game/validations';
 import { calculateTransactionPreview } from '@/lib/game/calculations';
 import { settleAction } from '@/lib/game/state';
 import { getQuote } from '@/lib/market/prices';
+import { checkScenarioOrder } from '@/lib/game/scenario-orders';
 import { coverSchema, validateTradeInputSafe } from '@/lib/game/trade-schemas';
 import { ValidationError } from '@/lib/utils/errors';
 import { getApiI18n } from '@/lib/i18n/server';
@@ -50,8 +51,17 @@ export const POST = withAuth(async (req, { userId }) => {
 
     await requireOwnership(userId, game.userId);
 
-    // 3. Récupérer le cours actuel, converti dans la devise de la partie
-    const quote = await getQuote(symbol, game.currentDate, game.currency);
+    // 3. Règles du scénario (ordres et actifs autorisés) et cours actuel,
+    //    converti dans la devise de la partie
+    const [scenarioError, quote] = await Promise.all([
+      checkScenarioOrder(game.scenario, symbol, 'cover'),
+      getQuote(symbol, game.currentDate, game.currency),
+    ]);
+
+    if (scenarioError) {
+      return NextResponse.json({ error: scenarioError }, { status: 400 });
+    }
+
     if (!quote || !quote.price) {
       return NextResponse.json(
         { error: api.priceUnavailable },

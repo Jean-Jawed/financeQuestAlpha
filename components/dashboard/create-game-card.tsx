@@ -16,6 +16,8 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useI18n } from '@/lib/i18n/client';
 import { INTL_LOCALE } from '@/lib/i18n/config';
 import { playSound } from '@/lib/sound';
+import { DEFAULT_SCENARIO, getScenario, type ScenarioId } from '@/lib/game/scenarios';
+import { ScenarioPicker } from './scenario-picker';
 import {
   DEFAULT_GAME_CURRENCY,
   GAME_CURRENCIES,
@@ -51,10 +53,13 @@ export function CreateGameCard({ minDate, maxDate, isFirst = false }: CreateGame
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [currency, setCurrency] = useState<GameCurrency>(DEFAULT_GAME_CURRENCY);
+  const [scenario, setScenario] = useState<ScenarioId>(DEFAULT_SCENARIO);
+  // Période imposée : la date de départ est celle du scénario
+  const period = getScenario(scenario).rules.period;
   const [loading, setLoading] = useState(false);
 
   async function handleCreateGame() {
-    if (!startDate) {
+    if (!period && !startDate) {
       toast.error(t.pickDate);
       return;
     }
@@ -65,7 +70,7 @@ export function CreateGameCard({ minDate, maxDate, isFirst = false }: CreateGame
       const res = await fetch('/api/games/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate, currency }),
+        body: JSON.stringify({ startDate: period ? undefined : startDate, currency, scenario }),
       });
 
       const data = await res.json();
@@ -114,9 +119,11 @@ export function CreateGameCard({ minDate, maxDate, isFirst = false }: CreateGame
         isOpen={isModalOpen}
         onClose={() => !loading && setIsModalOpen(false)}
         title={t.title}
-        size="md"
+        size="lg"
       >
         <div className="space-y-6">
+          <ScenarioPicker value={scenario} onChange={setScenario} disabled={loading} />
+
           <p className="text-paper-dim">
             {fmt(t.modalText, { capital: f.currency(STARTING_CAPITAL[currency], currency) })}
           </p>
@@ -141,17 +148,23 @@ export function CreateGameCard({ minDate, maxDate, isFirst = false }: CreateGame
             <p className="mt-2 text-xs text-paper-dim">{t.currencyHint}</p>
           </div>
 
-          <Input
-            id="game-start-date"
-            type="date"
-            label={t.startDate}
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            min={minDate}
-            max={maxDate}
-            disabled={loading}
-            helperText={t.startDateHint}
-          />
+          {period ? (
+            <p className="rounded border border-brass/30 bg-brass/10 px-4 py-3 text-paper">
+              {fmt(m.scenarios.periodFixed, { start: f.date(period.start), end: f.date(period.end) })}
+            </p>
+          ) : (
+            <Input
+              id="game-start-date"
+              type="date"
+              label={t.startDate}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              min={minDate}
+              max={maxDate}
+              disabled={loading}
+              helperText={t.startDateHint}
+            />
+          )}
 
           {loading && (
             <div className="flex items-center gap-3 rounded border border-brass/30 bg-brass/10 p-4">
@@ -165,7 +178,7 @@ export function CreateGameCard({ minDate, maxDate, isFirst = false }: CreateGame
           <Button variant="ghost" onClick={() => setIsModalOpen(false)} disabled={loading}>
             {m.common.cancel}
           </Button>
-          <Button onClick={handleCreateGame} loading={loading} disabled={!startDate}>
+          <Button onClick={handleCreateGame} loading={loading} disabled={!period && !startDate}>
             {t.submit}
           </Button>
         </ModalFooter>

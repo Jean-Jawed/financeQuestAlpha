@@ -38,13 +38,15 @@ export async function GET(req: Request) {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - 90);
 
-    // Supprimer les games inactives (status != 'active' ET updatedAt < 90 jours)
+    // Supprimer les parties abandonnées depuis plus de 90 jours. Les parties
+    // terminées autrement restent : elles font le classement et l'historique
     const deletedGames = await db
       .delete(games)
       .where(
         and(
           lt(games.updatedAt, cutoffDate),
-          eq(games.status, 'completed') // Supprimer uniquement les completed, garder paused
+          eq(games.status, 'completed'),
+          eq(games.endReason, 'abandoned')
         )
       )
       .returning();

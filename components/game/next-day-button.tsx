@@ -68,9 +68,14 @@ export function NextDayButton({
         return;
       }
 
-      // La cloche sonne la clôture, puis les volets basculent sur la nouvelle date
-      playSound('bell');
-      window.setTimeout(() => playSound('flaps', 0.7), 450);
+      // La cloche sonne la clôture, puis les volets basculent sur la nouvelle date ;
+      // une faillite se solde par un choc sourd
+      if (data.data?.endReason === 'bankrupt') {
+        playSound('refusal');
+      } else {
+        playSound('bell');
+        window.setTimeout(() => playSound('flaps', 0.7), 450);
+      }
 
       // Bilan de la séance : variation de la valeur du portefeuille
       const newValue: number | undefined = data.data?.state?.portfolio.totalValue;

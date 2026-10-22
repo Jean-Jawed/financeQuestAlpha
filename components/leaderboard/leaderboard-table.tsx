@@ -53,7 +53,9 @@ function PodiumStep({ entry, place }: { entry: LeaderboardEntry; place: 0 | 1 | 
         <PerformanceBadge value={entry.returnPercentage} />
       </div>
       <p className="num mt-3 text-lg text-paper">{f.currency(entry.totalValue, entry.currency)}</p>
-      <p className="label mt-1 text-[10px]">{fmt(m.leaderboard.pointsValue, { points: entry.score })}</p>
+      <p className="label mt-1 text-[10px]">
+        {entry.sessionsPlayed} {m.leaderboard.sessions.toLowerCase()}
+      </p>
     </li>
   );
 }
@@ -96,7 +98,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
                 <th scope="col" className="px-2 py-3 font-semibold">{t.player}</th>
                 <th scope="col" className="px-2 py-3 text-right font-semibold">{t.return}</th>
                 <th scope="col" className="hidden px-2 py-3 text-right font-semibold sm:table-cell">{t.value}</th>
-                <th scope="col" className="px-5 py-3 text-right font-semibold">{t.points}</th>
+                <th scope="col" className="px-5 py-3 text-right font-semibold">{t.sessions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -110,7 +112,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
                   <td className="num hidden px-2 py-3 text-right text-paper sm:table-cell">
                     {f.currency(entry.totalValue, entry.currency)}
                   </td>
-                  <td className="num px-5 py-3 text-right text-brass">{entry.score}</td>
+                  <td className="num px-5 py-3 text-right text-paper-dim">{entry.sessionsPlayed}</td>
                 </tr>
               ))}
             </tbody>

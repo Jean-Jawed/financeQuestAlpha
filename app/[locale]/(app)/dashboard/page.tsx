@@ -19,6 +19,7 @@ import { getPriceCoverage } from '@/lib/market/calendar';
 import { ProfileMissing } from '@/components/dashboard/profile-missing';
 import { getI18n, resolveLocale } from '@/lib/i18n/server';
 import { pageMetadata } from '@/lib/seo';
+import { latestStartDate } from '@/lib/game/scenarios';
 import type { GameWithStats } from '@/types/game';
 
 // ==========================================
@@ -55,11 +56,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
   const user = session.user;
 
-  // Plage de dates jouable (base prix) : bornes du sélecteur de date
+  // Plage de dates jouable (base prix) : bornes du sélecteur de date, avec assez
+  // de séances devant soi pour pouvoir prendre sa retraite
   const coverage = await getPriceCoverage();
-  const lastStartDate = new Date(Date.parse(`${coverage.end}T00:00:00Z`) - 86_400_000)
-    .toISOString()
-    .slice(0, 10);
+  const lastStartDate = latestStartDate(coverage.end);
 
   // Fetch games directement depuis la DB (pas d'API)
   let games: GameWithStats[] = [];
@@ -74,8 +74,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
     games = await Promise.all(
       userGames.map(async (game) => {
+        // Partie terminée : valeur et rendement finaux enregistrés, pas de valorisation
+        const ended = game.status === 'completed';
         const [portfolio, achievements] = await Promise.all([
-          calculatePortfolio(game.id, game.currentDate),
+          ended ? null : calculatePortfolio(game.id, game.currentDate),
           getUnlockedAchievements(game.id),
         ]);
         const remainingDays = getRemainingDays(game.currentDate, coverage.end);
@@ -84,8 +86,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           ...game,
           portfolioValue: portfolio?.portfolioValueLong || 0,
           shortPositionsPnl: portfolio?.shortPositionsPnl || 0,
-          totalValue: portfolio?.totalValue || parseFloat(game.currentBalance),
-          returnPercentage: portfolio?.returnPercentage || 0,
+          totalValue: ended
+            ? parseFloat(game.finalValue ?? game.currentBalance)
+            : portfolio?.totalValue || parseFloat(game.currentBalance),
+          returnPercentage: ended ? parseFloat(game.finalReturn ?? '0') : portfolio?.returnPercentage || 0,
           score: portfolio?.score || 0,
           achievementsUnlocked: achievements.length,
           remainingDays,
@@ -102,6 +106,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   // Limite de 5 parties actives (voir validateGameCreation)
   const MAX_ACTIVE_GAMES = 5;
   const activeGames = games.filter((g) => g.status === 'active').length;
+  const endedGames = games.filter((g) => g.status === 'completed');
   const bestReturn = games.length > 0 ? Math.max(...games.map((g) => g.returnPercentage)) : null;
 
   return (
@@ -123,14 +128,31 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {games.map((game) => (
-              <GameCard key={game.id} game={game} />
-            ))}
+            {games
+              .filter((game) => game.status !== 'completed')
+              .map((game) => (
+                <GameCard key={game.id} game={game} />
+              ))}
             {activeGames < MAX_ACTIVE_GAMES && (
               <CreateGameCard minDate={coverage.start} maxDate={lastStartDate} isFirst={gamesPlayed === 0} />
             )}
           </div>
         </section>
+
+        {endedGames.length > 0 && (
+          <section aria-labelledby="archive-title">
+            <div className="mb-6 border-b border-line pb-3">
+              <h2 id="archive-title" className="font-display text-3xl font-semibold text-paper">
+                {ui.dashboard.archive}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {endedGames.map((game) => (
+                <GameCard key={game.id} game={game} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

@@ -30,29 +30,43 @@ CROPS = {
     "corbeille.jpg": (58, 52, 1320, 714),
 }
 
-# source -> (sortie, largeur max, teinte, point blanc, point noir, fond opaque)
+# (source, sortie, largeur max, teinte, point blanc, point noir, fond opaque)
+# Une même source peut donner plusieurs sorties (le sablier : clair et positif)
 # Largeur max = 2 × la plus grande taille d'affichage (écrans haute densité) ;
 # next/image sert ensuite des versions réduites selon l'écran.
 # Point blanc : en dessous de cette luminance d'encre, le papier est effacé.
 # Fond opaque : image posée sur un aplat connu, pas besoin de transparence
 # (fichier bien plus léger).
-ASSETS = {
+ASSETS = [
     # Scène avec des visages : impression positive (encre sur papier), le négatif
     # les assombrirait. Affichée jusqu'à ~1140 px de large sur l'accueil.
-    "corbeille.jpg": ("corbeille", 1262, INK, 0.06, 0.80, PAPER),
+    ("corbeille.jpg", "corbeille", 1262, INK, 0.06, 0.80, PAPER),
     # Connexion : hauteur max 62vh (~670 px sur un écran 1080p) ; 1 000 px de haut suffisent
-    "palais.jpg": ("palais", 750, PAPER, 0.10, 0.85, None),
-    "taureau.jpg": ("taureau", 400, PAPER, 0.08, 0.80, None),  # 200 px max
-    "telescripteur.png": ("telescripteur", 640, PAPER, 0.08, 0.80, None),  # 320 px (Le jeu)
-    "sablier.png": ("sablier", 360, PAPER, 0.08, 0.80, None),  # 176 px max
-    "loupe_b.png": ("loupe", 280, PAPER, 0.08, 0.80, None),  # 140 px
-    "laurier.png": ("laurier", 320, BRASS, 0.08, 0.75, None),  # 160 px max
+    ("palais.jpg", "palais", 750, PAPER, 0.10, 0.85, None),
+    ("taureau.jpg", "taureau", 400, PAPER, 0.08, 0.80, None),  # 200 px max
+    ("telescripteur.png", "telescripteur", 640, PAPER, 0.08, 0.80, None),  # 320 px (Le jeu)
+    ("sablier.png", "sablier", 360, PAPER, 0.08, 0.80, None),  # 176 px max
+    ("loupe_b.png", "loupe", 280, PAPER, 0.08, 0.80, None),  # 140 px
+    ("laurier.png", "laurier", 320, BRASS, 0.08, 0.75, None),  # 160 px max
     # La Gazette : gravures d'articles, impression positive sur papier (cartes et
     # en-tête d'article, jusqu'à ~1000 px) ; la source fait 1024 px de large
-    "apprenti.jpg": ("apprenti", 1024, INK, 0.06, 0.80, PAPER),
-    "automate.jpg": ("automate", 1024, INK, 0.06, 0.80, PAPER),
-    "gazette.jpg": ("gazette", 560, PAPER, 0.08, 0.80, None),  # 280 px (une du magazine)
-}
+    ("apprenti.jpg", "apprenti", 1024, INK, 0.06, 0.80, PAPER),
+    ("automate.jpg", "automate", 1024, INK, 0.06, 0.80, PAPER),
+    ("gazette.jpg", "gazette", 560, PAPER, 0.08, 0.80, None),  # 280 px (une du magazine)
+    # Scénarios : vignettes du choix de scénario (160 px max), impression positive
+    # sur papier comme les cartes de La Gazette (les visages restent lisibles)
+    ("boussole.jpg", "scenario-libre", 320, INK, 0.06, 0.80, PAPER),
+    ("ruee.jpg", "scenario-ruee-bancaire", 320, INK, 0.06, 0.80, PAPER),
+    ("ours.png", "scenario-ours", 320, INK, 0.06, 0.80, PAPER),
+    ("frappe.jpg", "scenario-crypto", 320, INK, 0.06, 0.80, PAPER),
+    ("orient.jpg", "scenario-orient", 320, INK, 0.06, 0.80, PAPER),
+    ("diamant.jpg", "scenario-diamant", 320, INK, 0.06, 0.80, PAPER),
+    # Bilan de fin de partie (200 px max), impression positive
+    ("retraite.jpg", "retraite", 400, INK, 0.06, 0.80, PAPER),
+    ("faillite.jpg", "faillite", 400, INK, 0.06, 0.80, PAPER),
+    # Fin de période ou des données : le sablier, en impression positive pour le bilan
+    ("sablier.png", "sablier-bilan", 400, INK, 0.06, 0.80, PAPER),
+]
 
 # Images de partage (Open Graph) : JPEG en impression positive, recadrées au format
 # du cadre de lib/og.tsx (372 x 412), à 2x
@@ -95,7 +109,7 @@ def engrave(
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, (stem, width, tint, low, high, background) in ASSETS.items():
+    for name, stem, width, tint, low, high, background in ASSETS:
         image = engrave(SRC / name, width, tint, low, high, background)
         target = OUT / f"{stem}.webp"
         image.save(target, "WEBP", quality=78, method=6)

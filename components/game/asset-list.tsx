@@ -12,6 +12,7 @@ import { TradeTicket, type TicketAsset } from '@/components/game/trade-ticket';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useI18n } from '@/lib/i18n/client';
+import { getScenario } from '@/lib/game/scenarios';
 import { cn } from '@/lib/utils/cn';
 import type { GameState } from '@/types/game';
 
@@ -43,6 +44,8 @@ interface AssetListProps {
   /** Devise de la partie : cours convertis au taux du jour */
   currency: string;
   allowShorting: boolean;
+  /** Scénario de la partie : valeurs et ordres autorisés */
+  scenario: string;
   /** Frais de transaction en % */
   feeRate: number;
   availableCash: number;
@@ -62,12 +65,14 @@ export function AssetList({
   currentDate,
   currency,
   allowShorting,
+  scenario,
   feeRate,
   availableCash,
   onTradeComplete,
 }: AssetListProps) {
+  const rules = getScenario(scenario).rules;
   const { toast } = useToast();
-  const { m, f, plural } = useI18n();
+  const { m, f, fmt, plural } = useI18n();
   const t = m.game.assets;
 
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -84,7 +89,7 @@ export function AssetList({
 
   // 1. Filtres
   useEffect(() => {
-    fetch('/api/market/filters')
+    fetch(`/api/market/filters?scenario=${encodeURIComponent(scenario)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
         if (!json) return;
@@ -92,14 +97,14 @@ export function AssetList({
         setMarkets(json.data.markets);
       })
       .catch((error) => console.error('Error fetching filters:', error));
-  }, []);
+  }, [scenario]);
 
   // 2. Valeurs + cours du jour (relu à chaque séance)
   useEffect(() => {
     let cancelled = false;
     setLoadingAssets(true);
 
-    const params = new URLSearchParams({ limit: '60', date: currentDate, currency });
+    const params = new URLSearchParams({ limit: '60', date: currentDate, currency, scenario });
     if (selectedTypeId !== 'all') params.append('type', selectedTypeId);
     if (selectedMarketId !== 'all') params.append('market', selectedMarketId);
     if (debouncedSearch) params.append('search', debouncedSearch);
@@ -114,7 +119,7 @@ export function AssetList({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTypeId, selectedMarketId, debouncedSearch, currentDate, currency]);
+  }, [selectedTypeId, selectedMarketId, debouncedSearch, currentDate, currency, scenario]);
 
   return (
     <section className="panel" aria-labelledby="cote-title">
@@ -127,6 +132,14 @@ export function AssetList({
         </div>
         <p className="label">{loadingAssets ? t.reading : plural(assets.length, t.countOne, t.count)}</p>
       </header>
+
+      {(rules.assetTypes || rules.markets) && (
+        <p className="border-b border-line bg-ink px-5 py-2 text-xs text-paper-dim">
+          {fmt(m.scenarios.restricted, {
+            name: (m.scenarios[scenario as keyof typeof m.scenarios] as { name: string } | undefined)?.name ?? scenario,
+          })}
+        </p>
+      )}
 
       {/* Filtres */}
       <div className="flex flex-col gap-2 border-b border-line px-5 py-3 sm:flex-row">
@@ -241,6 +254,7 @@ export function AssetList({
           asset={selectedAsset}
           mode="open"
           allowShorting={allowShorting}
+          allowedActions={rules.actions}
           availableCash={availableCash}
           onClose={() => setSelectedAsset(null)}
           onDone={onTradeComplete}

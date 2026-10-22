@@ -10,6 +10,7 @@ import { eq, desc } from 'drizzle-orm';
 import { calculatePortfolio, calculateHoldingsValues } from './calculations';
 import { checkAndUnlockAchievements, getUnlockedAchievements } from './achievements';
 import { daysBetween } from './achievement-rules';
+import { loadGameSummary } from './summary';
 import { getPriceCoverage } from '@/lib/market/calendar';
 import { getApiI18n } from '@/lib/i18n/server';
 import type { GameState, PortfolioCalculation } from '@/types/game';
@@ -37,7 +38,7 @@ async function buildGameState(
   game: Game,
   portfolio?: PortfolioCalculation | null
 ): Promise<{ state: GameState; achievementIds: Set<string> } | null> {
-  const [resolvedPortfolio, holdingsWithValues, recentTransactions, unlocked, coverage] =
+  const [resolvedPortfolio, holdingsWithValues, recentTransactions, unlocked, coverage, summary] =
     await Promise.all([
       portfolio ?? calculatePortfolio(game.id, game.currentDate),
       calculateHoldingsValues(game.id, game.currentDate, game.currency),
@@ -48,6 +49,7 @@ async function buildGameState(
       }),
       getUnlockedAchievements(game.id),
       getPriceCoverage(),
+      game.status === 'completed' ? loadGameSummary(game) : null,
     ]);
 
   if (!resolvedPortfolio) {
@@ -86,6 +88,7 @@ async function buildGameState(
       },
       holdings: holdingsWithValues,
       recentTransactions,
+      summary,
     },
   };
 }

@@ -21,7 +21,7 @@ export const site: SiteMessages = {
     faqDescription:
       'Everything about FinanceQuest: is it free, where prices come from, how a game works, short selling, currencies, the leaderboard.',
     leaderboardTitle: 'Player leaderboard',
-    leaderboardDescription: 'The FinanceQuest roll of honour: the best returns among games in progress.',
+    leaderboardDescription: 'The FinanceQuest roll of honour: the best finished games, scenario by scenario.',
     loginTitle: 'Log in',
     signupTitle: 'Create an account',
     signupDescription: 'Create your free FinanceQuest account and receive your virtual starting capital.',
@@ -151,7 +151,7 @@ export const site: SiteMessages = {
       },
       {
         q: 'How does a game work?',
-        a: 'You pick a starting date and a game currency, then receive your capital. You place buy, sell or short-sell orders, executed at the day’s closing price. When you are ready, you close the session: the prices of the next trading day come in and your portfolio is revalued.',
+        a: 'You pick a scenario, a starting date and a game currency, then receive your capital. You place buy, sell or short-sell orders, executed at the day’s closing price. When you are ready, you close the session: the prices of the next trading day come in and your portfolio is revalued. After 20 sessions, you can retire: your positions are closed and your result is locked in.',
       },
       {
         q: 'What can I trade?',
@@ -167,7 +167,7 @@ export const site: SiteMessages = {
       },
       {
         q: 'How does the leaderboard work?',
-        a: 'Games in progress are ranked by return: the percentage change in portfolio value since the game opened. Unlocked achievements earn points shown on your profile, without changing your rank.',
+        a: 'Each scenario has its own leaderboard. It lists each player’s best finished game, ranked by return: the percentage change in portfolio value between opening and retirement. Abandoned games and games under 20 sessions are not ranked.',
       },
       {
         q: 'Does the game really teach you how to invest?',

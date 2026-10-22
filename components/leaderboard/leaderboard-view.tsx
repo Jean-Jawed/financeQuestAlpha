@@ -1,6 +1,6 @@
 /**
  * FINANCEQUEST - COMPONENT: LeaderboardView
- * Tableau d'honneur : choix de la période, podium et registre
+ * Tableau d'honneur : choix du scénario et de la période, podium et registre
  */
 
 'use client';
@@ -10,6 +10,8 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { LeaderboardTable } from '@/components/leaderboard/leaderboard-table';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n/client';
+import { DEFAULT_SCENARIO, SCENARIOS, isScenarioId, type ScenarioId } from '@/lib/game/scenarios';
+import { cn } from '@/lib/utils/cn';
 import type { LeaderboardEntry } from '@/types/api';
 
 // ==========================================
@@ -28,14 +30,21 @@ export function LeaderboardView() {
   const t = m.leaderboard;
 
   const [period, setPeriod] = useState<Period>('all_time');
+  const [scenario, setScenario] = useState<ScenarioId>(DEFAULT_SCENARIO);
+
+  // Scénario demandé par le lien du bilan (?scenario=crypto)
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('scenario');
+    if (isScenarioId(requested)) setScenario(requested);
+  }, []);
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  async function fetchLeaderboard(selectedPeriod: Period) {
+  async function fetchLeaderboard(selectedPeriod: Period, selectedScenario: ScenarioId) {
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/leaderboard?period=${selectedPeriod}&limit=50`);
+      const res = await fetch(`/api/leaderboard?scenario=${selectedScenario}&period=${selectedPeriod}&limit=50`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -53,8 +62,9 @@ export function LeaderboardView() {
   }
 
   useEffect(() => {
-    fetchLeaderboard(period);
-  }, [period]);
+    fetchLeaderboard(period, scenario);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period, scenario]);
 
   const periods: Array<{ value: Period; label: string }> = [
     { value: 'all_time', label: t.allTime },
@@ -90,6 +100,24 @@ export function LeaderboardView() {
           ))}
         </div>
       </header>
+
+      {/* Scénarios */}
+      <nav aria-label={t.scenario} className="-mx-4 mb-10 flex gap-2 overflow-x-auto px-4 pb-1">
+        {SCENARIOS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-pressed={scenario === item.id}
+            onClick={() => setScenario(item.id)}
+            className={cn(
+              'shrink-0 rounded border px-4 py-2 font-display text-base transition-colors',
+              scenario === item.id ? 'border-brass bg-brass/10 text-brass' : 'border-line text-paper-dim hover:text-paper'
+            )}
+          >
+            {m.scenarios[item.id].name}
+          </button>
+        ))}
+      </nav>
 
       {loading ? (
         <div className="flex items-center justify-center py-16">

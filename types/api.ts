@@ -209,6 +209,9 @@ export interface LeaderboardEntry {
   returnPercentage: number;
   score: number;
   gameId: string;
+  /** Séances jouées par la partie classée */
+  sessionsPlayed: number;
+  endedAt: string;
 }
 
 export interface GetLeaderboardResponse extends ApiResponse {

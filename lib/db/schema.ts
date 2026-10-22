@@ -29,6 +29,9 @@ import { GAME_CURRENCIES } from '../game/currency';
 
 export const GAME_STATUSES = ['active', 'paused', 'completed'] as const;
 
+/** Raisons de fin de partie (games.end_reason) */
+export const END_REASONS = ['retired', 'period_end', 'data_end', 'bankrupt', 'abandoned'] as const;
+
 export const TRANSACTION_TYPES = ['buy', 'sell', 'short', 'cover'] as const;
 
 export const CRITERIA_TYPES = [
@@ -104,6 +107,15 @@ export const games = pgTable('games', {
       allow_leverage: false,
     })
     .notNull(),
+  /** Scénario choisi à la création (règles : lib/game/scenarios.ts) */
+  scenario: text('scenario').default('libre').notNull(),
+  /** Séances jouées depuis le départ (retraite possible à partir de MIN_SESSIONS_TO_RETIRE) */
+  sessionsPlayed: integer('sessions_played').default(0).notNull(),
+  /** Fin de partie : renseignés ensemble quand status = 'completed' */
+  endedAt: timestamp('ended_at', { withTimezone: true }),
+  endReason: text('end_reason', { enum: END_REASONS }),
+  finalValue: decimal('final_value', { precision: 15, scale: 2 }),
+  finalReturn: decimal('final_return', { precision: 12, scale: 4 }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
