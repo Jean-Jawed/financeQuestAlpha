@@ -4,7 +4,8 @@
  * connues sur toute la période couverte par la base prix
  */
 
-import { marketDb } from './db';
+import { sql } from 'drizzle-orm';
+import { marketQuery } from './db';
 import { getPriceCoverage } from './calendar';
 
 // ==========================================
@@ -63,7 +64,7 @@ export async function getTickerData(): Promise<TickerData> {
   const coverage = await getPriceCoverage();
 
   const [rows, [counts]] = await Promise.all([
-    marketDb`
+    marketQuery(sql`
     SELECT a.symbol, a.name, first_p.close_price AS first_close, last_p.close_price AS last_close
     FROM assets a
     CROSS JOIN LATERAL (
@@ -76,9 +77,9 @@ export async function getTickerData(): Promise<TickerData> {
       WHERE asset_id = a.id AND date <= ${coverage.end}
       ORDER BY date DESC LIMIT 1
     ) last_p
-    WHERE a.symbol IN ${marketDb(TICKER_SYMBOLS)}
-  `,
-    marketDb`
+    WHERE a.symbol IN ${TICKER_SYMBOLS}
+  `),
+    marketQuery(sql`
       SELECT
         COUNT(*)::int AS asset_count,
         COUNT(DISTINCT market_id)::int AS market_count,
@@ -88,7 +89,7 @@ export async function getTickerData(): Promise<TickerData> {
         ) AS session_count
       FROM assets
       WHERE is_active
-    `,
+    `),
   ]);
 
   const bySymbol = new Map(rows.map((row) => [row.symbol as string, row]));

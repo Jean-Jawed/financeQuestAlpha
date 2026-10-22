@@ -159,6 +159,7 @@ export const ui: UiMessages = {
       finished: 'End of market data',
       hint: 'The next session’s closing prices will come in.',
       failed: 'The session could not be closed',
+      noAnswer: 'No answer from the server. The game has been reloaded.',
       closed: 'Session closed: {change} on the day',
     },
     summary: {
@@ -224,6 +225,9 @@ export const ui: UiMessages = {
       shortNote:
         'The sale proceeds stay locked as collateral. Losses are unlimited if the price rises.',
       refused: 'Order rejected',
+      sending: 'Sending…',
+      retrying: 'The server is slow to answer: the order is being resent, with no risk of duplicates.',
+      noAnswer: 'No answer from the server. Your portfolio has been reloaded: check whether the order went through.',
     },
     chart: {
       caption: 'Last {days} days · prices in {currency}',

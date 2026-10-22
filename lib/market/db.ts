@@ -3,7 +3,9 @@
  * Client dédié pour la base de données Assets & Prices
  */
 
-import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import type { SQL } from 'drizzle-orm';
+import { createPool } from '@/lib/db/pool';
 
 // ==========================================
 // CONFIGURATION
@@ -15,25 +17,24 @@ if (!connectionString) {
     throw new Error('SUPABASE_PRICES_URL environment variable is not set');
 }
 
-// Client connection pool
-// - prepare: false : obligatoire derrière le pooler Supabase en mode transaction (port 6543)
-// - max: 5 : en serverless, chaque instance a son propre pool ; peu de connexions
-//   par instance évite de saturer les 60 connexions de la base
-// - En dev, le client est conservé sur globalThis pour ne pas ouvrir un nouveau
-//   pool à chaque rechargement à chaud (HMR)
-const globalForMarketDb = globalThis as unknown as { marketDb?: postgres.Sql };
+// Pool node-postgres partagé (voir lib/db/pool.ts : connexions fermées avant la mise
+// en pause de l'instance Vercel, délai de requête)
+const pool = createPool('prix', connectionString);
+const pricesDb = drizzle(pool);
 
-export const marketDb =
-    globalForMarketDb.marketDb ??
-    postgres(connectionString, {
-        prepare: false,
-        max: 5,
-        idle_timeout: 20,
-        connect_timeout: 10,
-    });
-
-if (process.env.NODE_ENV !== 'production') {
-    globalForMarketDb.marketDb = marketDb;
+/**
+ * Exécuter une requête sur la base prix
+ * Les requêtes s'écrivent avec la balise `sql` de Drizzle ; une liste passée en
+ * paramètre devient ($1, $2, …), d'où `a.symbol IN ${symbols}`
+ *
+ * @example
+ * const rows = await marketQuery(sql`SELECT * FROM assets WHERE symbol IN ${symbols}`);
+ */
+export async function marketQuery<T extends Record<string, unknown> = Record<string, any>>(
+    query: SQL
+): Promise<T[]> {
+    const result = await pricesDb.execute<T>(query);
+    return result.rows as T[];
 }
 
 // ==========================================
@@ -97,8 +98,8 @@ export interface Price {
 // ==========================================
 
 /**
- * Helper to close the connection (useful for scripts/testing)
+ * Fermer le pool (scripts, tests)
  */
 export async function closeMarketDb() {
-    await marketDb.end();
+    await pool.end();
 }

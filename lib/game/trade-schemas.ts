@@ -13,6 +13,8 @@ export const baseTradeSchema = z.object({
   gameId: z.string().uuid('ID de game invalide'),
   symbol: z.string().min(1, 'Symbole requis').max(20, 'Symbole trop long'),
   quantity: z.number().positive('La quantité doit être positive').finite('La quantité doit être un nombre valide'),
+  /** Identifiant unique de l'ordre (généré par le ticket) : rend l'ordre rejouable sans doublon */
+  orderId: z.string().uuid().optional(),
 });
 
 // ==========================================

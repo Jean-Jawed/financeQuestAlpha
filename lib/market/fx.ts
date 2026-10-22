@@ -7,7 +7,8 @@
  * « devise pour 1 USD ». Chaque jour, on prend le dernier cours connu.
  */
 
-import { marketDb } from './db';
+import { sql } from 'drizzle-orm';
+import { marketQuery } from './db';
 import type { UsdRates } from '@/lib/game/currency';
 
 // ==========================================
@@ -58,7 +59,7 @@ export async function getUsdRates(date: string): Promise<UsdRates> {
   if (cached) return cached;
 
   const symbols = Object.values(USD_PAIRS).map((pair) => pair.symbol);
-  const results = await marketDb`
+  const results = await marketQuery(sql`
     SELECT a.symbol, p.close_price
     FROM assets a
     CROSS JOIN LATERAL (
@@ -69,8 +70,8 @@ export async function getUsdRates(date: string): Promise<UsdRates> {
       ORDER BY date DESC
       LIMIT 1
     ) p
-    WHERE a.symbol IN ${marketDb(symbols)}
-  `;
+    WHERE a.symbol IN ${symbols}
+  `);
 
   const quoteBySymbol = new Map(results.map((row) => [row.symbol as string, Number(row.close_price)]));
 

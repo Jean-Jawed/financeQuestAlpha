@@ -157,6 +157,8 @@ export const transactions = pgTable('transactions', {
   fxRate: decimal('fx_rate', { precision: 20, scale: 10 }),
   fee: decimal('fee', { precision: 15, scale: 2 }).default('0').notNull(),
   total: decimal('total', { precision: 15, scale: 2 }).notNull(),
+  /** Identifiant généré par le ticket : un ordre renvoyé après une réponse perdue n'est pas réexécuté */
+  clientOrderId: uuid('client_order_id'),
   transactionDate: date('transaction_date').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });

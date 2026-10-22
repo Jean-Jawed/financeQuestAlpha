@@ -13,7 +13,8 @@
  * réellement couverte par la base.
  */
 
-import { marketDb } from './db';
+import { sql } from 'drizzle-orm';
+import { marketQuery } from './db';
 
 // ==========================================
 // CONFIGURATION
@@ -53,14 +54,14 @@ async function findTradingDate(
 ): Promise<string | null> {
   const dateFilter =
     direction === 'after'
-      ? marketDb`p.date > ${date}::date AND p.date <= ${date}::date + ${SEARCH_WINDOW_DAYS}::int`
+      ? sql`p.date > ${date}::date AND p.date <= ${date}::date + ${SEARCH_WINDOW_DAYS}::int`
       : direction === 'from'
-        ? marketDb`p.date >= ${date}::date AND p.date <= ${date}::date + ${SEARCH_WINDOW_DAYS}::int`
-        : marketDb`p.date <= ${date}::date AND p.date >= ${date}::date - ${SEARCH_WINDOW_DAYS}::int`;
+        ? sql`p.date >= ${date}::date AND p.date <= ${date}::date + ${SEARCH_WINDOW_DAYS}::int`
+        : sql`p.date <= ${date}::date AND p.date >= ${date}::date - ${SEARCH_WINDOW_DAYS}::int`;
 
-  const order = direction === 'until' ? marketDb`DESC` : marketDb`ASC`;
+  const order = direction === 'until' ? sql`DESC` : sql`ASC`;
 
-  const results = await marketDb`
+  const results = await marketQuery(sql`
     SELECT p.date::text AS date
     FROM prices p
     JOIN assets a ON a.id = p.asset_id
@@ -75,7 +76,7 @@ async function findTradingDate(
     )
     ORDER BY p.date ${order}
     LIMIT 1
-  `;
+  `);
 
   return results.length > 0 ? results[0].date : null;
 }
@@ -113,11 +114,11 @@ export async function getPriceCoverage(): Promise<PriceCoverage> {
   }
 
   // MIN/MAX sur la clé de l'index (date, asset_id) : lecture d'index instantanée
-  const [bounds] = await marketDb`
+  const [bounds] = await marketQuery(sql`
     SELECT
       (SELECT date::text FROM prices ORDER BY date ASC LIMIT 1) AS first_date,
       (SELECT date::text FROM prices ORDER BY date DESC LIMIT 1) AS last_date
-  `;
+  `);
 
   const [start, end] = await Promise.all([
     findTradingDate(bounds.first_date, 'from'),

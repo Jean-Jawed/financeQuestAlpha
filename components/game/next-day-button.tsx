@@ -12,6 +12,7 @@ import { showMedals } from '@/components/game/achievement-medal';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n/client';
 import { playSound } from '@/lib/sound';
+import { TimeoutError, fetchWithTimeout } from '@/lib/utils/fetch-timeout';
 import { daysBetween } from '@/lib/game/achievement-rules';
 import type { GameState } from '@/types/game';
 
@@ -54,7 +55,8 @@ export function NextDayButton({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/games/next-day', {
+      // Pas de renvoi automatique : il ferait avancer la partie de deux séances
+      const res = await fetchWithTimeout('/api/games/next-day', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameId }),
@@ -88,6 +90,11 @@ export function NextDayButton({
       showMedals(data.data?.achievementsUnlocked);
       onDayAdvanced(data.data?.state);
     } catch (error) {
+      if (error instanceof TimeoutError) {
+        toast.error(t.noAnswer);
+        onDayAdvanced();
+        return;
+      }
       toast.error(m.common.networkError);
     } finally {
       setLoading(false);

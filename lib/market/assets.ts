@@ -3,7 +3,8 @@
  * Service pour la gestion des assets via Supabase Prices DB
  */
 
-import { marketDb, type Asset } from './db';
+import { sql } from 'drizzle-orm';
+import { marketQuery, type Asset } from './db';
 
 // ==========================================
 // TYPES
@@ -30,7 +31,7 @@ export interface AssetFilters {
  * Récupérer la liste des assets avec filtres
  */
 export async function getAssets(filters: AssetFilters = {}): Promise<Asset[]> {
-  let query = marketDb`
+  let query = sql`
     SELECT 
       a.*,
       m.code as market_code,
@@ -46,46 +47,46 @@ export async function getAssets(filters: AssetFilters = {}): Promise<Asset[]> {
   `;
 
   if (filters.type_id) {
-    query = marketDb`${query} AND a.asset_type_id = ${filters.type_id}`;
+    query = sql`${query} AND a.asset_type_id = ${filters.type_id}`;
   }
 
   if (filters.market_id) {
-    query = marketDb`${query} AND a.market_id = ${filters.market_id}`;
+    query = sql`${query} AND a.market_id = ${filters.market_id}`;
   }
 
   if (filters.symbols && filters.symbols.length > 0) {
-    query = marketDb`${query} AND a.symbol IN ${marketDb(filters.symbols)}`;
+    query = sql`${query} AND a.symbol IN ${filters.symbols}`;
   }
 
   if (filters.type_codes && filters.type_codes.length > 0) {
-    query = marketDb`${query} AND t.code IN ${marketDb([...filters.type_codes])}`;
+    query = sql`${query} AND t.code IN ${[...filters.type_codes]}`;
   }
 
   if (filters.market_codes && filters.market_codes.length > 0) {
-    query = marketDb`${query} AND m.code IN ${marketDb([...filters.market_codes])}`;
+    query = sql`${query} AND m.code IN ${[...filters.market_codes]}`;
   }
 
   if (filters.search) {
     const searchPattern = `%${filters.search}%`;
-    query = marketDb`${query} AND (
+    query = sql`${query} AND (
       a.symbol ILIKE ${searchPattern} OR 
       a.name ILIKE ${searchPattern}
     )`;
   }
 
   // Order by symbol
-  query = marketDb`${query} ORDER BY a.symbol ASC`;
+  query = sql`${query} ORDER BY a.symbol ASC`;
 
   // Limit / Offset
   if (filters.limit) {
-    query = marketDb`${query} LIMIT ${filters.limit}`;
+    query = sql`${query} LIMIT ${filters.limit}`;
   }
 
   if (filters.offset) {
-    query = marketDb`${query} OFFSET ${filters.offset}`;
+    query = sql`${query} OFFSET ${filters.offset}`;
   }
 
-  const results = await query;
+  const results = await marketQuery(query);
   return results.map(mapAssetRow);
 }
 
@@ -109,7 +110,7 @@ export async function getAssetsMap(symbols: string[]): Promise<Map<string, Asset
  * Récupérer un asset par son symbole
  */
 export async function getAssetBySymbol(symbol: string): Promise<Asset | null> {
-  const results = await marketDb`
+  const results = await marketQuery(sql`
     SELECT 
       a.*,
       m.code as market_code,
@@ -123,7 +124,7 @@ export async function getAssetBySymbol(symbol: string): Promise<Asset | null> {
     LEFT JOIN asset_types t ON a.asset_type_id = t.id
     WHERE a.symbol = ${symbol}
     LIMIT 1
-  `;
+  `);
 
   if (results.length === 0) return null;
   return mapAssetRow(results[0]);
@@ -157,17 +158,17 @@ export async function getScenarioFilterIds(
   typeCodes?: readonly string[],
   marketCodes?: readonly string[]
 ): Promise<{ typeIds: Set<number>; marketIds: Set<number> }> {
-  let query = marketDb`
+  let query = sql`
     SELECT DISTINCT a.asset_type_id AS type_id, a.market_id
     FROM assets a
     JOIN asset_types t ON t.id = a.asset_type_id
     LEFT JOIN markets m ON m.id = a.market_id
     WHERE a.is_active
   `;
-  if (typeCodes && typeCodes.length > 0) query = marketDb`${query} AND t.code IN ${marketDb([...typeCodes])}`;
-  if (marketCodes && marketCodes.length > 0) query = marketDb`${query} AND m.code IN ${marketDb([...marketCodes])}`;
+  if (typeCodes && typeCodes.length > 0) query = sql`${query} AND t.code IN ${[...typeCodes]}`;
+  if (marketCodes && marketCodes.length > 0) query = sql`${query} AND m.code IN ${[...marketCodes]}`;
 
-  const rows = await query;
+  const rows = await marketQuery(query);
   return {
     typeIds: new Set(rows.map((row) => Number(row.type_id))),
     marketIds: new Set(rows.filter((row) => row.market_id !== null).map((row) => Number(row.market_id))),
@@ -178,7 +179,7 @@ export async function getScenarioFilterIds(
  * Récupérer tous les types d'assets disponibles
  */
 export async function getAssetTypes() {
-  return await marketDb`SELECT * FROM asset_types ORDER BY id ASC`;
+  return await marketQuery(sql`SELECT * FROM asset_types ORDER BY id ASC`);
 }
 
 /**
@@ -188,12 +189,12 @@ export async function getAssetTypes() {
 export async function getAssetTypesBySymbol(symbols: string[]): Promise<Map<string, string>> {
   if (symbols.length === 0) return new Map();
 
-  const results = await marketDb`
+  const results = await marketQuery(sql`
     SELECT a.symbol, LOWER(t.code) AS type_code
     FROM assets a
     JOIN asset_types t ON t.id = a.asset_type_id
-    WHERE a.symbol IN ${marketDb(symbols)}
-  `;
+    WHERE a.symbol IN ${symbols}
+  `);
 
   return new Map(results.map((row) => [row.symbol as string, row.type_code as string]));
 }
@@ -202,7 +203,7 @@ export async function getAssetTypesBySymbol(symbols: string[]): Promise<Map<stri
  * Récupérer tous les marchés disponibles
  */
 export async function getMarkets() {
-  return await marketDb`SELECT * FROM markets ORDER BY is_major DESC, name ASC`;
+  return await marketQuery(sql`SELECT * FROM markets ORDER BY is_major DESC, name ASC`);
 }
 
 // ==========================================
@@ -264,7 +265,7 @@ export async function getCatalogSummary(): Promise<CatalogCategory[]> {
     return catalogCache.value;
   }
 
-  const rows = await marketDb`
+  const rows = await marketQuery(sql`
     SELECT t.code, t.label, COUNT(*)::int AS count,
            (ARRAY_AGG(a.name ORDER BY a.id))[1:8] AS examples
     FROM assets a
@@ -272,7 +273,7 @@ export async function getCatalogSummary(): Promise<CatalogCategory[]> {
     WHERE a.is_active
     GROUP BY t.code, t.label
     ORDER BY COUNT(*) DESC
-  `;
+  `);
 
   const value = rows.map((row) => ({
     code: row.code as string,

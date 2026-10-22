@@ -39,7 +39,9 @@ async function loadBenchmark(game: Game): Promise<GameSummary['benchmark']> {
 async function loadRank(game: Game): Promise<GameSummary['rank']> {
   if (!isRanked(game) || game.finalReturn === null) return null;
 
-  const [row] = await db.execute<{ better: number; total: number }>(sql`
+  const {
+    rows: [row],
+  } = await db.execute<{ better: number; total: number }>(sql`
     WITH best AS (
       SELECT DISTINCT ON (user_id) user_id, final_return
       FROM games

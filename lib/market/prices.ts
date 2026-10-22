@@ -4,7 +4,8 @@
  * Version optimisée utilisant pleinement les index existants
  */
 
-import { marketDb, type Price } from './db';
+import { sql } from 'drizzle-orm';
+import { marketQuery, type Price } from './db';
 import { getUsdRates } from './fx';
 import { fxRate } from '@/lib/game/currency';
 
@@ -44,7 +45,7 @@ export interface Quote {
  * Performance : ~1-5ms (vs 50-100ms sans index)
  */
 export async function getPrice(symbol: string, date: string): Promise<Price | null> {
-  const results = await marketDb`
+  const results = await marketQuery(sql`
     SELECT p.*
     FROM prices p
     JOIN assets a ON p.asset_id = a.id
@@ -52,7 +53,7 @@ export async function getPrice(symbol: string, date: string): Promise<Price | nu
       AND p.date <= ${date}
     ORDER BY p.date DESC
     LIMIT 1
-  `;
+  `);
 
   if (results.length === 0) return null;
   return mapPriceRow(results[0]);
@@ -73,7 +74,7 @@ export async function getHistory(
   startDate: string,
   endDate: string
 ): Promise<Price[]> {
-  const results = await marketDb`
+  const results = await marketQuery(sql`
     SELECT p.*
     FROM prices p
     JOIN assets a ON p.asset_id = a.id
@@ -81,7 +82,7 @@ export async function getHistory(
       AND p.date >= ${startDate}
       AND p.date <= ${endDate}
     ORDER BY p.date ASC
-  `;
+  `);
 
   return results.map(mapPriceRow);
 }
@@ -104,7 +105,7 @@ export async function getLatestPrices(
   if (symbols.length === 0) return new Map();
 
   // LATERAL permet à Postgres d'optimiser avec l'index pour chaque asset
-  const results = await marketDb`
+  const results = await marketQuery(sql`
     SELECT 
       a.symbol,
       p.*
@@ -117,8 +118,8 @@ export async function getLatestPrices(
       ORDER BY date DESC
       LIMIT 1
     ) p
-    WHERE a.symbol IN ${marketDb(symbols)}
-  `;
+    WHERE a.symbol IN ${symbols}
+  `);
 
   const map = new Map<string, Price>();
   results.forEach(row => {
@@ -145,7 +146,7 @@ export async function getQuotes(
   if (symbols.length === 0) return new Map();
 
   const [rows, rates] = await Promise.all([
-    marketDb`
+    marketQuery(sql`
       SELECT a.symbol, c.code AS currency_code, p.date, p.close_price, prev.close_price AS previous_close
       FROM assets a
       JOIN currencies c ON c.id = a.currency_id
@@ -165,8 +166,8 @@ export async function getQuotes(
         ORDER BY date DESC
         LIMIT 1
       ) prev ON true
-      WHERE a.symbol IN ${marketDb(symbols)}
-    `,
+      WHERE a.symbol IN ${symbols}
+    `),
     getUsdRates(date),
   ]);
 

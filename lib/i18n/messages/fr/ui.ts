@@ -159,6 +159,7 @@ export const ui = {
       finished: 'Fin des données de marché',
       hint: 'Les cours de clôture de la séance suivante tomberont.',
       failed: 'La séance n’a pas pu être clôturée',
+      noAnswer: 'Pas de réponse du serveur. La partie a été relue.',
       closed: 'Séance close : {change} sur la journée',
     },
     summary: {
@@ -224,6 +225,9 @@ export const ui = {
       shortNote:
         'Le produit de la vente reste bloqué en garantie. Perte possible illimitée si le cours monte.',
       refused: 'Ordre refusé',
+      sending: 'Transmission…',
+      retrying: 'Le serveur tarde à répondre : l’ordre est renvoyé, sans risque de doublon.',
+      noAnswer: 'Pas de réponse du serveur. Votre portefeuille a été relu : vérifiez si l’ordre est passé.',
     },
     chart: {
       caption: '{days} derniers jours · cours en {currency}',

@@ -65,7 +65,7 @@ export async function GET(req: Request) {
     const days = PERIOD_DAYS[period];
     const since = days === null ? sql`` : sql`AND g.ended_at >= now() - make_interval(days => ${days})`;
 
-    const rows = await db.execute<Row>(sql`
+    const { rows } = await db.execute<Row>(sql`
       SELECT * FROM (
         SELECT DISTINCT ON (g.user_id)
           g.id AS game_id, u.name AS user_name, g.final_value, g.final_return,
@@ -83,7 +83,7 @@ export async function GET(req: Request) {
       LIMIT ${limit}
     `);
 
-    const entries = [...rows].map((row, index) => {
+    const entries = rows.map((row, index) => {
       const returnPercentage = parseFloat(row.final_return);
       return {
         rank: index + 1,

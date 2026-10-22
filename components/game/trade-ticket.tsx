@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { useI18n } from '@/lib/i18n/client';
 import { playSound } from '@/lib/sound';
 import { TRADE_ACTIONS, type TradeAction } from '@/lib/game/scenarios';
 import { cn } from '@/lib/utils/cn';
+import { TimeoutError, fetchWithTimeout } from '@/lib/utils/fetch-timeout';
 import type { GameState } from '@/types/game';
 
 // ==========================================
@@ -102,6 +103,8 @@ export function TradeTicket({
   const [quoteError, setQuoteError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [stamped, setStamped] = useState<TradeAction | null>(null);
+  // Identifiant de l'ordre : un renvoi après une réponse perdue n'est pas réexécuté
+  const orderId = useRef<string | null>(null);
 
   // Le ticket se détache du carnet
   useEffect(() => playSound('ticket', 0.8), []);
@@ -156,21 +159,37 @@ export function TradeTicket({
     }
   }
 
+  /** Envoyer l'ordre ; en cas de délai dépassé, renvoyer le même ordre une fois */
+  async function send(attempt: number): Promise<Response> {
+    try {
+      return await fetchWithTimeout(`/api/trades/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId, symbol: asset.symbol, quantity: qty, orderId: orderId.current }),
+      });
+    } catch (error) {
+      if (error instanceof TimeoutError && attempt === 1) {
+        toast.info(t.retrying);
+        return send(2);
+      }
+      throw error;
+    }
+  }
+
   async function submit() {
     if (!validQty || !quote || overHeld) return;
     setLoading(true);
+    orderId.current ??= crypto.randomUUID();
 
     try {
-      const res = await fetch(`/api/trades/${action}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, symbol: asset.symbol, quantity: qty }),
-      });
+      const res = await send(1);
       const data = await res.json();
 
       if (!res.ok) {
         playSound('refusal');
         toast.error(data.error || t.refused);
+        // Ordre refusé : jamais enregistré, le prochain essai aura son propre identifiant
+        orderId.current = null;
         setLoading(false);
         return;
       }
@@ -188,6 +207,13 @@ export function TradeTicket({
         onClose();
       }, STAMP_MS);
     } catch (error) {
+      if (error instanceof TimeoutError) {
+        // Toujours pas de réponse : la page relit la partie, le joueur voit si l'ordre est passé
+        toast.error(t.noAnswer);
+        onDone();
+        onClose();
+        return;
+      }
       toast.error(m.common.networkError);
       setLoading(false);
     }
@@ -320,7 +346,7 @@ export function TradeTicket({
           loading={loading}
           disabled={!validQty || !quote || overHeld}
         >
-          {verb}
+          {loading ? t.sending : verb}
         </Button>
       </ModalFooter>
     </Modal>

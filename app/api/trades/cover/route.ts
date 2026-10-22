@@ -13,6 +13,7 @@ import { eq, and } from 'drizzle-orm';
 import { validateCover } from '@/lib/game/validations';
 import { calculateTransactionPreview } from '@/lib/game/calculations';
 import { settleAction } from '@/lib/game/state';
+import { DuplicateOrderError, duplicateOrderResponse, findClientOrder } from '@/lib/game/client-orders';
 import { getQuote } from '@/lib/market/prices';
 import { checkScenarioOrder } from '@/lib/game/scenario-orders';
 import { coverSchema, validateTradeInputSafe } from '@/lib/game/trade-schemas';
@@ -38,7 +39,7 @@ export const POST = withAuth(async (req, { userId }) => {
       );
     }
 
-    const { gameId, symbol, quantity } = validation.data;
+    const { gameId, symbol, quantity, orderId } = validation.data;
 
     // 2. Récupérer le game et vérifier ownership
     const game = await db.query.games.findFirst({
@@ -50,6 +51,12 @@ export const POST = withAuth(async (req, { userId }) => {
     }
 
     await requireOwnership(userId, game.userId);
+
+    // Ordre déjà reçu (réponse perdue, nouvel essai du navigateur) : pas de seconde exécution
+    const alreadyPlaced = await findClientOrder(db, gameId, orderId);
+    if (alreadyPlaced) {
+      return duplicateOrderResponse(gameId, alreadyPlaced);
+    }
 
     // 3. Règles du scénario (ordres et actifs autorisés) et cours actuel,
     //    converti dans la devise de la partie
@@ -85,6 +92,12 @@ export const POST = withAuth(async (req, { userId }) => {
       // Le prix a été lu pour game.currentDate : refuser si la partie a avancé entre-temps
       if (lockedGame.currentDate !== game.currentDate) {
         throw new ValidationError(api.dateChanged);
+      }
+
+      // Même ordre envoyé deux fois en même temps : le second attendait le verrou
+      const duplicate = await findClientOrder(tx, gameId, orderId);
+      if (duplicate) {
+        throw new DuplicateOrderError(gameId, duplicate);
       }
 
       // 4. Valider l'ordre et lire la position, sous verrou (en parallèle)
@@ -150,6 +163,7 @@ export const POST = withAuth(async (req, { userId }) => {
             fee: preview.feeAmount.toFixed(2),
             total: preview.total.toFixed(2),
             transactionDate: lockedGame.currentDate,
+            clientOrderId: orderId ?? null,
           })
           .returning(),
       ]);
@@ -158,7 +172,12 @@ export const POST = withAuth(async (req, { userId }) => {
     });
 
     // 8. Succès et état de la partie (la page n'a pas à la relire)
-    const { state, achievementsUnlocked } = await settleAction(updatedGame);
+    // L'ordre est enregistré : un échec du recalcul ne doit pas le faire passer pour
+    // refusé (le joueur réessaierait). Sans état, la page relit la partie.
+    const { state, achievementsUnlocked } = await settleAction(updatedGame).catch((error) => {
+      console.error('[API] Recalcul après ordre impossible :', error);
+      return { state: null, achievementsUnlocked: [] };
+    });
 
     return NextResponse.json(
       {
@@ -176,6 +195,10 @@ export const POST = withAuth(async (req, { userId }) => {
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof DuplicateOrderError) {
+      return duplicateOrderResponse(error.gameId, error.transaction);
+    }
+
     if (error instanceof ValidationError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }

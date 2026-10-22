@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users, games, transactions } from '@/lib/db/schema';
 import { eq, sql, count } from 'drizzle-orm';
-import { marketDb } from '@/lib/market/db';
+import { marketQuery } from '@/lib/market/db';
 import { checkAdmin } from '@/lib/auth/session';
 import type { MonitoringData } from '@/types/api';
 
@@ -48,15 +48,15 @@ export async function GET() {
       db.select({ count: count() }).from(games),
       db.select({ count: count() }).from(games).where(eq(games.status, 'active')),
       db.select({ count: count() }).from(transactions),
-      marketDb`
+      marketQuery(sql`
         SELECT MIN(date)::text AS oldest_date, MAX(date)::text AS newest_date, COUNT(*)::int AS total_rows
         FROM prices
-      `,
-      marketDb`
+      `),
+      marketQuery(sql`
         SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE is_active)::int AS active
         FROM assets
-      `,
-      marketDb`SELECT value FROM settings WHERE key = 'last_data_update'`,
+      `),
+      marketQuery(sql`SELECT value FROM settings WHERE key = 'last_data_update'`),
     ]);
 
     // 3. Construire la réponse
