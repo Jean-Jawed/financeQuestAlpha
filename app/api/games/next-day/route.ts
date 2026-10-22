@@ -11,6 +11,7 @@ import { games } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { advanceToNextDay } from '@/lib/game/next-day';
 import { z } from 'zod';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // VALIDATION SCHEMA
@@ -25,6 +26,8 @@ const nextDaySchema = z.object({
 // ==========================================
 
 export const POST = withAuth(async (req, { userId }) => {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // 1. Parser et valider le body
     const body = await req.json();
@@ -33,7 +36,7 @@ export const POST = withAuth(async (req, { userId }) => {
     if (!validation.success) {
       const errors = validation.error.errors.map((err) => err.message);
       return NextResponse.json(
-        { error: 'Validation failed', details: errors },
+        { error: api.validationFailed, details: errors },
         { status: 400 }
       );
     }
@@ -46,13 +49,13 @@ export const POST = withAuth(async (req, { userId }) => {
     });
 
     if (!game) {
-      return NextResponse.json({ error: 'Game non trouvé' }, { status: 404 });
+      return NextResponse.json({ error: api.gameNotFound }, { status: 404 });
     }
 
     await requireOwnership(userId, game.userId);
 
     // 3. Avancer d'un jour
-    const result = await advanceToNextDay(gameId);
+    const result = await advanceToNextDay(game);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
@@ -63,18 +66,18 @@ export const POST = withAuth(async (req, { userId }) => {
       success: true,
       data: {
         newDate: result.newDate,
-        portfolio: result.portfolio,
+        state: result.state,
         achievementsUnlocked: result.achievementsUnlocked || [],
       },
-      message: `Avancé au ${result.newDate}`,
+      message: fmt(api.advanced, { date: f.date(result.newDate!) }),
     });
   } catch (error) {
     console.error('[API] Next day error:', error);
 
     if (error instanceof Error && error.message === 'Forbidden: You do not own this resource') {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+      return NextResponse.json({ error: api.forbidden }, { status: 403 });
     }
 
-    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+    return NextResponse.json({ error: api.internal }, { status: 500 });
   }
 });

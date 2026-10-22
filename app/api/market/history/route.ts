@@ -6,12 +6,15 @@
 import { NextResponse } from 'next/server';
 import { getHistory } from '@/lib/market/prices';
 import { isValidSymbol } from '@/lib/market/assets';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // API HANDLER
 // ==========================================
 
 export async function GET(req: Request) {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     const { searchParams } = new URL(req.url);
     const symbol = searchParams.get('symbol');
@@ -21,20 +24,20 @@ export async function GET(req: Request) {
     // Validation
     if (!symbol || !from || !to) {
       return NextResponse.json(
-        { error: 'Paramètres manquants: symbol, from et to requis' },
+        { error: fmt(api.missingParams, { params: 'symbol, from, to' }) },
         { status: 400 }
       );
     }
 
     if (!(await isValidSymbol(symbol))) {
-      return NextResponse.json({ error: 'Symbole invalide' }, { status: 400 });
+      return NextResponse.json({ error: api.invalidSymbol }, { status: 400 });
     }
 
     // Vérifier format dates
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(from) || !dateRegex.test(to)) {
       return NextResponse.json(
-        { error: 'Format de date invalide (YYYY-MM-DD)' },
+        { error: api.invalidDate },
         { status: 400 }
       );
     }
@@ -44,7 +47,7 @@ export async function GET(req: Request) {
 
     if (!history || history.length === 0) {
       return NextResponse.json(
-        { error: 'Aucune donnée disponible pour cette période' },
+        { error: api.noHistory },
         { status: 404 }
       );
     }
@@ -68,6 +71,6 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error('[API] Get price history error:', error);
-    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+    return NextResponse.json({ error: api.internal }, { status: 500 });
   }
 }

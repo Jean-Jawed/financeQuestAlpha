@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
+import { useI18n } from '@/lib/i18n/client';
 
 // ==========================================
 // TYPES
@@ -33,6 +34,7 @@ export function Modal({
   size = 'md',
   closeOnBackdrop = true,
 }: ModalProps) {
+  const { m } = useI18n();
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Sizes
@@ -79,28 +81,32 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex animate-fade items-center justify-center p-4"
       onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div className="pointer-events-none absolute inset-0 bg-[#050b09]/80" />
 
       {/* Modal */}
       <div
         ref={modalRef}
         className={cn(
-          'relative w-full bg-slate-800/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-700',
-          'animate-in zoom-in-95 slide-in-from-bottom-4 duration-300',
+          'certificate relative max-h-[calc(100vh-2rem)] w-full overflow-y-auto shadow-lift',
+          'animate-rise',
           sizes[size]
         )}
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
-            <h2 className="text-2xl font-bold text-white">{title}</h2>
+          <div className="flex items-center justify-between gap-4 border-b border-line px-6 py-4">
+            <h2 className="font-display text-2xl font-semibold text-paper">{title}</h2>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-paper-dim transition-colors hover:text-paper"
+              aria-label={m.common.close}
             >
               <svg
                 className="w-6 h-6"
@@ -132,7 +138,7 @@ export function Modal({
 
 export function ModalFooter({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-700/50">
+    <div className="mt-6 flex items-center justify-end gap-3 border-t border-line pt-4">
       {children}
     </div>
   );

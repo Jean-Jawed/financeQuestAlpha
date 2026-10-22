@@ -16,11 +16,25 @@ if (!process.env.DATABASE_URL) {
 const connectionString = process.env.DATABASE_URL;
 
 // Client postgres.js
-const client = postgres(connectionString, {
-  max: 10, // Max connections pool
-  idle_timeout: 20, // Secondes avant fermeture connexion idle
-  connect_timeout: 10, // Timeout connexion
-});
+// - prepare: false : obligatoire derrière le pooler Supabase en mode transaction (port 6543)
+// - max: 5 : en serverless, chaque instance a son propre pool ; peu de connexions
+//   par instance évite de saturer les 60 connexions de la base
+// - En dev, le client est conservé sur globalThis pour ne pas ouvrir un nouveau
+//   pool à chaque rechargement à chaud (HMR)
+const globalForDb = globalThis as unknown as { pgClient?: postgres.Sql };
+
+const client =
+  globalForDb.pgClient ??
+  postgres(connectionString, {
+    prepare: false,
+    max: 5,
+    idle_timeout: 20, // Secondes avant fermeture connexion idle
+    connect_timeout: 10, // Timeout connexion
+  });
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForDb.pgClient = client;
+}
 
 // Client Drizzle avec schema complet
 export const db = drizzle(client, { schema });
@@ -30,3 +44,6 @@ export { schema };
 
 // Types utiles
 export type Database = typeof db;
+
+/** Client utilisable pour lire/écrire : `db` ou une transaction `tx` */
+export type DbExecutor = Database | Parameters<Parameters<Database['transaction']>[0]>[0];

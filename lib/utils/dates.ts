@@ -398,10 +398,13 @@ export function isValidGameDate(date: string): boolean {
  */
 export function formatDateDisplay(date: string, locale = 'fr-FR'): string {
   const d = parseDate(date);
+  // Les dates YYYY-MM-DD sont lues en UTC : afficher en UTC pour ne pas
+  // reculer d'un jour dans les fuseaux à l'ouest de Greenwich
   return d.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
@@ -410,7 +413,7 @@ export function formatDateDisplay(date: string, locale = 'fr-FR'): string {
  */
 export function formatDateShort(date: string, locale = 'fr-FR'): string {
   const d = parseDate(date);
-  return d.toLocaleDateString(locale);
+  return d.toLocaleDateString(locale, { timeZone: 'UTC' });
 }
 
 /**

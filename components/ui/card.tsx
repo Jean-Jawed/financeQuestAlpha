@@ -1,6 +1,6 @@
 /**
  * FINANCEQUEST - UI COMPONENT: Card
- * Composant Card avec effet glassmorphism
+ * Panneau « plaque gravée » ; variante certificate = cadre de titre au porteur
  */
 
 'use client';
@@ -13,7 +13,8 @@ import { cn } from '@/lib/utils/cn';
 // ==========================================
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'elevated' | 'glass';
+  /** glass : conservé pour compatibilité, rendu comme default */
+  variant?: 'default' | 'elevated' | 'glass' | 'certificate';
   hover?: boolean;
 }
 
@@ -25,22 +26,22 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = 'glass', hover = false, children, ...props }, ref) => {
     // Variants
     const variants = {
-      default: 'bg-slate-800 border-slate-700',
-      elevated: 'bg-slate-800 border-slate-700 shadow-2xl',
-      glass: 'bg-slate-800/50 backdrop-blur-lg border-slate-700/50',
+      default: 'panel',
+      elevated: 'panel bg-ink-3 shadow-lift',
+      glass: 'panel',
+      certificate: 'certificate',
     };
 
     return (
       <div
         ref={ref}
         className={cn(
-          // Base
-          'rounded-2xl border p-6',
-          'transition-all duration-300',
+          // Base (rayon et bordure portés par .panel / .certificate)
+          'p-6 transition-[border-color,transform] duration-200',
           // Variant
           variants[variant],
           // Hover effect
-          hover && 'hover:scale-[1.02] hover:shadow-2xl hover:shadow-cyan-500/10',
+          hover && 'hover:-translate-y-0.5 hover:border-brass/60',
           className
         )}
         {...props}
@@ -68,7 +69,7 @@ export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadi
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn('text-2xl font-bold text-white', className)}
+      className={cn('font-display text-2xl font-semibold text-paper', className)}
       {...props}
     />
   )
@@ -79,7 +80,7 @@ export const CardDescription = forwardRef<
   HTMLParagraphElement,
   HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p ref={ref} className={cn('text-slate-400 text-sm mt-1', className)} {...props} />
+  <p ref={ref} className={cn('mt-1 text-sm text-paper-dim', className)} {...props} />
 ));
 CardDescription.displayName = 'CardDescription';
 
@@ -94,7 +95,7 @@ export const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEleme
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('mt-6 pt-4 border-t border-slate-700/50', className)}
+      className={cn('mt-6 border-t border-line pt-4', className)}
       {...props}
     />
   )

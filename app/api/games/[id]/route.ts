@@ -7,18 +7,18 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
 import { requireOwnership } from '@/lib/auth/middleware';
 import { db } from '@/lib/db';
-import { games, holdings, transactions } from '@/lib/db/schema';
-import { eq, desc } from 'drizzle-orm';
-import { calculatePortfolio, calculateHoldingsValues } from '@/lib/game/calculations';
-import { getUnlockedAchievements } from '@/lib/game/achievements';
-import { getRemainingDays } from '@/lib/game/next-day';
-import { NotFoundError } from '@/lib/utils/errors';
+import { games } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { loadGameState } from '@/lib/game/state';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // API HANDLER
 // ==========================================
 
 export const GET = withAuth(async (req, { userId }, context) => {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // CORRECTION: await params avant de l'utiliser
     const { id: gameId } = await context.params;
@@ -29,72 +29,30 @@ export const GET = withAuth(async (req, { userId }, context) => {
     });
 
     if (!game) {
-      return NextResponse.json({ error: 'Game non trouvé' }, { status: 404 });
+      return NextResponse.json({ error: api.gameNotFound }, { status: 404 });
     }
 
     // 2. Vérifier ownership
     await requireOwnership(userId, game.userId);
 
-    // 3. Calculer portfolio
-    const portfolio = await calculatePortfolio(game.id, game.currentDate);
-    if (!portfolio) {
+    // 3. Portfolio, positions, transactions, succès et plage de données
+    const state = await loadGameState(game);
+
+    if (!state) {
       return NextResponse.json(
-        { error: 'Erreur lors du calcul du portfolio' },
+        { error: api.portfolioFailed },
         { status: 500 }
       );
     }
 
-    // 4. Récupérer holdings avec valeurs
-    const holdingsWithValues = await calculateHoldingsValues(game.id, game.currentDate);
-
-    // 5. Récupérer les 20 dernières transactions
-    const recentTransactions = await db.query.transactions.findMany({
-      where: eq(transactions.gameId, game.id),
-      orderBy: [desc(transactions.createdAt)],
-      limit: 20,
-    });
-
-    // 6. Récupérer achievements
-    const achievementsUnlocked = await getUnlockedAchievements(game.id);
-
-    // 7. Calculer jours restants
-    const remainingDays = getRemainingDays(game.currentDate);
-
-    // 8. Construire la réponse
-    return NextResponse.json({
-      success: true,
-      data: {
-        game: {
-          ...game,
-          portfolioValue: portfolio.portfolioValueLong,
-          shortPositionsPnl: portfolio.shortPositionsPnl,
-          totalValue: portfolio.totalValue,
-          returnPercentage: portfolio.returnPercentage,
-          score: portfolio.score,
-          achievementsUnlocked: achievementsUnlocked.length,
-          remainingDays,
-        },
-        portfolio: {
-          currentBalance: portfolio.currentBalance,
-          portfolioValueLong: portfolio.portfolioValueLong,
-          shortPositionsPnl: portfolio.shortPositionsPnl,
-          totalValue: portfolio.totalValue,
-          returnPercentage: portfolio.returnPercentage,
-          score: portfolio.score,
-          initialBalance: parseFloat(game.initialBalance),
-          profitLoss: portfolio.totalValue - parseFloat(game.initialBalance),
-        },
-        holdings: holdingsWithValues,
-        recentTransactions,
-      },
-    });
+    return NextResponse.json({ success: true, data: state });
   } catch (error) {
     console.error('[API] Get game error:', error);
 
     if (error instanceof Error && error.message === 'Forbidden: You do not own this resource') {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+      return NextResponse.json({ error: api.forbidden }, { status: 403 });
     }
 
-    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+    return NextResponse.json({ error: api.internal }, { status: 500 });
   }
 });

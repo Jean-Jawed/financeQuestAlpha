@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { signIn } from '@/lib/auth/session';
 import { z } from 'zod';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // VALIDATION SCHEMA
@@ -21,6 +22,8 @@ const loginSchema = z.object({
 // ==========================================
 
 export async function POST(req: Request) {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // 1. Parser et valider le body
     const body = await req.json();
@@ -29,7 +32,7 @@ export async function POST(req: Request) {
     if (!validation.success) {
       const errors = validation.error.errors.map((err) => err.message);
       return NextResponse.json(
-        { error: 'Validation failed', details: errors },
+        { error: api.validationFailed, details: errors },
         { status: 400 }
       );
     }
@@ -42,7 +45,7 @@ export async function POST(req: Request) {
     if (!result.success) {
       // Message générique pour ne pas révéler si l'email existe
       return NextResponse.json(
-        { error: 'Email ou mot de passe incorrect' },
+        { error: api.invalidCredentials },
         { status: 401 }
       );
     }
@@ -51,12 +54,12 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       user: result.user,
-      message: 'Connexion réussie',
+      message: api.loggedIn,
     });
   } catch (error) {
     console.error('[API] Login error:', error);
     return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
+      { error: api.internal },
       { status: 500 }
     );
   }

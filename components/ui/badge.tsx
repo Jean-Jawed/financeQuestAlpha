@@ -7,6 +7,7 @@
 
 import { HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils/cn';
+import { useI18n } from '@/lib/i18n/client';
 
 // ==========================================
 // TYPES
@@ -30,23 +31,23 @@ export function Badge({
 }: BadgeProps) {
   // Variants
   const variants = {
-    success: 'bg-green-500/10 text-green-400 border-green-500/20',
-    danger: 'bg-red-500/10 text-red-400 border-red-500/20',
-    warning: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-    info: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-    neutral: 'bg-slate-700/50 text-slate-300 border-slate-600/50',
+    success: 'bg-gain/10 text-gain border-gain/40',
+    danger: 'bg-loss/10 text-loss border-loss/40',
+    warning: 'bg-brass/10 text-brass-bright border-brass/40',
+    info: 'bg-paper/5 text-paper border-line-strong',
+    neutral: 'bg-transparent text-paper-dim border-line-strong',
   };
 
   // Sizes
   const sizes = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-3 py-1 text-sm',
+    sm: 'px-1.5 py-px text-[11px]',
+    md: 'px-2 py-0.5 text-xs',
   };
 
   return (
     <span
       className={cn(
-        'inline-flex items-center font-semibold rounded-full border',
+        'inline-flex items-center whitespace-nowrap rounded-sm border font-label font-semibold uppercase tracking-[0.1em]',
         variants[variant],
         sizes[size],
         className
@@ -62,13 +63,14 @@ export function Badge({
  * Badge pour afficher les performances (avec couleur auto)
  */
 export function PerformanceBadge({ value }: { value: number }) {
+  const { f } = useI18n();
   const variant = value > 0 ? 'success' : value < 0 ? 'danger' : 'neutral';
-  const sign = value > 0 ? '+' : '';
+  // Flèche en plus de la couleur : lisible sans distinguer rouge et vert
+  const arrow = value > 0 ? '▲' : value < 0 ? '▼' : '■';
 
   return (
-    <Badge variant={variant}>
-      {sign}
-      {value.toFixed(2)}%
+    <Badge variant={variant} className="num normal-case tracking-normal">
+      {arrow} {f.percent(value, 2)}
     </Badge>
   );
 }
@@ -77,11 +79,7 @@ export function PerformanceBadge({ value }: { value: number }) {
  * Badge pour afficher les statuts de game
  */
 export function GameStatusBadge({ status }: { status: 'active' | 'paused' | 'completed' }) {
-  const labels = {
-    active: 'Actif',
-    paused: 'En pause',
-    completed: 'Terminé',
-  };
+  const { m } = useI18n();
 
   const variants = {
     active: 'success' as const,
@@ -89,5 +87,5 @@ export function GameStatusBadge({ status }: { status: 'active' | 'paused' | 'com
     completed: 'neutral' as const,
   };
 
-  return <Badge variant={variants[status]}>{labels[status]}</Badge>;
+  return <Badge variant={variants[status]}>{m.status[status]}</Badge>;
 }

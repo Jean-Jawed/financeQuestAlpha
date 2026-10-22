@@ -2,13 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #0f172a;
-  --foreground: #f8fafc;
+/* ==========================================
+   LA CORBEILLE — styles de base
+   Jetons dans tailwind.config.ts
+   ========================================== */
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ink font-sans text-paper antialiased;
+    /* Grain de papier très léger : texture imprimée, pas un aplat numérique */
+    background-image:
+      radial-gradient(ellipse 120% 60% at 50% -10%, rgb(201 164 92 / 0.07), transparent 60%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .94 0 0 0 0 .9 0 0 0 0 .82 0 0 0 .035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-brass text-ink;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brass ring-offset-2 ring-offset-ink;
+  }
+
+  /* Champs date et nombre : rester dans la palette */
+  input[type='date']::-webkit-calendar-picker-indicator {
+    filter: invert(88%) sepia(12%) saturate(300%) hue-rotate(5deg);
+    cursor: pointer;
+  }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: system-ui, -apple-system, sans-serif;
+@layer components {
+  /* Étiquette « tableau d'affichage » : capitales condensées espacées */
+  .label {
+    @apply font-label text-xs font-semibold uppercase tracking-label text-paper-dim;
+  }
+
+  /* Chiffres de cotation : chasse fixe, colonnes stables */
+  .num {
+    @apply font-mono tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* Panneau : plaque gravée sur le fond d'encre */
+  .panel {
+    @apply rounded border border-line bg-ink-2 shadow-plate;
+  }
+
+  /* Cadre de titre au porteur : double filet laiton */
+  .certificate {
+    @apply relative rounded border border-brass/50 bg-ink-2 shadow-plate;
+    outline: 1px solid rgb(201 164 92 / 0.22);
+    outline-offset: -6px;
+  }
+
+  /* Filet décoratif centré avec losange */
+  .rule-ornament {
+    @apply flex items-center gap-3 text-brass/70;
+  }
+  .rule-ornament::before,
+  .rule-ornament::after {
+    content: '';
+    @apply h-px flex-1 bg-gradient-to-r from-transparent via-brass/40 to-transparent;
+  }
+
+  /* Bord perforé (ticket d'ordre) */
+  .perforated {
+    mask-image: radial-gradient(circle 5px at 50% 0, transparent 98%, #000 100%);
+    mask-size: 16px 100%;
+    mask-repeat: repeat-x;
+  }
+
+  /* Tampon encreur */
+  .stamp {
+    @apply inline-block rounded-sm border-[3px] px-3 py-1 font-label text-lg font-bold uppercase tracking-label;
+    transform: rotate(-8deg);
+    mix-blend-mode: screen;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cfilter id='g'%3E%3CfeTurbulence baseFrequency='.7' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+
+  /* Gravure posée sur le fond (images de public/gravures) */
+  .engraving {
+    @apply pointer-events-none select-none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -17,8 +17,6 @@ if (!supabaseAnonKey) {
   throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
 }
 
-console.log('[Supabase Client] Initializing with URL:', supabaseUrl);
-
 /**
  * Client Supabase pour le browser
  * Usage: composants Client Components uniquement

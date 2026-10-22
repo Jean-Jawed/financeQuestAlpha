@@ -12,8 +12,12 @@
  * 
  * @example
  * formatCurrency(1234.56) // "1 234,56 €"
- * formatCurrency(1234.56, 'USD') // "$1,234.56"
+ * formatCurrency(1234.56, 'USD') // "1 234,56 $US"
+ * formatCurrency(150000, 'JPY') // "150 000 ¥"
  */
+/** Symbole court sans ambiguïté (€, £, ¥) ; les dollars restent qualifiés ($US, $CA, $AU) */
+const NARROW_SYMBOL_CURRENCIES = new Set(['EUR', 'GBP', 'JPY']);
+
 export function formatCurrency(
   amount: number,
   currency: string = 'EUR',
@@ -22,6 +26,7 @@ export function formatCurrency(
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
+    currencyDisplay: NARROW_SYMBOL_CURRENCIES.has(currency) ? 'narrowSymbol' : 'symbol',
   }).format(amount);
 }
 
@@ -71,8 +76,8 @@ export function formatPriceShort(amount: number): string {
  * Formater un pourcentage
  * 
  * @example
- * formatPercentage(12.3456) // "+12,35%"
- * formatPercentage(-5.12) // "-5,12%"
+ * formatPercentage(12.3456) // "+12,35 %"
+ * formatPercentage(-5.12) // "-5,12 %"
  */
 export function formatPercentage(
   value: number,
@@ -80,8 +85,12 @@ export function formatPercentage(
   showSign: boolean = true
 ): string {
   const sign = showSign && value > 0 ? '+' : '';
-  const formatted = value.toFixed(decimals);
-  return `${sign}${formatted}%`;
+  const formatted = value.toLocaleString('fr-FR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+  // Espace insécable avant % (typographie française)
+  return `${sign}${formatted} %`;
 }
 
 /**

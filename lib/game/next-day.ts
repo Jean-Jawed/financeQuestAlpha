@@ -4,11 +4,13 @@
  */
 
 import { db } from '@/lib/db';
-import { games } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { nextBusinessDay, getTodayDate, isAfter } from '@/lib/utils/dates';
-import { calculatePortfolio } from './calculations';
-import { checkAndUnlockAchievements } from './achievements';
+import { games, type Game } from '@/lib/db/schema';
+import { and, eq } from 'drizzle-orm';
+import { getApiI18n } from '@/lib/i18n/server';
+import { getNextTradingDate } from '@/lib/market/calendar';
+import { daysBetween } from './achievement-rules';
+import { settleAction } from './state';
+import type { GameState } from '@/types/game';
 
 // ==========================================
 // TYPES
@@ -17,12 +19,8 @@ import { checkAndUnlockAchievements } from './achievements';
 export interface NextDayResult {
   success: boolean;
   newDate?: string;
-  portfolio?: {
-    totalValue: number;
-    returnPercentage: number;
-    portfolioValueLong: number;
-    shortPositionsPnl: number;
-  };
+  /** État de la partie après la séance (la page n'a pas à la relire) */
+  state?: GameState;
   achievementsUnlocked?: Array<{ name: string; points: number }>;
   error?: string;
 }
@@ -33,141 +31,68 @@ export interface NextDayResult {
 
 /**
  * Avancer d'un jour dans le game
- * - Skip les week-ends automatiquement
- * - Recalcule le portfolio
- * - Vérifie les achievements
- * 
- * @param gameId - ID du game
+ * - Prochain jour de bourse d'après la base prix (week-ends et fériés sautés)
+ * - S'arrête à la dernière date disponible dans la base prix
+ * - Vérifie les achievements et renvoie l'état complet de la partie
+ *
+ * @param game - Ligne games, déjà lue par l'appelant (contrôle de propriété)
  * @returns Résultat de l'opération
  */
-export async function advanceToNextDay(gameId: string): Promise<NextDayResult> {
+export async function advanceToNextDay(game: Game): Promise<NextDayResult> {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
-    console.log(`[NextDay] Starting for game ${gameId}`);
-
-    // 1. Récupérer le game
-    const game = await db.query.games.findFirst({
-      where: eq(games.id, gameId),
-    });
-
-    if (!game) {
-      return { success: false, error: 'Game non trouvé' };
-    }
-
-    // 2. Vérifier que le game est actif
+    // 1. Vérifier que le game est actif
     if (game.status !== 'active') {
-      return { success: false, error: 'Le game n\'est pas actif' };
+      return { success: false, error: api.gameInactive };
     }
 
-    // 3. Calculer la date suivante (skip week-ends)
-    const nextDate = nextBusinessDay(game.currentDate);
-    console.log(`[NextDay] Current: ${game.currentDate}, Next: ${nextDate}`);
+    // 2. Prochain jour de bourse disponible
+    const nextDate = await getNextTradingDate(game.currentDate);
 
-    // 4. Vérifier que la nouvelle date ne dépasse pas aujourd'hui
-    const today = getTodayDate();
-    if (isAfter(nextDate, today)) {
+    if (!nextDate) {
       return {
         success: false,
-        error: 'Vous avez atteint la date actuelle. Impossible d\'avancer plus loin.',
+        error: fmt(api.endOfData, { date: f.date(game.currentDate) }),
       };
     }
 
-    // 5. Recalculer le portfolio à la nouvelle date
-    console.log('[NextDay] Calculating portfolio at new date');
-    const portfolioCalc = await calculatePortfolio(gameId, nextDate);
-
-    if (!portfolioCalc) {
-      return { success: false, error: 'Erreur lors du calcul du portfolio' };
-    }
-
-    // 6. Mettre à jour le game
-    await db
+    // 3. Mettre à jour le game, seulement s'il est encore à la date lue
+    //    (un double-clic ne fait pas sauter deux jours)
+    const [updatedGame] = await db
       .update(games)
       .set({
         currentDate: nextDate,
         updatedAt: new Date(),
       })
-      .where(eq(games.id, gameId));
+      .where(and(eq(games.id, game.id), eq(games.currentDate, game.currentDate)))
+      .returning();
 
-    console.log(`[NextDay] Game updated to ${nextDate}`);
+    if (!updatedGame) {
+      return { success: false, error: api.alreadyAdvanced };
+    }
 
-    // 7. Vérifier les achievements
-    console.log('[NextDay] Checking achievements');
-    const unlockedAchievements = await checkAndUnlockAchievements(gameId);
+    // 4. Portfolio à la nouvelle date, succès et état de la partie
+    //    (la séance est passée même si l'état manque : la page le relira)
+    const { state, achievementsUnlocked } = await settleAction(updatedGame);
 
-    // 8. Retourner le résultat
-    return {
-      success: true,
-      newDate: nextDate,
-      portfolio: {
-        totalValue: portfolioCalc.totalValue,
-        returnPercentage: portfolioCalc.returnPercentage,
-        portfolioValueLong: portfolioCalc.portfolioValueLong,
-        shortPositionsPnl: portfolioCalc.shortPositionsPnl,
-      },
-      achievementsUnlocked: unlockedAchievements.map((a) => ({
-        name: a.achievement.name,
-        points: a.achievement.points,
-      })),
-    };
+    return { success: true, newDate: nextDate, state: state ?? undefined, achievementsUnlocked };
   } catch (error) {
     console.error('[NextDay] Error:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Erreur inconnue',
+      error: api.internal,
     };
   }
 }
 
 /**
- * Avancer de plusieurs jours d'un coup (pour tests ou fast-forward)
- * 
- * @param gameId - ID du game
- * @param days - Nombre de jours à avancer
- * @returns Résultat final
- */
-export async function advanceMultipleDays(
-  gameId: string,
-  days: number
-): Promise<NextDayResult> {
-  try {
-    let lastResult: NextDayResult = { success: false };
-
-    for (let i = 0; i < days; i++) {
-      lastResult = await advanceToNextDay(gameId);
-
-      if (!lastResult.success) {
-        break;
-      }
-    }
-
-    return lastResult;
-  } catch (error) {
-    console.error('[NextDay] Error advancing multiple days:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Erreur inconnue',
-    };
-  }
-}
-
-/**
- * Vérifier combien de jours restent jusqu'à aujourd'hui
- * 
+ * Nombre de jours calendaires restants jusqu'à la fin des données de marché
+ *
  * @param currentDate - Date actuelle du game
- * @returns Nombre de jours ouvrables restants
+ * @param endDate - Dernière date de la base prix (voir getPriceCoverage)
+ * @returns Nombre de jours restants (0 si la fin est atteinte)
  */
-export function getRemainingDays(currentDate: string): number {
-  const today = getTodayDate();
-  let count = 0;
-  let date = currentDate;
-
-  while (!isAfter(date, today)) {
-    date = nextBusinessDay(date);
-    count++;
-
-    // Sécurité : limite à 10000 jours
-    if (count > 10000) break;
-  }
-
-  return count - 1; // -1 car on compte jusqu'à aujourd'hui inclus
+export function getRemainingDays(currentDate: string, endDate: string): number {
+  return Math.max(daysBetween(currentDate, endDate), 0);
 }

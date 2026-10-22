@@ -11,17 +11,20 @@ import { db } from '@/lib/db';
 import { games, holdings, transactions } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { validateSell } from '@/lib/game/validations';
-import { calculateTransactionPreview, calculatePortfolio } from '@/lib/game/calculations';
-import { checkAndUnlockAchievements } from '@/lib/game/achievements';
-import { getPrice } from '@/lib/market/prices';
+import { calculateTransactionPreview } from '@/lib/game/calculations';
+import { settleAction } from '@/lib/game/state';
+import { getQuote } from '@/lib/market/prices';
 import { sellSchema, validateTradeInputSafe } from '@/lib/game/trade-schemas';
 import { ValidationError } from '@/lib/utils/errors';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // API HANDLER
 // ==========================================
 
 export const POST = withAuth(async (req, { userId }) => {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // 1. Parser et valider le body
     const body = await req.json();
@@ -29,7 +32,7 @@ export const POST = withAuth(async (req, { userId }) => {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Validation failed', details: validation.errors },
+        { error: api.validationFailed, details: validation.errors },
         { status: 400 }
       );
     }
@@ -42,110 +45,107 @@ export const POST = withAuth(async (req, { userId }) => {
     });
 
     if (!game) {
-      return NextResponse.json({ error: 'Game non trouvé' }, { status: 404 });
+      return NextResponse.json({ error: api.gameNotFound }, { status: 404 });
     }
 
     await requireOwnership(userId, game.userId);
 
-    // 3. Récupérer le prix actuel
-    const priceData = await getPrice(symbol, game.currentDate);
-    if (!priceData || !priceData.close_price) {
+    // 3. Récupérer le cours actuel, converti dans la devise de la partie
+    const quote = await getQuote(symbol, game.currentDate, game.currency);
+    if (!quote || !quote.price) {
       return NextResponse.json(
-        { error: 'Prix non disponible pour cet actif' },
+        { error: api.priceUnavailable },
         { status: 404 }
       );
     }
-    const currentPrice = priceData.close_price;
+    const currentPrice = quote.price;
 
-    // 4 à 9 : dans une transaction SQL. Le verrou FOR UPDATE sur la partie
+    // Dans une transaction SQL. Le verrou FOR UPDATE sur la partie
     // sérialise les ordres concurrents : impossible de vendre deux fois
     // la même position.
     const transactionFees = game.settings.transaction_fees;
 
-    const { newBalance, updatedHolding, transaction } = await db.transaction(async (tx) => {
+    const { newBalance, updatedGame, updatedHolding, transaction } = await db.transaction(async (tx) => {
       const [lockedGame] = await tx
         .select()
         .from(games)
         .where(eq(games.id, gameId))
         .for('update');
 
-      // 4. Valider l'ordre de vente (après obtention du verrou)
-      const validationResult = await validateSell(gameId, symbol, quantity);
+      // Le prix a été lu pour game.currentDate : refuser si la partie a avancé entre-temps
+      if (lockedGame.currentDate !== game.currentDate) {
+        throw new ValidationError(api.dateChanged);
+      }
+
+      // 4. Valider l'ordre et lire la position, sous verrou (en parallèle)
+      const [validationResult, holding] = await Promise.all([
+        validateSell(gameId, symbol, quantity, tx),
+        tx.query.holdings.findFirst({
+          where: and(eq(holdings.gameId, gameId), eq(holdings.symbol, symbol), eq(holdings.isShort, false)),
+        }),
+      ]);
 
       if (!validationResult.valid) {
-        throw new ValidationError(validationResult.error ?? 'Ordre invalide');
+        throw new ValidationError(validationResult.error ?? api.invalidOrder);
       }
-
-      // 5. Récupérer le holding
-      const holding = await tx.query.holdings.findFirst({
-        where: and(eq(holdings.gameId, gameId), eq(holdings.symbol, symbol), eq(holdings.isShort, false)),
-      });
 
       if (!holding) {
-        throw new ValidationError('Position non trouvée');
+        throw new ValidationError(api.positionNotFound);
       }
 
-      // 6. Calculer les montants
+      // 5. Calculer les montants
       const preview = calculateTransactionPreview('sell', quantity, currentPrice, transactionFees);
-
-      // 7. Mettre à jour le solde
       const newBalance = parseFloat(lockedGame.currentBalance) + preview.balanceChange;
 
-      await tx
-        .update(games)
-        .set({
-          currentBalance: newBalance.toFixed(2),
-          updatedAt: new Date(),
-        })
-        .where(eq(games.id, gameId));
-
-      // 8. Mettre à jour ou supprimer le holding
+      // 6. Réduire le holding, ou le supprimer s'il est soldé
       const remainingQuantity = parseFloat(holding.quantity) - quantity;
-      let updatedHolding;
+      const holdingWrite =
+        remainingQuantity <= 0.00000001
+          ? tx.delete(holdings).where(eq(holdings.id, holding.id)).then(() => [null])
+          : tx
+              .update(holdings)
+              .set({
+                quantity: remainingQuantity.toFixed(8),
+                updatedAt: new Date(),
+              })
+              .where(eq(holdings.id, holding.id))
+              .returning();
 
-      if (remainingQuantity <= 0.00000001) {
-        // Supprimer le holding si quantité = 0
-        await tx.delete(holdings).where(eq(holdings.id, holding.id));
-        updatedHolding = null;
-      } else {
-        // Réduire la quantité
-        [updatedHolding] = await tx
-          .update(holdings)
+      // 7. Solde, holding et transaction : écritures indépendantes, envoyées ensemble
+      const [[updatedGame], [updatedHolding], [transaction]] = await Promise.all([
+        tx
+          .update(games)
           .set({
-            quantity: remainingQuantity.toFixed(8),
+            currentBalance: newBalance.toFixed(2),
             updatedAt: new Date(),
           })
-          .where(eq(holdings.id, holding.id))
-          .returning();
-      }
+          .where(eq(games.id, gameId))
+          .returning(),
+        holdingWrite,
+        tx
+          .insert(transactions)
+          .values({
+            gameId,
+            symbol,
+            type: 'sell',
+            quantity: quantity.toFixed(8),
+            price: currentPrice.toFixed(6),
+            assetCurrency: quote.assetCurrency,
+            assetPrice: quote.assetPrice.toFixed(6),
+            fxRate: quote.fxRate.toFixed(10),
+            fee: preview.feeAmount.toFixed(2),
+            total: preview.total.toFixed(2),
+            transactionDate: lockedGame.currentDate,
+          })
+          .returning(),
+      ]);
 
-      // 9. Enregistrer la transaction
-      const [transaction] = await tx
-        .insert(transactions)
-        .values({
-          gameId,
-          symbol,
-          type: 'sell',
-          quantity: quantity.toFixed(8),
-          price: currentPrice.toFixed(6),
-          fee: preview.feeAmount.toFixed(2),
-          total: preview.total.toFixed(2),
-          transactionDate: lockedGame.currentDate,
-        })
-        .returning();
-
-      return { newBalance, updatedHolding, transaction };
+      return { newBalance, updatedGame, updatedHolding, transaction };
     });
 
-    console.log(`[API] Sell executed: ${quantity} ${symbol} @ ${currentPrice}`);
+    // 8. Succès et état de la partie (la page n'a pas à la relire)
+    const { state, achievementsUnlocked } = await settleAction(updatedGame);
 
-    // 10. Vérifier achievements
-    const achievementsUnlocked = await checkAndUnlockAchievements(gameId);
-
-    // 11. Recalculer portfolio
-    const portfolio = await calculatePortfolio(gameId, game.currentDate);
-
-    // 12. Retourner le résultat
     return NextResponse.json(
       {
         success: true,
@@ -153,20 +153,10 @@ export const POST = withAuth(async (req, { userId }) => {
           transaction,
           holding: updatedHolding,
           newBalance,
-          portfolio: portfolio
-            ? {
-              totalValue: portfolio.totalValue,
-              returnPercentage: portfolio.returnPercentage,
-              portfolioValueLong: portfolio.portfolioValueLong,
-              shortPositionsPnl: portfolio.shortPositionsPnl,
-            }
-            : undefined,
-          achievementsUnlocked: achievementsUnlocked.map((a) => ({
-            name: a.achievement.name,
-            points: a.achievement.points,
-          })),
+          state,
+          achievementsUnlocked,
         },
-        message: `Vente réussie: ${quantity} ${symbol}`,
+        message: fmt(api.sellDone, { quantity: f.quantity(quantity), symbol }),
       },
       { status: 200 }
     );
@@ -178,9 +168,9 @@ export const POST = withAuth(async (req, { userId }) => {
     console.error('[API] Sell error:', error);
 
     if (error instanceof Error && error.message === 'Forbidden: You do not own this resource') {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+      return NextResponse.json({ error: api.forbidden }, { status: 403 });
     }
 
-    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+    return NextResponse.json({ error: api.internal }, { status: 500 });
   }
 });

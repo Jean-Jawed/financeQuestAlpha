@@ -16,11 +16,25 @@ if (!connectionString) {
 }
 
 // Client connection pool
-export const marketDb = postgres(connectionString, {
-    max: 10,
-    idle_timeout: 20,
-    connect_timeout: 10,
-});
+// - prepare: false : obligatoire derrière le pooler Supabase en mode transaction (port 6543)
+// - max: 5 : en serverless, chaque instance a son propre pool ; peu de connexions
+//   par instance évite de saturer les 60 connexions de la base
+// - En dev, le client est conservé sur globalThis pour ne pas ouvrir un nouveau
+//   pool à chaque rechargement à chaud (HMR)
+const globalForMarketDb = globalThis as unknown as { marketDb?: postgres.Sql };
+
+export const marketDb =
+    globalForMarketDb.marketDb ??
+    postgres(connectionString, {
+        prepare: false,
+        max: 5,
+        idle_timeout: 20,
+        connect_timeout: 10,
+    });
+
+if (process.env.NODE_ENV !== 'production') {
+    globalForMarketDb.marketDb = marketDb;
+}
 
 // ==========================================
 // TYPES (Mirroring DB Schema)

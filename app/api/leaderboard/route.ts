@@ -8,6 +8,7 @@ import { db } from '@/lib/db';
 import { games, users } from '@/lib/db/schema';
 import { eq, desc, and, gte } from 'drizzle-orm';
 import { calculatePortfolio } from '@/lib/game/calculations';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // TYPES
@@ -20,6 +21,8 @@ type Period = 'all_time' | 'monthly' | 'weekly';
 // ==========================================
 
 export async function GET(req: Request) {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     const { searchParams } = new URL(req.url);
     const period = (searchParams.get('period') || 'all_time') as Period;
@@ -27,11 +30,11 @@ export async function GET(req: Request) {
 
     // Validation
     if (!['all_time', 'monthly', 'weekly'].includes(period)) {
-      return NextResponse.json({ error: 'Period invalide' }, { status: 400 });
+      return NextResponse.json({ error: api.invalidPeriod }, { status: 400 });
     }
 
     if (limit < 1 || limit > 100) {
-      return NextResponse.json({ error: 'Limit doit être entre 1 et 100' }, { status: 400 });
+      return NextResponse.json({ error: api.invalidLimit }, { status: 400 });
     }
 
     // Date filters
@@ -67,8 +70,6 @@ export async function GET(req: Request) {
       limit: limit * 2, // Fetch plus pour compenser les erreurs de calcul
     });
 
-    console.log(`[Leaderboard] Found ${activeGames.length} active games for ${period}`);
-
     // Calculer les scores pour chaque game
     const entries = await Promise.all(
       activeGames.map(async (game) => {
@@ -84,6 +85,7 @@ export async function GET(req: Request) {
             gameId: game.id,
             userName: game.user.name,
             totalValue: portfolio.totalValue,
+            currency: game.currency,
             returnPercentage: portfolio.returnPercentage,
             score: portfolio.score,
             startDate: game.startDate,
@@ -118,6 +120,6 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error('[API] Leaderboard error:', error);
-    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+    return NextResponse.json({ error: api.internal }, { status: 500 });
   }
 }

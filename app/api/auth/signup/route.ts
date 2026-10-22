@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { signUp, emailExists } from '@/lib/auth/session';
 import { z } from 'zod';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // VALIDATION SCHEMA
@@ -30,6 +31,8 @@ const signupSchema = z.object({
 // ==========================================
 
 export async function POST(req: Request) {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // 1. Parser et valider le body
     const body = await req.json();
@@ -38,7 +41,7 @@ export async function POST(req: Request) {
     if (!validation.success) {
       const errors = validation.error.errors.map((err) => err.message);
       return NextResponse.json(
-        { error: 'Validation failed', details: errors },
+        { error: api.validationFailed, details: errors },
         { status: 400 }
       );
     }
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
     const exists = await emailExists(email);
     if (exists) {
       return NextResponse.json(
-        { error: 'Cet email est déjà utilisé' },
+        { error: api.emailTaken },
         { status: 409 }
       );
     }
@@ -69,14 +72,14 @@ export async function POST(req: Request) {
       {
         success: true,
         user: result.user,
-        message: 'Compte créé avec succès',
+        message: api.accountCreated,
       },
       { status: 201 }
     );
   } catch (error) {
     console.error('[API] Signup error:', error);
     return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
+      { error: api.internal },
       { status: 500 }
     );
   }

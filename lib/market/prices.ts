@@ -5,6 +5,29 @@
  */
 
 import { marketDb, type Price } from './db';
+import { getUsdRates } from './fx';
+import { fxRate } from '@/lib/game/currency';
+
+// ==========================================
+// TYPES
+// ==========================================
+
+/** Cours d'un actif converti dans la devise de la partie */
+export interface Quote {
+  symbol: string;
+  /** Date du cours (dernier cours ≤ date demandée) */
+  date: string;
+  /** Devise de cotation de l'actif */
+  assetCurrency: string;
+  /** Cours de clôture dans la devise de l'actif */
+  assetPrice: number;
+  /** Unités de devise de jeu pour 1 unité de devise de l'actif */
+  fxRate: number;
+  /** Cours dans la devise de la partie */
+  price: number;
+  /** Variation depuis la clôture précédente, en % (null : pas de cours précédent) */
+  changePercent: number | null;
+}
 
 // ==========================================
 // DATA FETCHING
@@ -103,6 +126,87 @@ export async function getLatestPrices(
   });
 
   return map;
+}
+
+// ==========================================
+// QUOTES (prix convertis dans la devise de jeu)
+// ==========================================
+
+/**
+ * Derniers cours d'une liste d'actifs, convertis dans la devise de la partie
+ * Deux requêtes en parallèle : cours (et clôture précédente) + devise de chaque actif, taux du jour
+ * (en cache). Un actif sans taux de change est ignoré, comme un actif sans prix.
+ */
+export async function getQuotes(
+  symbols: string[],
+  date: string,
+  currency: string
+): Promise<Map<string, Quote>> {
+  if (symbols.length === 0) return new Map();
+
+  const [rows, rates] = await Promise.all([
+    marketDb`
+      SELECT a.symbol, c.code AS currency_code, p.date, p.close_price, prev.close_price AS previous_close
+      FROM assets a
+      JOIN currencies c ON c.id = a.currency_id
+      CROSS JOIN LATERAL (
+        SELECT date, close_price
+        FROM prices
+        WHERE asset_id = a.id
+          AND date <= ${date}
+        ORDER BY date DESC
+        LIMIT 1
+      ) p
+      LEFT JOIN LATERAL (
+        SELECT close_price
+        FROM prices
+        WHERE asset_id = a.id
+          AND date < p.date
+        ORDER BY date DESC
+        LIMIT 1
+      ) prev ON true
+      WHERE a.symbol IN ${marketDb(symbols)}
+    `,
+    getUsdRates(date),
+  ]);
+
+  const quotes = new Map<string, Quote>();
+  for (const row of rows) {
+    const assetCurrency = String(row.currency_code).trim();
+    const assetPrice = Number(row.close_price);
+    const previousClose = row.previous_close === null ? null : Number(row.previous_close);
+    const rate = fxRate(assetCurrency, currency, rates);
+
+    if (rate === null) {
+      console.warn(`[Prices] Pas de taux ${assetCurrency}→${currency} au ${date} (${row.symbol})`);
+      continue;
+    }
+
+    quotes.set(row.symbol, {
+      symbol: row.symbol,
+      date: row.date instanceof Date ? row.date.toISOString().split('T')[0] : row.date,
+      assetCurrency,
+      assetPrice,
+      fxRate: rate,
+      price: assetPrice * rate,
+      // Variation du cours d'origine (hors effet de change)
+      changePercent: previousClose && previousClose > 0 ? ((assetPrice - previousClose) / previousClose) * 100 : null,
+    });
+  }
+
+  return quotes;
+}
+
+/**
+ * Dernier cours d'un actif, converti dans la devise de la partie
+ */
+export async function getQuote(
+  symbol: string,
+  date: string,
+  currency: string
+): Promise<Quote | null> {
+  const quotes = await getQuotes([symbol], date, currency);
+  return quotes.get(symbol) ?? null;
 }
 
 // ==========================================

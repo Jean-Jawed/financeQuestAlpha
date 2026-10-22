@@ -1,13 +1,13 @@
 /**
  * FINANCEQUEST - COMPONENT: PortfolioSummary
- * Affiche le résumé financier du portfolio
+ * Valeur liquidative et décomposition : liquidités + titres + découverts = total
  */
 
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PerformanceBadge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/utils/formatting';
+import { useI18n } from '@/lib/i18n/client';
+import { cn } from '@/lib/utils/cn';
 import type { PortfolioSummary as PortfolioSummaryType } from '@/types/game';
 
 // ==========================================
@@ -16,84 +16,66 @@ import type { PortfolioSummary as PortfolioSummaryType } from '@/types/game';
 
 interface PortfolioSummaryProps {
   portfolio: PortfolioSummaryType;
+  /** Devise de la partie */
+  currency: string;
 }
 
 // ==========================================
 // COMPONENT
 // ==========================================
 
-export function PortfolioSummary({ portfolio }: PortfolioSummaryProps) {
-  const isProfit = portfolio.profitLoss > 0;
+export function PortfolioSummary({ portfolio, currency }: PortfolioSummaryProps) {
+  const { m, f } = useI18n();
+  const t = m.game.summary;
+  const up = portfolio.profitLoss >= 0;
+
+  const lines = [
+    { label: t.cash, value: portfolio.availableCash, signed: false },
+    { label: t.securities, value: portfolio.portfolioValueLong, signed: false },
+    ...(portfolio.shortPositionsPnl !== 0 || portfolio.shortLiability > 0
+      ? [{ label: t.shorts, value: portfolio.shortPositionsPnl, signed: true }]
+      : []),
+  ];
 
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle className="text-xl">Finances</CardTitle>
-      </CardHeader>
+    <section className="panel overflow-hidden" aria-labelledby="summary-title">
+      <div className="border-b border-line px-5 py-5">
+        <p id="summary-title" className="label text-brass">
+          {t.netValue}
+        </p>
+        <p className="num mt-2 text-4xl font-semibold leading-none text-paper">
+          {f.currency(portfolio.totalValue, currency)}
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <PerformanceBadge value={portfolio.returnPercentage} />
+          <span className={cn('num text-sm', up ? 'text-gain' : 'text-loss')}>
+            {up ? '+' : ''}
+            {f.currency(portfolio.profitLoss, currency)}
+          </span>
+        </div>
+      </div>
 
-      <CardContent className="space-y-4">
-        {/* Valeur totale */}
-        <div className="bg-gradient-to-br from-cyan-900/20 to-purple-900/10 rounded-lg p-4 border border-cyan-500/20">
-          <p className="text-sm text-slate-400 mb-1">Valeur totale</p>
-          <p className="text-3xl font-bold text-white mb-2">
-            {formatCurrency(portfolio.totalValue)}
-          </p>
-          <div className="flex items-center gap-2">
-            <PerformanceBadge value={portfolio.returnPercentage} />
-            <span
-              className={`text-sm font-medium ${
-                isProfit ? 'text-green-400' : 'text-red-400'
-              }`}
+      {/* Décomposition : les lignes s'additionnent pour donner la valeur */}
+      <dl className="space-y-2.5 px-5 py-4 text-sm">
+        {lines.map((line) => (
+          <div key={line.label} className="flex items-baseline justify-between gap-4">
+            <dt className="text-paper-dim">{line.label}</dt>
+            <dd
+              className={cn(
+                'num',
+                line.signed ? (line.value >= 0 ? 'text-gain' : 'text-loss') : 'text-paper'
+              )}
             >
-              {isProfit ? '+' : ''}
-              {formatCurrency(portfolio.profitLoss)}
-            </span>
+              {line.signed && line.value > 0 ? '+' : ''}
+              {f.currency(line.value, currency)}
+            </dd>
           </div>
+        ))}
+        <div className="flex items-baseline justify-between gap-4 border-t border-line pt-2.5">
+          <dt className="text-paper-faint">{t.initial}</dt>
+          <dd className="num text-paper-faint">{f.currency(portfolio.initialBalance, currency)}</dd>
         </div>
-
-        {/* Détails */}
-        <div className="space-y-3">
-          {/* Liquidités */}
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-slate-400">Liquidités</span>
-            <span className="font-semibold text-white">
-              {formatCurrency(portfolio.currentBalance)}
-            </span>
-          </div>
-
-          {/* Valeur actifs */}
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-slate-400">Valeur actifs (long)</span>
-            <span className="font-semibold text-white">
-              {formatCurrency(portfolio.portfolioValueLong)}
-            </span>
-          </div>
-
-          {/* P&L positions short */}
-          {portfolio.shortPositionsPnl !== 0 && (
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-400">P&L positions short</span>
-              <span
-                className={`font-semibold ${
-                  portfolio.shortPositionsPnl > 0 ? 'text-green-400' : 'text-red-400'
-                }`}
-              >
-                {portfolio.shortPositionsPnl > 0 ? '+' : ''}
-                {formatCurrency(portfolio.shortPositionsPnl)}
-              </span>
-            </div>
-          )}
-
-          <div className="pt-3 border-t border-slate-700/50">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-400">Capital initial</span>
-              <span className="text-sm text-slate-500">
-                {formatCurrency(portfolio.initialBalance)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      </dl>
+    </section>
   );
 }

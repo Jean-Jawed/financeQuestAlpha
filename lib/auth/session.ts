@@ -31,44 +31,72 @@ export interface AuthResponse {
 // ==========================================
 
 /**
- * Obtenir l'utilisateur de la session courante
- * Retourne null si non authentifié
+ * ID de l'utilisateur authentifié, lu dans le JWT de session
+ *
+ * getClaims() vérifie la signature du JWT (localement si le projet utilise
+ * des clés asymétriques, sinon via Supabase Auth) et rafraîchit la session
+ * si nécessaire. Pas de requête à la table users.
  */
-export async function getSessionUser(): Promise<SessionUser | null> {
+async function getAuthUserId(): Promise<string | null> {
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.auth.getClaims();
+
+  if (error || !data?.claims?.sub) {
+    return null;
+  }
+
+  return data.claims.sub;
+}
+
+/**
+ * État de la session : distingue « non connecté » de « connecté sans profil »
+ * (compte Supabase Auth sans ligne dans public.users)
+ */
+export type SessionState =
+  | { status: 'anonymous' }
+  | { status: 'no-profile'; userId: string }
+  | { status: 'ok'; user: SessionUser };
+
+export async function getSessionState(): Promise<SessionState> {
   try {
-    const supabase = await createServerClient();
-    
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const userId = await getAuthUserId();
 
-
-    if (error || !user) {
-      return null;
+    if (!userId) {
+      return { status: 'anonymous' };
     }
 
     // Récupérer les infos complètes depuis notre table users
-
     const dbUser = await db.query.users.findFirst({
-      where: eq(users.id, user.id),
+      where: eq(users.id, userId),
     });
 
-
-
     if (!dbUser) {
-      console.warn(`[Auth] ⚠️ User ${user.id} exists in Supabase but not in database`);
-      return null;
+      console.warn(`[Auth] User ${userId} exists in Supabase but not in database`);
+      return { status: 'no-profile', userId };
     }
 
-
     return {
-      id: dbUser.id,
-      email: dbUser.email,
-      name: dbUser.name,
-      createdAt: dbUser.createdAt,
+      status: 'ok',
+      user: {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.name,
+        createdAt: dbUser.createdAt,
+      },
     };
   } catch (error) {
-    console.error('[Auth] 💥 Error getting session user:', error);
-    return null;
+    console.error('[Auth] Error getting session state:', error);
+    return { status: 'anonymous' };
   }
+}
+
+/**
+ * Obtenir l'utilisateur de la session courante
+ * Retourne null si non authentifié (ou sans profil)
+ */
+export async function getSessionUser(): Promise<SessionUser | null> {
+  const state = await getSessionState();
+  return state.status === 'ok' ? state.user : null;
 }
 
 /**
@@ -82,15 +110,18 @@ export async function isAuthenticated(): Promise<boolean> {
 /**
  * Obtenir l'ID de l'utilisateur courant
  * Lance une erreur si non authentifié (pour usage dans API routes)
+ *
+ * Une seule vérification du JWT, sans lecture de la table users : les routes
+ * vérifient ensuite la propriété des ressources (game.userId === userId).
  */
 export async function requireAuth(): Promise<string> {
-  const user = await getSessionUser();
+  const userId = await getAuthUserId();
 
-  if (!user) {
+  if (!userId) {
     throw new Error('Unauthorized');
   }
 
-  return user.id;
+  return userId;
 }
 
 /**
@@ -226,8 +257,6 @@ export async function signIn(email: string, password: string): Promise<AuthRespo
       return { success: false, error: 'Login failed' };
     }
 
-    console.log(`[Auth] User logged in: ${email}`);
-
     // 2. Récupérer l'utilisateur complet
     const sessionUser = await getSessionUser();
 
@@ -258,8 +287,6 @@ export async function signOut(): Promise<{ success: boolean; error?: string }> {
       console.error('[Auth] Logout error:', error);
       return { success: false, error: error.message };
     }
-
-    console.log('[Auth] User logged out');
 
     return { success: true };
   } catch (error) {
@@ -293,8 +320,6 @@ export async function emailExists(email: string): Promise<boolean> {
 export async function updateUserName(userId: string, name: string): Promise<boolean> {
   try {
     await db.update(users).set({ name, updatedAt: new Date() }).where(eq(users.id, userId));
-
-    console.log(`[Auth] User name updated: ${userId}`);
 
     return true;
   } catch (error) {

@@ -11,13 +11,17 @@ import { eq } from 'drizzle-orm';
 import { calculatePortfolio } from '@/lib/game/calculations';
 import { getUnlockedAchievements } from '@/lib/game/achievements';
 import { getRemainingDays } from '@/lib/game/next-day';
+import { getPriceCoverage } from '@/lib/market/calendar';
 import type { GameWithStats } from '@/types/game';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // API HANDLER
 // ==========================================
 
 export const GET = withAuth(async (req, { userId }) => {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // 1. Récupérer tous les games de l'utilisateur
     const userGames = await db.query.games.findMany({
@@ -42,7 +46,7 @@ export const GET = withAuth(async (req, { userId }) => {
         const achievements = await getUnlockedAchievements(game.id);
 
         // Calculer jours restants
-        const remainingDays = getRemainingDays(game.currentDate);
+        const remainingDays = getRemainingDays(game.currentDate, (await getPriceCoverage()).end);
 
         return {
           ...game,
@@ -63,6 +67,6 @@ export const GET = withAuth(async (req, { userId }) => {
     });
   } catch (error) {
     console.error('[API] List games error:', error);
-    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+    return NextResponse.json({ error: api.internal }, { status: 500 });
   }
 });

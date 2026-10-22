@@ -3,11 +3,14 @@
  * Validation des ordres de trading (buy/sell/short/cover)
  */
 
-import { db } from '@/lib/db';
+import { db, type DbExecutor } from '@/lib/db';
 import { games, holdings } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { isValidSymbol } from '@/lib/market/assets';
-import type { Game } from '@/types/database';
+import { getPriceCoverage } from '@/lib/market/calendar';
+import { getApiI18n } from '@/lib/i18n/server';
+import { checkShortMargin } from './portfolio-math';
+import type { PortfolioCalculation } from '@/types/game';
 
 // ==========================================
 // TYPES
@@ -18,58 +21,69 @@ export interface ValidationResult {
   error?: string;
 }
 
+/** Parties en cours simultanées par joueur */
+export const MAX_ACTIVE_GAMES = 5;
+
 // ==========================================
 // VALIDATION FUNCTIONS
 // ==========================================
 
 /**
  * Valider un ordre d'ACHAT (buy)
+ *
+ * @param portfolio - Portfolio courant : l'achat est limité au cash disponible
+ *   (le produit des shorts est bloqué en garantie)
  */
 export async function validateBuy(
   gameId: string,
   symbol: string,
   quantity: number,
   price: number,
-  transactionFees: number
+  transactionFees: number,
+  portfolio: Pick<PortfolioCalculation, 'availableCash'>,
+  executor: DbExecutor = db
 ): Promise<ValidationResult> {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // 1. Vérifier que quantity > 0
     if (quantity <= 0) {
-      return { valid: false, error: 'La quantité doit être supérieure à 0' };
+      return { valid: false, error: api.quantityPositive };
     }
 
-    // 2. Vérifier que le symbole est valide
-    if (!(await isValidSymbol(symbol, true))) {
-      return { valid: false, error: 'Symbole invalide' };
-    }
+    // 2. Symbole, partie et position (lectures indépendantes, en parallèle)
+    const [symbolValid, game, existingShortPosition] = await Promise.all([
+      isValidSymbol(symbol, true),
+      executor.query.games.findFirst({
+        where: eq(games.id, gameId),
+      }),
+      executor.query.holdings.findFirst({
+        where: and(
+          eq(holdings.gameId, gameId),
+          eq(holdings.symbol, symbol),
+          eq(holdings.isShort, true)
+        ),
+      }),
+    ]);
 
-    // 3. Récupérer le game
-    const game = await db.query.games.findFirst({
-      where: eq(games.id, gameId),
-    });
+    if (!symbolValid) {
+      return { valid: false, error: api.invalidSymbol };
+    }
 
     if (!game) {
-      return { valid: false, error: 'Game non trouvé' };
+      return { valid: false, error: api.gameNotFound };
     }
 
     // 4. Vérifier que le game est actif
     if (game.status !== 'active') {
-      return { valid: false, error: 'Le game n\'est pas actif' };
+      return { valid: false, error: api.gameInactive };
     }
 
     // 5. Vérifier qu'il n'y a pas de position short sur ce symbole
-    const existingShortPosition = await db.query.holdings.findFirst({
-      where: and(
-        eq(holdings.gameId, gameId),
-        eq(holdings.symbol, symbol),
-        eq(holdings.isShort, true)
-      ),
-    });
-
     if (existingShortPosition) {
       return {
         valid: false,
-        error: 'Impossible d\'acheter : vous avez une position short active sur cet actif',
+        error: api.buyBlockedByShort,
       };
     }
 
@@ -78,19 +92,18 @@ export async function validateBuy(
     const feeAmount = subtotal * (transactionFees / 100);
     const totalCost = subtotal + feeAmount;
 
-    // 7. Vérifier que le solde est suffisant
-    const currentBalance = parseFloat(game.currentBalance);
-    if (currentBalance < totalCost) {
+    // 7. Vérifier que le cash disponible est suffisant
+    if (portfolio.availableCash < totalCost) {
       return {
         valid: false,
-        error: `Solde insuffisant. Requis: ${totalCost.toFixed(2)}€, Disponible: ${currentBalance.toFixed(2)}€`,
+        error: fmt(api.insufficientCash, { required: f.currency(totalCost, game.currency), available: f.currency(Math.max(portfolio.availableCash, 0), game.currency) }),
       };
     }
 
     return { valid: true };
   } catch (error) {
     console.error('[Validations] Error validating buy:', error);
-    return { valid: false, error: 'Erreur lors de la validation' };
+    return { valid: false, error: api.validationError };
   }
 }
 
@@ -100,46 +113,50 @@ export async function validateBuy(
 export async function validateSell(
   gameId: string,
   symbol: string,
-  quantity: number
+  quantity: number,
+  executor: DbExecutor = db
 ): Promise<ValidationResult> {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // 1. Vérifier que quantity > 0
     if (quantity <= 0) {
-      return { valid: false, error: 'La quantité doit être supérieure à 0' };
+      return { valid: false, error: api.quantityPositive };
     }
 
-    // 2. Vérifier que le symbole est valide
-    if (!(await isValidSymbol(symbol))) {
-      return { valid: false, error: 'Symbole invalide' };
-    }
+    // 2. Symbole, partie et position (lectures indépendantes, en parallèle)
+    const [symbolValid, game, holding] = await Promise.all([
+      isValidSymbol(symbol),
+      executor.query.games.findFirst({
+        where: eq(games.id, gameId),
+      }),
+      executor.query.holdings.findFirst({
+        where: and(
+          eq(holdings.gameId, gameId),
+          eq(holdings.symbol, symbol),
+          eq(holdings.isShort, false)
+        ),
+      }),
+    ]);
 
-    // 3. Récupérer le game
-    const game = await db.query.games.findFirst({
-      where: eq(games.id, gameId),
-    });
+    if (!symbolValid) {
+      return { valid: false, error: api.invalidSymbol };
+    }
 
     if (!game) {
-      return { valid: false, error: 'Game non trouvé' };
+      return { valid: false, error: api.gameNotFound };
     }
 
     // 4. Vérifier que le game est actif
     if (game.status !== 'active') {
-      return { valid: false, error: 'Le game n\'est pas actif' };
+      return { valid: false, error: api.gameInactive };
     }
 
     // 5. Vérifier qu'il y a une position long sur ce symbole
-    const holding = await db.query.holdings.findFirst({
-      where: and(
-        eq(holdings.gameId, gameId),
-        eq(holdings.symbol, symbol),
-        eq(holdings.isShort, false)
-      ),
-    });
-
     if (!holding) {
       return {
         valid: false,
-        error: 'Vous ne détenez pas cet actif',
+        error: api.notHeld,
       };
     }
 
@@ -148,92 +165,110 @@ export async function validateSell(
     if (ownedQuantity < quantity) {
       return {
         valid: false,
-        error: `Quantité insuffisante. Détenu: ${ownedQuantity}, Demandé: ${quantity}`,
+        error: fmt(api.insufficientQuantity, { held: f.quantity(ownedQuantity), requested: f.quantity(quantity) }),
       };
     }
 
     return { valid: true };
   } catch (error) {
     console.error('[Validations] Error validating sell:', error);
-    return { valid: false, error: 'Erreur lors de la validation' };
+    return { valid: false, error: api.validationError };
   }
 }
 
 /**
  * Valider un ordre de SHORT (vente à découvert)
+ *
+ * @param portfolio - Portfolio courant : la valeur nette doit couvrir la marge
+ *   sur l'ensemble des shorts (voir checkShortMargin)
  */
 export async function validateShort(
   gameId: string,
   symbol: string,
   quantity: number,
   price: number,
-  allowShorting: boolean
+  allowShorting: boolean,
+  transactionFees: number,
+  portfolio: Pick<PortfolioCalculation, 'totalValue' | 'shortLiability' | 'availableCash'>,
+  executor: DbExecutor = db
 ): Promise<ValidationResult> {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // 1. Vérifier que le short selling est activé
     if (!allowShorting) {
       return {
         valid: false,
-        error: 'La vente à découvert n\'est pas activée pour ce game',
+        error: api.shortDisabled,
       };
     }
 
     // 2. Vérifier que quantity > 0
     if (quantity <= 0) {
-      return { valid: false, error: 'La quantité doit être supérieure à 0' };
+      return { valid: false, error: api.quantityPositive };
     }
 
-    // 3. Vérifier que le symbole est valide
-    if (!(await isValidSymbol(symbol, true))) {
-      return { valid: false, error: 'Symbole invalide' };
-    }
+    // 3. Symbole, partie et position (lectures indépendantes, en parallèle)
+    const [symbolValid, game, existingLongPosition] = await Promise.all([
+      isValidSymbol(symbol, true),
+      executor.query.games.findFirst({
+        where: eq(games.id, gameId),
+      }),
+      executor.query.holdings.findFirst({
+        where: and(
+          eq(holdings.gameId, gameId),
+          eq(holdings.symbol, symbol),
+          eq(holdings.isShort, false)
+        ),
+      }),
+    ]);
 
-    // 4. Récupérer le game
-    const game = await db.query.games.findFirst({
-      where: eq(games.id, gameId),
-    });
+    if (!symbolValid) {
+      return { valid: false, error: api.invalidSymbol };
+    }
 
     if (!game) {
-      return { valid: false, error: 'Game non trouvé' };
+      return { valid: false, error: api.gameNotFound };
     }
 
     // 5. Vérifier que le game est actif
     if (game.status !== 'active') {
-      return { valid: false, error: 'Le game n\'est pas actif' };
+      return { valid: false, error: api.gameInactive };
     }
 
     // 6. Vérifier qu'il n'y a pas de position long sur ce symbole
-    const existingLongPosition = await db.query.holdings.findFirst({
-      where: and(
-        eq(holdings.gameId, gameId),
-        eq(holdings.symbol, symbol),
-        eq(holdings.isShort, false)
-      ),
-    });
-
     if (existingLongPosition) {
       return {
         valid: false,
-        error: 'Impossible de shorter : vous détenez déjà cet actif',
+        error: api.shortBlockedByLong,
       };
     }
 
-    // 7. Vérifier le margin requirement (simplifié : 50% de la valeur)
-    const totalValue = price * quantity;
-    const marginRequired = totalValue * 0.5;
-    const currentBalance = parseFloat(game.currentBalance);
+    // 7. Les frais sont prélevés sur le cash disponible
+    const notional = price * quantity;
+    const feeAmount = notional * (transactionFees / 100);
 
-    if (currentBalance < marginRequired) {
+    if (portfolio.availableCash < feeAmount) {
       return {
         valid: false,
-        error: `Marge insuffisante. Requis: ${marginRequired.toFixed(2)}€, Disponible: ${currentBalance.toFixed(2)}€`,
+        error: fmt(api.insufficientCashForFees, { required: f.currency(feeAmount, game.currency), available: f.currency(Math.max(portfolio.availableCash, 0), game.currency) }),
+      };
+    }
+
+    // 8. Vérifier la marge : valeur nette ≥ 50 % de la dette totale des shorts
+    const marginShortfall = checkShortMargin(portfolio, notional, feeAmount);
+
+    if (marginShortfall) {
+      return {
+        valid: false,
+        error: fmt(api.insufficientMargin, { required: f.currency(marginShortfall.required, game.currency), available: f.currency(Math.max(marginShortfall.equity, 0), game.currency) }),
       };
     }
 
     return { valid: true };
   } catch (error) {
     console.error('[Validations] Error validating short:', error);
-    return { valid: false, error: 'Erreur lors de la validation' };
+    return { valid: false, error: api.validationError };
   }
 }
 
@@ -245,46 +280,50 @@ export async function validateCover(
   symbol: string,
   quantity: number,
   price: number,
-  transactionFees: number
+  transactionFees: number,
+  executor: DbExecutor = db
 ): Promise<ValidationResult> {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // 1. Vérifier que quantity > 0
     if (quantity <= 0) {
-      return { valid: false, error: 'La quantité doit être supérieure à 0' };
+      return { valid: false, error: api.quantityPositive };
     }
 
-    // 2. Vérifier que le symbole est valide
-    if (!(await isValidSymbol(symbol))) {
-      return { valid: false, error: 'Symbole invalide' };
-    }
+    // 2. Symbole, partie et position (lectures indépendantes, en parallèle)
+    const [symbolValid, game, shortPosition] = await Promise.all([
+      isValidSymbol(symbol),
+      executor.query.games.findFirst({
+        where: eq(games.id, gameId),
+      }),
+      executor.query.holdings.findFirst({
+        where: and(
+          eq(holdings.gameId, gameId),
+          eq(holdings.symbol, symbol),
+          eq(holdings.isShort, true)
+        ),
+      }),
+    ]);
 
-    // 3. Récupérer le game
-    const game = await db.query.games.findFirst({
-      where: eq(games.id, gameId),
-    });
+    if (!symbolValid) {
+      return { valid: false, error: api.invalidSymbol };
+    }
 
     if (!game) {
-      return { valid: false, error: 'Game non trouvé' };
+      return { valid: false, error: api.gameNotFound };
     }
 
     // 4. Vérifier que le game est actif
     if (game.status !== 'active') {
-      return { valid: false, error: 'Le game n\'est pas actif' };
+      return { valid: false, error: api.gameInactive };
     }
 
     // 5. Vérifier qu'il y a une position short sur ce symbole
-    const shortPosition = await db.query.holdings.findFirst({
-      where: and(
-        eq(holdings.gameId, gameId),
-        eq(holdings.symbol, symbol),
-        eq(holdings.isShort, true)
-      ),
-    });
-
     if (!shortPosition) {
       return {
         valid: false,
-        error: 'Vous n\'avez pas de position short sur cet actif',
+        error: api.noShortPosition,
       };
     }
 
@@ -293,7 +332,7 @@ export async function validateCover(
     if (shortQuantity < quantity) {
       return {
         valid: false,
-        error: `Quantité insuffisante. Position short: ${shortQuantity}, Demandé: ${quantity}`,
+        error: fmt(api.insufficientShortQuantity, { held: f.quantity(shortQuantity), requested: f.quantity(quantity) }),
       };
     }
 
@@ -307,14 +346,14 @@ export async function validateCover(
     if (currentBalance < totalCost) {
       return {
         valid: false,
-        error: `Solde insuffisant pour couvrir. Requis: ${totalCost.toFixed(2)}€, Disponible: ${currentBalance.toFixed(2)}€`,
+        error: fmt(api.insufficientCashToCover, { required: f.currency(totalCost, game.currency), available: f.currency(currentBalance, game.currency) }),
       };
     }
 
     return { valid: true };
   } catch (error) {
     console.error('[Validations] Error validating cover:', error);
-    return { valid: false, error: 'Erreur lors de la validation' };
+    return { valid: false, error: api.validationError };
   }
 }
 
@@ -325,24 +364,24 @@ export async function validateGameCreation(
   userId: string,
   startDate: string
 ): Promise<ValidationResult> {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // 1. Vérifier format de date
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(startDate)) {
-      return { valid: false, error: 'Format de date invalide (YYYY-MM-DD)' };
+      return { valid: false, error: api.invalidDate };
     }
 
-    // 2. Vérifier que la date est entre 2020-01-01 et aujourd'hui
-    const start = new Date(startDate);
-    const minDate = new Date('2020-01-01');
-    const today = new Date();
+    // 2. Vérifier que la date est dans la plage couverte par la base de prix
+    //    (comparaison de chaînes YYYY-MM-DD : pas de problème de fuseau horaire)
+    const coverage = await getPriceCoverage();
 
-    if (start < minDate) {
-      return { valid: false, error: 'La date de départ doit être après le 1er janvier 2020' };
-    }
-
-    if (start > today) {
-      return { valid: false, error: 'La date de départ ne peut pas être dans le futur' };
+    if (startDate < coverage.start || startDate >= coverage.end) {
+      return {
+        valid: false,
+        error: fmt(api.startDateRange, { start: f.date(coverage.start), end: f.date(coverage.end) }),
+      };
     }
 
     // 3. Vérifier le nombre de games actives de l'utilisateur (limite 5)
@@ -350,16 +389,16 @@ export async function validateGameCreation(
       where: and(eq(games.userId, userId), eq(games.status, 'active')),
     });
 
-    if (activeGames.length >= 5) {
+    if (activeGames.length >= MAX_ACTIVE_GAMES) {
       return {
         valid: false,
-        error: 'Limite de 5 parties actives atteinte. Terminez ou mettez en pause une partie existante.',
+        error: fmt(api.activeGamesLimit, { max: MAX_ACTIVE_GAMES }),
       };
     }
 
     return { valid: true };
   } catch (error) {
     console.error('[Validations] Error validating game creation:', error);
-    return { valid: false, error: 'Erreur lors de la validation' };
+    return { valid: false, error: api.validationError };
   }
 }

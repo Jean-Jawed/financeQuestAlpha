@@ -10,9 +10,15 @@ import type { Game, Holding, Transaction } from './database';
 // ==========================================
 
 export interface PortfolioCalculation {
+  /** Cash brut en base (inclut le produit des shorts, bloqué en garantie) */
   currentBalance: number;
+  /** Cash utilisable pour acheter : cash − produit des shorts (au coût moyen) */
+  availableCash: number;
   portfolioValueLong: number;
+  /** Dette des shorts au prix courant : Σ quantité × prix actuel */
+  shortLiability: number;
   shortPositionsPnl: number;
+  /** cash + longs − dette des shorts */
   totalValue: number;
   returnPercentage: number;
   score: number;
@@ -26,6 +32,8 @@ export interface GameWithStats extends Game {
   score: number;
   achievementsUnlocked: number;
   remainingDays: number;
+  /** Dernière date couverte par la base de prix (fin possible de la partie) */
+  dataEndDate?: string;
 }
 
 export interface GameSettings {
@@ -40,6 +48,12 @@ export interface GameSettings {
 
 export interface HoldingWithValue extends Holding {
   name: string;
+  /** Devise de cotation de l'actif et cours d'origine */
+  assetCurrency: string;
+  assetPrice: number;
+  /** Variation du cours depuis la séance précédente, en % (null : inconnue) */
+  dayChangePercent: number | null;
+  /** Cours et valeurs ci-dessous : dans la devise de la partie */
   currentPrice: number;
   currentValue: number;
   profitLoss: number;
@@ -82,13 +96,27 @@ export interface TransactionResult {
 
 export interface PortfolioSummary {
   currentBalance: number;
+  availableCash: number;
   portfolioValueLong: number;
+  shortLiability: number;
   shortPositionsPnl: number;
   totalValue: number;
   returnPercentage: number;
   score: number;
   initialBalance: number;
   profitLoss: number;
+}
+
+/**
+ * État complet d'une partie, tel qu'affiché par la page de jeu
+ * Renvoyé par GET /api/games/[id], et après un ordre ou une séance
+ * (évite au client de relire la partie)
+ */
+export interface GameState {
+  game: GameWithStats;
+  portfolio: PortfolioSummary;
+  holdings: HoldingWithValue[];
+  recentTransactions: Transaction[];
 }
 
 export interface PortfolioHistory {
@@ -149,12 +177,7 @@ export interface CreateGameResult {
 export interface NextDayResult {
   success: boolean;
   newDate?: string;
-  portfolio?: {
-    totalValue: number;
-    returnPercentage: number;
-    portfolioValueLong: number;
-    shortPositionsPnl: number;
-  };
+  state?: GameState;
   achievementsUnlocked?: Array<{
     name: string;
     points: number;

@@ -7,32 +7,55 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useI18n } from '@/lib/i18n/client';
+import { INTL_LOCALE } from '@/lib/i18n/config';
+import { playSound } from '@/lib/sound';
+import {
+  DEFAULT_GAME_CURRENCY,
+  GAME_CURRENCIES,
+  STARTING_CAPITAL,
+  type GameCurrency,
+} from '@/lib/game/currency';
+
+// ==========================================
+// TYPES
+// ==========================================
+
+interface CreateGameCardProps {
+  /** Première date de départ possible (début de la base prix, YYYY-MM-DD) */
+  minDate: string;
+  /** Dernière date de départ possible (veille de la fin de la base prix) */
+  maxDate: string;
+  /** Aucune partie encore : libellé d'accueil */
+  isFirst?: boolean;
+}
 
 // ==========================================
 // COMPONENT
 // ==========================================
 
-export function CreateGameCard() {
+export function CreateGameCard({ minDate, maxDate, isFirst = false }: CreateGameCardProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { m, f, fmt, locale } = useI18n();
+  const t = m.dashboard.create;
+  // Nom des devises dans la langue du joueur (« dollar des États-Unis », « US Dollar »)
+  const currencyNames = new Intl.DisplayNames([INTL_LOCALE[locale]], { type: 'currency' });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
+  const [currency, setCurrency] = useState<GameCurrency>(DEFAULT_GAME_CURRENCY);
   const [loading, setLoading] = useState(false);
-
-  // Date min/max
-  const minDate = '2020-01-01';
-  const maxDate = new Date().toISOString().split('T')[0];
 
   async function handleCreateGame() {
     if (!startDate) {
-      toast.error('Veuillez sélectionner une date de départ');
+      toast.error(t.pickDate);
       return;
     }
 
@@ -42,139 +65,108 @@ export function CreateGameCard() {
       const res = await fetch('/api/games/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate }),
+        body: JSON.stringify({ startDate, currency }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Erreur lors de la création');
+        playSound('refusal');
+        toast.error(data.error || t.failed);
         setLoading(false);
         return;
       }
 
-      toast.success('Partie créée avec succès !');
+      playSound('opening');
+      toast.success(data.message || t.success);
       setIsModalOpen(false);
       router.refresh(); // Recharger la page pour afficher la nouvelle partie
     } catch (error) {
-      toast.error('Erreur réseau');
+      toast.error(m.common.networkError);
       setLoading(false);
     }
   }
 
   return (
     <>
-      <Card
-        variant="glass"
-        hover
-        className="bg-gradient-to-br from-cyan-900/30 to-purple-900/20 border-cyan-500/30 cursor-pointer"
+      <button
+        type="button"
         onClick={() => setIsModalOpen(true)}
+        className="group relative flex min-h-[320px] flex-col items-center justify-center overflow-hidden rounded border border-dashed border-brass/50 bg-ink/40 p-8 text-center transition-colors hover:border-brass hover:bg-ink-2"
       >
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-cyan-500/20 rounded-lg">
-              <svg
-                className="w-8 h-8 text-cyan-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            </div>
-            <div>
-              <CardTitle className="text-2xl">Nouvelle Partie</CardTitle>
-              <CardDescription>Commencez une nouvelle simulation</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <div className="space-y-2 text-sm text-slate-300">
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Capital initial : 10 000€
-            </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              105 actifs disponibles
-            </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Données historiques réelles
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <Image
+          src="/gravures/sablier.webp"
+          alt=""
+          width={140}
+          height={140}
+          className="engraving h-28 w-28 object-contain opacity-70 transition-opacity group-hover:opacity-100"
+        />
+        <p className="label mt-4 text-brass">{isFirst ? t.firstTitle : t.blankTitle}</p>
+        <h3 className="mt-2 font-display text-2xl font-semibold text-paper">{t.title}</h3>
+        <p className="mt-2 max-w-xs text-sm text-paper-dim">{t.cardText}</p>
+        <span className="mt-6 inline-flex h-10 items-center rounded border border-brass-bright/60 bg-brass px-5 font-label text-sm font-semibold uppercase tracking-[0.14em] text-ink shadow-[0_2px_0_#8E7034] transition-colors group-hover:bg-brass-bright">
+          {t.cta}
+        </span>
+      </button>
 
       {/* Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => !loading && setIsModalOpen(false)}
-        title="Créer une nouvelle partie"
+        title={t.title}
         size="md"
       >
         <div className="space-y-6">
-          <p className="text-slate-300">
-            Choisissez une date de départ entre 2020 et aujourd'hui. Vous commencerez avec 10 000€
-            de capital et pourrez progresser jour par jour avec des données de marché réelles.
+          <p className="text-paper-dim">
+            {fmt(t.modalText, { capital: f.currency(STARTING_CAPITAL[currency], currency) })}
           </p>
 
+          <div>
+            <label htmlFor="game-currency" className="label mb-2 block">
+              {t.currency}
+            </label>
+            <select
+              id="game-currency"
+              className="h-11 w-full rounded border border-line-strong bg-ink px-3 text-paper focus:border-brass focus:outline-none focus:ring-1 focus:ring-brass"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value as GameCurrency)}
+              disabled={loading}
+            >
+              {GAME_CURRENCIES.map((code) => (
+                <option key={code} value={code}>
+                  {code} · {currencyNames.of(code)}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs text-paper-dim">{t.currencyHint}</p>
+          </div>
+
           <Input
+            id="game-start-date"
             type="date"
-            label="Date de départ"
+            label={t.startDate}
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             min={minDate}
             max={maxDate}
             disabled={loading}
-            helperText="La partie commencera à cette date avec les prix historiques réels"
+            helperText={t.startDateHint}
           />
 
           {loading && (
-            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <LoadingSpinner size="sm" />
-                <div>
-                  <p className="text-cyan-400 font-medium">Préparation des données...</p>
-                  <p className="text-sm text-slate-400 mt-1">
-                    Chargement des prix historiques pour 105 actifs
-                  </p>
-                </div>
-              </div>
+            <div className="flex items-center gap-3 rounded border border-brass/30 bg-brass/10 p-4">
+              <LoadingSpinner size="sm" />
+              <p className="font-medium text-brass">{t.opening}</p>
             </div>
           )}
         </div>
 
         <ModalFooter>
           <Button variant="ghost" onClick={() => setIsModalOpen(false)} disabled={loading}>
-            Annuler
+            {m.common.cancel}
           </Button>
           <Button onClick={handleCreateGame} loading={loading} disabled={!startDate}>
-            Créer la partie
+            {t.submit}
           </Button>
         </ModalFooter>
       </Modal>

@@ -35,6 +35,10 @@ interface AuthState {
 // ZUSTAND STORE
 // ==========================================
 
+// Vérification en cours : partagée par tous les composants qui la demandent
+// au même moment (provider, en-tête, double montage du mode strict)
+let pendingCheck: Promise<void> | null = null;
+
 const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: true,
@@ -49,32 +53,38 @@ const useAuthStore = create<AuthState>((set) => ({
 
   setLoading: (loading) => set({ loading }),
 
-  checkSession: async () => {
-    try {
-      const res = await fetch('/api/auth/session');
-      const data = await res.json();
+  checkSession: () => {
+    pendingCheck ??= (async () => {
+      try {
+        const res = await fetch('/api/auth/session');
+        const data = await res.json();
 
-      if (data.authenticated && data.user) {
-        set({
-          user: data.user,
-          authenticated: true,
-          loading: false,
-        });
-      } else {
+        if (data.authenticated && data.user) {
+          set({
+            user: data.user,
+            authenticated: true,
+            loading: false,
+          });
+        } else {
+          set({
+            user: null,
+            authenticated: false,
+            loading: false,
+          });
+        }
+      } catch (error) {
+        console.error('[useAuth] Error checking session:', error);
         set({
           user: null,
           authenticated: false,
           loading: false,
         });
+      } finally {
+        pendingCheck = null;
       }
-    } catch (error) {
-      console.error('[useAuth] Error checking session:', error);
-      set({
-        user: null,
-        authenticated: false,
-        loading: false,
-      });
-    }
+    })();
+
+    return pendingCheck;
   },
 
   logout: async () => {

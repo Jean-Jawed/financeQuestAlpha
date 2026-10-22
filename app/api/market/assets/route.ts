@@ -1,16 +1,22 @@
 /**
  * FINANCEQUEST - API ROUTE: GET ASSETS
  * GET /api/market/assets?type=stock&market=nyse&search=apple
+ *   &date=2023-06-15&currency=EUR : ajoute le cours converti et la variation du jour
  */
 
 import { NextResponse } from 'next/server';
 import { getAssets, getAssetTypes, getMarkets } from '@/lib/market/assets';
+import { getQuotes } from '@/lib/market/prices';
+import { isGameCurrency } from '@/lib/game/currency';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // API HANDLER
 // ==========================================
 
 export async function GET(req: Request) {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     const { searchParams } = new URL(req.url);
     const typeParam = searchParams.get('type'); // e.g., 'stock'
@@ -18,6 +24,10 @@ export async function GET(req: Request) {
     const searchParam = searchParams.get('search');
     const limitParam = searchParams.get('limit');
     const offsetParam = searchParams.get('offset');
+    const dateParam = searchParams.get('date');
+    const currencyParam = searchParams.get('currency');
+    const withQuotes =
+      dateParam !== null && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) && isGameCurrency(currencyParam);
 
     // 1. Resolve Type ID
     let typeId: number | undefined;
@@ -50,7 +60,12 @@ export async function GET(req: Request) {
       offset: offsetParam ? parseInt(offsetParam) : undefined,
     });
 
-    // 4. Transform for Frontend
+    // 4. Cours du jour, convertis dans la devise de la partie (une requête batch)
+    const quotes = withQuotes
+      ? await getQuotes(assets.map((asset) => asset.symbol), dateParam!, currencyParam!)
+      : new Map();
+
+    // 5. Transform for Frontend
     const mappedAssets = assets.map((asset) => ({
       symbol: asset.symbol,
       name: asset.name,
@@ -58,6 +73,8 @@ export async function GET(req: Request) {
       category: asset.asset_type_id === 1 ? 'Stocks' : 'Other', // Temporary fallback as 'category' column missing
       market: asset.market?.code || '',
       currency: asset.currency?.code || '',
+      price: quotes.get(asset.symbol)?.price ?? null,
+      changePercent: quotes.get(asset.symbol)?.changePercent ?? null,
     }));
 
     return NextResponse.json({
@@ -69,6 +86,6 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error('[API] Get assets error:', error);
-    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+    return NextResponse.json({ error: api.internal }, { status: 500 });
   }
 }

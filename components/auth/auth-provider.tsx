@@ -5,7 +5,6 @@
 
 'use client';
 
-import { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 
 // ==========================================
@@ -24,12 +23,8 @@ import { useAuth } from '@/hooks/use-auth';
  * ```
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { checkSession } = useAuth();
-
-  // Vérifier la session au montage de l'app
-  useEffect(() => {
-    checkSession();
-  }, [checkSession]);
+  // useAuth vérifie la session au montage (un seul appel, partagé avec l'en-tête)
+  useAuth();
 
   return <>{children}</>;
 }

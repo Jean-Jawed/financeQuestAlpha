@@ -7,6 +7,7 @@
 
 import { useToastStore } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils/cn';
+import { useI18n } from '@/lib/i18n/client';
 
 // ==========================================
 // COMPONENT
@@ -16,7 +17,11 @@ export function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
 
   return (
-    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+    <div
+      className="pointer-events-none fixed right-4 top-4 z-[100] flex flex-col gap-2"
+      role="status"
+      aria-live="polite"
+    >
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
       ))}
@@ -38,12 +43,20 @@ interface ToastProps {
 }
 
 function Toast({ toast, onClose }: ToastProps) {
+  const { m } = useI18n();
   // Colors
   const colors = {
-    success: 'bg-green-500/10 border-green-500/50 text-green-400',
-    error: 'bg-red-500/10 border-red-500/50 text-red-400',
-    info: 'bg-cyan-500/10 border-cyan-500/50 text-cyan-400',
-    warning: 'bg-yellow-500/10 border-yellow-500/50 text-yellow-400',
+    success: 'border-l-gain',
+    error: 'border-l-loss',
+    info: 'border-l-paper-dim',
+    warning: 'border-l-brass',
+  };
+
+  const iconColors = {
+    success: 'text-gain',
+    error: 'text-loss',
+    info: 'text-paper-dim',
+    warning: 'text-brass',
   };
 
   // Icons
@@ -89,22 +102,23 @@ function Toast({ toast, onClose }: ToastProps) {
   return (
     <div
       className={cn(
-        'flex items-center gap-3 p-4 rounded-lg border backdrop-blur-lg shadow-lg',
-        'pointer-events-auto animate-in slide-in-from-right-5 fade-in duration-300',
-        'min-w-[300px] max-w-[400px]',
+        'flex items-center gap-3 rounded border border-line border-l-4 bg-ink-3 p-4 shadow-lift',
+        'pointer-events-auto animate-rise',
+        'w-[min(400px,calc(100vw-2rem))]',
         colors[toast.type]
       )}
     >
       {/* Icon */}
-      <div className="flex-shrink-0">{icons[toast.type]}</div>
+      <div className={cn('flex-shrink-0', iconColors[toast.type])}>{icons[toast.type]}</div>
 
       {/* Message */}
-      <p className="flex-1 text-sm font-medium">{toast.message}</p>
+      <p className="flex-1 text-sm font-medium text-paper">{toast.message}</p>
 
       {/* Close button */}
       <button
         onClick={onClose}
-        className="flex-shrink-0 text-current hover:opacity-70 transition-opacity"
+        className="flex-shrink-0 text-paper-dim transition-colors hover:text-paper"
+        aria-label={m.common.closeNotification}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

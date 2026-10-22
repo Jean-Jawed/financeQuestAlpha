@@ -1,13 +1,14 @@
 /**
  * FINANCEQUEST - COMPONENT: LeaderboardTable
- * Table du classement avec podium
+ * Podium couronné de laurier, puis registre des agents de change
  */
 
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { formatCurrency, formatPercentage } from '@/lib/utils/formatting';
+import Image from 'next/image';
+import { PerformanceBadge } from '@/components/ui/badge';
+import { useI18n } from '@/lib/i18n/client';
+import { cn } from '@/lib/utils/cn';
 import type { LeaderboardEntry } from '@/types/api';
 
 // ==========================================
@@ -18,139 +19,103 @@ interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
 }
 
+const ROMAN = ['I', 'II', 'III'];
+
+// ==========================================
+// SOUS-COMPOSANT
+// ==========================================
+
+function PodiumStep({ entry, place }: { entry: LeaderboardEntry; place: 0 | 1 | 2 }) {
+  const { m, f, fmt } = useI18n();
+  const first = place === 0;
+
+  return (
+    <li
+      className={cn(
+        'certificate flex flex-col items-center px-6 pb-6 text-center',
+        first ? 'pt-4 md:order-2 md:-translate-y-6' : place === 1 ? 'pt-6 md:order-1' : 'pt-6 md:order-3'
+      )}
+    >
+      <div className={cn('relative flex items-center justify-center', first ? 'h-36 w-36' : 'h-28 w-28')}>
+        <Image
+          src="/gravures/laurier.webp"
+          alt=""
+          width={160}
+          height={160}
+          className={cn('engraving absolute inset-0 h-full w-full', !first && 'opacity-60')}
+        />
+        <span className={cn('font-display font-bold italic', first ? 'text-5xl text-brass-bright' : 'text-4xl text-paper-dim')}>
+          {ROMAN[place]}
+        </span>
+      </div>
+      <h3 className="mt-2 font-display text-2xl font-semibold text-paper">{entry.userName}</h3>
+      <div className="mt-3">
+        <PerformanceBadge value={entry.returnPercentage} />
+      </div>
+      <p className="num mt-3 text-lg text-paper">{f.currency(entry.totalValue, entry.currency)}</p>
+      <p className="label mt-1 text-[10px]">{fmt(m.leaderboard.pointsValue, { points: entry.score })}</p>
+    </li>
+  );
+}
+
 // ==========================================
 // COMPONENT
 // ==========================================
 
 export function LeaderboardTable({ entries }: LeaderboardTableProps) {
+  const { m, f } = useI18n();
+  const t = m.leaderboard;
+
   if (entries.length === 0) {
     return (
-      <Card variant="glass">
-        <CardContent className="py-12">
-          <p className="text-center text-slate-400">Aucune entrée dans le classement</p>
-        </CardContent>
-      </Card>
+      <div className="panel flex flex-col items-center px-6 py-14 text-center">
+        <Image src="/gravures/laurier.webp" alt="" width={140} height={140} className="engraving opacity-50" />
+        <p className="mt-4 font-display text-2xl text-paper">{t.emptyTitle}</p>
+        <p className="mt-1 text-paper-dim">{t.emptyText}</p>
+      </div>
     );
   }
 
-  // Podium (top 3)
   const podium = entries.slice(0, 3);
   const rest = entries.slice(3);
 
   return (
-    <div className="space-y-6">
-      {/* Podium */}
-      {podium.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* 1st place */}
-          {podium[0] && (
-            <Card
-              variant="glass"
-              className="bg-gradient-to-br from-yellow-900/30 to-slate-800/50 border-yellow-500/50"
-            >
-              <CardContent className="pt-6 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-500/20 border-2 border-yellow-500 mb-4">
-                  <span className="text-3xl">🥇</span>
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-2">{podium[0].userName}</h3>
-                <p className="text-3xl font-bold text-yellow-400 mb-2">
-                  {formatCurrency(podium[0].totalValue)}
-                </p>
-                <Badge variant="success">
-                  {formatPercentage(podium[0].returnPercentage)}
-                </Badge>
-                <p className="text-sm text-slate-400 mt-3">{podium[0].score} pts</p>
-              </CardContent>
-            </Card>
-          )}
+    <div className="space-y-12">
+      <ol className="grid grid-cols-1 items-end gap-6 pt-6 md:grid-cols-3" aria-label={t.podium}>
+        {podium.map((entry, index) => (
+          <PodiumStep key={entry.gameId} entry={entry} place={index as 0 | 1 | 2} />
+        ))}
+      </ol>
 
-          {/* 2nd place */}
-          {podium[1] && (
-            <Card
-              variant="glass"
-              className="bg-gradient-to-br from-slate-700/30 to-slate-800/50 border-slate-500/50"
-            >
-              <CardContent className="pt-6 text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-slate-500/20 border-2 border-slate-400 mb-4">
-                  <span className="text-2xl">🥈</span>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">{podium[1].userName}</h3>
-                <p className="text-2xl font-bold text-slate-300 mb-2">
-                  {formatCurrency(podium[1].totalValue)}
-                </p>
-                <Badge variant={podium[1].returnPercentage > 0 ? 'success' : 'danger'}>
-                  {formatPercentage(podium[1].returnPercentage)}
-                </Badge>
-                <p className="text-sm text-slate-400 mt-3">{podium[1].score} pts</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* 3rd place */}
-          {podium[2] && (
-            <Card
-              variant="glass"
-              className="bg-gradient-to-br from-orange-900/30 to-slate-800/50 border-orange-700/50"
-            >
-              <CardContent className="pt-6 text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-orange-700/20 border-2 border-orange-600 mb-4">
-                  <span className="text-2xl">🥉</span>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">{podium[2].userName}</h3>
-                <p className="text-2xl font-bold text-orange-400 mb-2">
-                  {formatCurrency(podium[2].totalValue)}
-                </p>
-                <Badge variant={podium[2].returnPercentage > 0 ? 'success' : 'danger'}>
-                  {formatPercentage(podium[2].returnPercentage)}
-                </Badge>
-                <p className="text-sm text-slate-400 mt-3">{podium[2].score} pts</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* Rest of leaderboard */}
       {rest.length > 0 && (
-        <Card variant="glass">
-          <CardHeader>
-            <CardTitle>Classement</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
+        <section className="panel overflow-x-auto" aria-label={t.rest}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="label border-b border-line text-left text-[10px]">
+                <th scope="col" className="px-5 py-3 font-semibold">{t.rank}</th>
+                <th scope="col" className="px-2 py-3 font-semibold">{t.player}</th>
+                <th scope="col" className="px-2 py-3 text-right font-semibold">{t.return}</th>
+                <th scope="col" className="hidden px-2 py-3 text-right font-semibold sm:table-cell">{t.value}</th>
+                <th scope="col" className="px-5 py-3 text-right font-semibold">{t.points}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
               {rest.map((entry) => (
-                <div
-                  key={entry.gameId}
-                  className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700/50 hover:border-slate-600/50 transition-colors"
-                >
-                  {/* Rank */}
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-10 text-center">
-                      <span className="text-2xl font-bold text-slate-400">#{entry.rank}</span>
-                    </div>
-
-                    {/* User */}
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-white">{entry.userName}</h4>
-                      <p className="text-sm text-slate-400">{entry.score} pts</p>
-                    </div>
-
-                    {/* Performance */}
-                    <div className="text-right">
-                      <p className="font-bold text-white">{formatCurrency(entry.totalValue)}</p>
-                      <Badge
-                        variant={entry.returnPercentage > 0 ? 'success' : 'danger'}
-                        size="sm"
-                      >
-                        {formatPercentage(entry.returnPercentage)}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
+                <tr key={entry.gameId} className="hover:bg-ink-3">
+                  <td className="num px-5 py-3 text-paper-dim">{String(entry.rank).padStart(2, '0')}</td>
+                  <td className="px-2 py-3 font-display text-base text-paper">{entry.userName}</td>
+                  <td className="px-2 py-3 text-right">
+                    <PerformanceBadge value={entry.returnPercentage} />
+                  </td>
+                  <td className="num hidden px-2 py-3 text-right text-paper sm:table-cell">
+                    {f.currency(entry.totalValue, entry.currency)}
+                  </td>
+                  <td className="num px-5 py-3 text-right text-brass">{entry.score}</td>
+                </tr>
               ))}
-            </div>
-          </CardContent>
-        </Card>
+            </tbody>
+          </table>
+        </section>
       )}
     </div>
   );

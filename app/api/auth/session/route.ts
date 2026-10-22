@@ -6,12 +6,15 @@
 
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // API HANDLER
 // ==========================================
 
 export async function GET(req: Request) {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     const user = await getSessionUser();
 
@@ -29,7 +32,7 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('[API] Session error:', error);
     return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
+      { error: api.internal },
       { status: 500 }
     );
   }

@@ -4,7 +4,7 @@
  */
 
 import type { Game, User, Achievement } from './database';
-import type { GameWithStats, TransactionType, PortfolioSummary } from './game';
+import type { GameWithStats, GameState, TransactionType, PortfolioSummary } from './game';
 
 // ==========================================
 // STANDARD API RESPONSE
@@ -50,6 +50,8 @@ export interface SessionResponse {
 
 export interface CreateGameRequest {
   startDate: string;
+  /** Devise de jeu (EUR par défaut) */
+  currency?: string;
   settings?: {
     transaction_fees?: number;
     allow_shorting?: boolean;
@@ -74,12 +76,7 @@ export interface ListGamesResponse extends ApiResponse {
 }
 
 export interface GetGameResponse extends ApiResponse {
-  data?: {
-    game: GameWithStats;
-    portfolio: PortfolioSummary;
-    holdings: any[];
-    recentTransactions: any[];
-  };
+  data?: GameState;
 }
 
 export interface NextDayRequest {
@@ -89,7 +86,7 @@ export interface NextDayRequest {
 export interface NextDayResponse extends ApiResponse {
   data?: {
     newDate: string;
-    portfolio: PortfolioSummary;
+    state: GameState;
     achievementsUnlocked: Array<{
       name: string;
       points: number;
@@ -112,7 +109,11 @@ export interface TradeResponse extends ApiResponse {
     transaction: any;
     holding: any;
     newBalance: number;
-    portfolio: PortfolioSummary;
+    state: GameState;
+    achievementsUnlocked: Array<{
+      name: string;
+      points: number;
+    }>;
   };
 }
 
@@ -202,7 +203,9 @@ export interface GetLeaderboardRequest {
 export interface LeaderboardEntry {
   rank: number;
   userName: string;
+  /** Valeur dans la devise de la partie (le classement se fait au rendement) */
   totalValue: number;
+  currency: string;
   returnPercentage: number;
   score: number;
   gameId: string;

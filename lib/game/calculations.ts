@@ -1,113 +1,68 @@
 /**
  * FINANCEQUEST - GAME CALCULATIONS
  * Calculs financiers pour le jeu (portfolio value, P&L, rendement, score)
+ * Les formules pures sont dans ./portfolio-math (testables sans base)
  */
 
-import { db } from '@/lib/db';
+import { db, type DbExecutor } from '@/lib/db';
 import { games, holdings } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { getLatestPrices } from '@/lib/market/prices';
+import { getQuotes } from '@/lib/market/prices';
 import { getAssetsMap } from '@/lib/market/assets';
+import { valuePortfolio } from './portfolio-math';
 import type { PortfolioCalculation, HoldingWithValue } from '@/types/game';
+
+export { calculateTransactionPreview } from './portfolio-math';
 
 // ==========================================
 // PORTFOLIO CALCULATIONS
 // ==========================================
 
 /**
- * Calculer la valeur totale du portfolio pour un game
- * 
+ * Calculer la valeur totale du portfolio pour un game, dans sa devise de jeu
+ * game + holdings (en parallèle), puis cours convertis en batch
+ *
  * @param gameId - ID du game
  * @param currentDate - Date actuelle du game (YYYY-MM-DD)
+ * @param executor - `db` ou la transaction en cours (lecture sous verrou)
  * @returns Calcul complet du portfolio
  */
 export async function calculatePortfolio(
   gameId: string,
-  currentDate: string
+  currentDate: string,
+  executor: DbExecutor = db
 ): Promise<PortfolioCalculation | null> {
   try {
-    // 1. Récupérer le game
-    const game = await db.query.games.findFirst({
-      where: eq(games.id, gameId),
-    });
+    // 1. Récupérer le game et ses holdings
+    const [game, allHoldings] = await Promise.all([
+      executor.query.games.findFirst({
+        where: eq(games.id, gameId),
+      }),
+      executor.query.holdings.findMany({
+        where: eq(holdings.gameId, gameId),
+      }),
+    ]);
 
     if (!game) {
       console.error(`[Calculations] Game not found: ${gameId}`);
       return null;
     }
 
-    // 2. Récupérer tous les holdings
-    const allHoldings = await db.query.holdings.findMany({
-      where: eq(holdings.gameId, gameId),
-    });
-
-    if (allHoldings.length === 0) {
-      // Pas de holdings, valeur = balance uniquement
-      return {
-        currentBalance: parseFloat(game.currentBalance),
-        portfolioValueLong: 0,
-        shortPositionsPnl: 0,
-        totalValue: parseFloat(game.currentBalance),
-        returnPercentage: 0,
-        score: 0,
-      };
-    }
-
-    // 3. Récupérer les prix actuels pour tous les symboles (BATCH DB Query)
+    // 2. Cours actuels convertis dans la devise de la partie (BATCH DB Query)
     const symbols = [...new Set(allHoldings.map((h) => h.symbol))];
-    console.log(`next-day : prices update for ${symbols.length} symbols at ${currentDate}`);
-    const pricesMap = await getLatestPrices(symbols, currentDate);
+    const quotes = await getQuotes(symbols, currentDate, game.currency);
 
-    // 4. Calculer la valeur des positions long
-    let portfolioValueLong = 0;
-    const longHoldings = allHoldings.filter((h) => !h.isShort);
-
-    for (const holding of longHoldings) {
-      const priceData = pricesMap.get(holding.symbol);
-      const currentPrice = priceData ? priceData.close_price : 0;
-
-      if (currentPrice > 0) {
-        const value = parseFloat(holding.quantity) * currentPrice;
-        portfolioValueLong += value;
-      }
-    }
-
-    // 5. Calculer le P&L des positions short
-    let shortPositionsPnl = 0;
-    const shortHoldings = allHoldings.filter((h) => h.isShort);
-
-    for (const holding of shortHoldings) {
-      const priceData = pricesMap.get(holding.symbol);
-      const currentPrice = priceData ? priceData.close_price : 0;
-
-      if (currentPrice > 0) {
-        // P&L short = (prix d'emprunt - prix actuel) × quantité
-        const pnl =
-          (parseFloat(holding.averageCost) - currentPrice) *
-          parseFloat(holding.quantity);
-        shortPositionsPnl += pnl;
-      }
-    }
-
-    // 6. Calculer la valeur totale
-    const currentBalance = parseFloat(game.currentBalance);
-    const totalValue = currentBalance + portfolioValueLong + shortPositionsPnl;
-
-    // 7. Calculer le rendement
-    const initialBalance = parseFloat(game.initialBalance);
-    const returnPercentage = ((totalValue - initialBalance) / initialBalance) * 100;
-
-    // 8. Calculer le score (pour leaderboard)
-    const score = Math.floor(returnPercentage * 10);
-
-    return {
-      currentBalance,
-      portfolioValueLong,
-      shortPositionsPnl,
-      totalValue,
-      returnPercentage,
-      score,
-    };
+    // 3. Valoriser
+    return valuePortfolio(
+      parseFloat(game.currentBalance),
+      parseFloat(game.initialBalance),
+      allHoldings.map((holding) => ({
+        quantity: parseFloat(holding.quantity),
+        averageCost: parseFloat(holding.averageCost),
+        isShort: holding.isShort,
+        price: quotes.get(holding.symbol)?.price ?? null,
+      }))
+    );
   } catch (error) {
     console.error('[Calculations] Error calculating portfolio:', error);
     return null;
@@ -116,14 +71,16 @@ export async function calculatePortfolio(
 
 /**
  * Calculer les valeurs actuelles pour tous les holdings
- * 
+ *
  * @param gameId - ID du game
  * @param currentDate - Date actuelle
- * @returns Array de holdings avec valeurs calculées
+ * @param currency - Devise de la partie (games.currency)
+ * @returns Array de holdings avec valeurs calculées (dans la devise de la partie)
  */
 export async function calculateHoldingsValues(
   gameId: string,
-  currentDate: string
+  currentDate: string,
+  currency: string
 ): Promise<HoldingWithValue[]> {
   try {
     // 1. Récupérer tous les holdings
@@ -137,18 +94,18 @@ export async function calculateHoldingsValues(
 
     // 2. Récupérer les prix actuels (BATCH DB Query)
     const symbols = [...new Set(allHoldings.map((h) => h.symbol))];
-    const [pricesMap, assetsMap] = await Promise.all([
-      getLatestPrices(symbols, currentDate),
-      getAssetsMap(symbols)
+    const [quotes, assetsMap] = await Promise.all([
+      getQuotes(symbols, currentDate, currency),
+      getAssetsMap(symbols),
     ]);
 
     // 3. Calculer pour chaque holding
     const holdingsWithValues: HoldingWithValue[] = [];
 
     for (const holding of allHoldings) {
-      const priceData = pricesMap.get(holding.symbol);
+      const quote = quotes.get(holding.symbol);
       const assetData = assetsMap.get(holding.symbol);
-      const currentPrice = priceData ? priceData.close_price : 0;
+      const currentPrice = quote ? quote.price : 0;
       const assetName = assetData ? assetData.name : holding.symbol;
 
       if (currentPrice === 0) {
@@ -164,8 +121,9 @@ export async function calculateHoldingsValues(
 
       if (holding.isShort) {
         // Position short : P&L = (prix d'emprunt - prix actuel) × quantité
-        // Si prix actuel est 0 (pas de donnée), P&L est faussé mais on garde 0 pour currentPrice
-        profitLoss = (averageCost - currentPrice) * quantity;
+        // Sans prix, P&L neutre (même convention que valuePortfolio)
+        const priceForPnl = currentPrice > 0 ? currentPrice : averageCost;
+        profitLoss = (averageCost - priceForPnl) * quantity;
         currentValue = profitLoss;
       } else {
         // Position long : valeur = prix actuel × quantité
@@ -186,6 +144,9 @@ export async function calculateHoldingsValues(
         createdAt: holding.createdAt,
         updatedAt: holding.updatedAt,
         name: assetName,
+        assetCurrency: quote?.assetCurrency ?? assetData?.currency?.code ?? currency,
+        assetPrice: quote?.assetPrice ?? 0,
+        dayChangePercent: quote?.changePercent ?? null,
         currentPrice,
         currentValue,
         profitLoss,
@@ -198,62 +159,6 @@ export async function calculateHoldingsValues(
     console.error('[Calculations] Error calculating holdings values:', error);
     return [];
   }
-}
-
-/**
- * Calculer le P&L d'une transaction potentielle (preview avant exécution)
- * 
- * @param type - Type de transaction (buy/sell/short/cover)
- * @param quantity - Quantité
- * @param price - Prix actuel
- * @param fees - Frais de transaction (%)
- * @returns Détails du calcul
- */
-export function calculateTransactionPreview(
-  type: 'buy' | 'sell' | 'short' | 'cover',
-  quantity: number,
-  price: number,
-  fees: number
-): {
-  subtotal: number;
-  feeAmount: number;
-  total: number;
-  balanceChange: number;
-} {
-  const subtotal = quantity * price;
-  const feeAmount = subtotal * (fees / 100);
-
-  let total: number;
-  let balanceChange: number;
-
-  switch (type) {
-    case 'buy':
-      total = subtotal + feeAmount;
-      balanceChange = -total; // Balance diminue
-      break;
-
-    case 'sell':
-      total = subtotal - feeAmount;
-      balanceChange = total; // Balance augmente
-      break;
-
-    case 'short':
-      total = subtotal - feeAmount;
-      balanceChange = total; // Balance augmente temporairement
-      break;
-
-    case 'cover':
-      total = subtotal + feeAmount;
-      balanceChange = -total; // Balance diminue
-      break;
-  }
-
-  return {
-    subtotal,
-    feeAmount,
-    total,
-    balanceChange,
-  };
 }
 
 /**

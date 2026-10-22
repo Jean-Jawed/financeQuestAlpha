@@ -42,3 +42,7 @@ next-env.d.ts
 
 # docs
 docs/
+
+# sources des visuels (gravures Gemini brutes, images non utilisées) : locales,
+# seules les versions traitées de public/gravures/ sont versionnées
+/assets-src/

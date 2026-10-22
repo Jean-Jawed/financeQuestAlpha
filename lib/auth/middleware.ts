@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { getSessionUser, requireAuth } from './session';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // TYPES
@@ -41,20 +42,18 @@ export function withAuth<T extends any[]>(
   ) => Promise<Response> | Response
 ) {
   return async (req: Request, ...args: T): Promise<Response> => {
+    // Vérifier l'authentification (seul échec qui donne un 401 : une erreur
+    // du handler reste une erreur serveur)
+    let userId: string;
     try {
-      console.log('[Auth Middleware] 🚀 Starting auth check...');
-      
-      // Vérifier l'authentification
-      const userId = await requireAuth();
-      
-      console.log('[Auth Middleware] ✅ Auth successful, userId:', userId);
-
-      // Exécuter le handler avec userId
-      return await handler(req, { userId }, ...args);
-    } catch (error) {
-      console.error('[Auth Middleware] ❌ Unauthorized access attempt, error:', error);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      userId = await requireAuth();
+    } catch {
+      const { api } = await getApiI18n();
+      return NextResponse.json({ error: api.unauthorized }, { status: 401 });
     }
+
+    // Exécuter le handler avec userId
+    return handler(req, { userId }, ...args);
   };
 }
 

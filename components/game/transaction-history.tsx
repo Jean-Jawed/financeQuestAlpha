@@ -1,14 +1,12 @@
 /**
  * FINANCEQUEST - COMPONENT: TransactionHistory
- * Historique des transactions
+ * Le livre d'ordres : dernières opérations, présentées comme un registre
  */
 
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { formatCurrency, formatQuantity } from '@/lib/utils/formatting';
-import { formatDateDisplay } from '@/lib/utils/dates';
+import { useI18n } from '@/lib/i18n/client';
+import { cn } from '@/lib/utils/cn';
 import type { Transaction } from '@/types/database';
 
 // ==========================================
@@ -17,86 +15,96 @@ import type { Transaction } from '@/types/database';
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
+  /** Devise de la partie */
+  currency: string;
 }
+
+/** Libellés dans le dictionnaire (ui.game.history) ; couleur par sens */
+const TYPE_TONES = {
+  buy: 'text-gain border-gain/40',
+  sell: 'text-brass border-brass/40',
+  short: 'text-loss border-loss/40',
+  cover: 'text-brass border-brass/40',
+} as const;
 
 // ==========================================
 // COMPONENT
 // ==========================================
 
-export function TransactionHistory({ transactions }: TransactionHistoryProps) {
-  if (transactions.length === 0) {
-    return (
-      <Card variant="glass">
-        <CardHeader>
-          <CardTitle>Historique des Transactions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center text-slate-400 py-8">Aucune transaction</p>
-        </CardContent>
-      </Card>
-    );
-  }
+export function TransactionHistory({ transactions, currency }: TransactionHistoryProps) {
+  const { m, f, fmt } = useI18n();
+  const t = m.game.history;
 
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle>Historique des Transactions ({transactions.length})</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          {transactions.map((transaction) => {
-            const typeColors = {
-              buy: 'info' as const,
-              sell: 'success' as const,
-              short: 'warning' as const,
-              cover: 'danger' as const,
-            };
-
-            const typeLabels = {
-              buy: 'Achat',
-              sell: 'Vente',
-              short: 'Short',
-              cover: 'Cover',
-            };
-
-            return (
-              <div
-                key={transaction.id}
-                className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700/50"
-              >
-                <div className="flex items-center gap-3 flex-1">
-                  <Badge variant={typeColors[transaction.type]} size="sm">
-                    {typeLabels[transaction.type]}
-                  </Badge>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-white">{transaction.symbol}</span>
-                      <span className="text-xs text-slate-500">
-                        {formatDateDisplay(transaction.transactionDate)}
-                      </span>
-                    </div>
-                    <div className="text-sm text-slate-400">
-                      {formatQuantity(parseFloat(transaction.quantity))} × {formatCurrency(parseFloat(transaction.price))}
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="font-semibold text-white">
-                      {formatCurrency(parseFloat(transaction.total))}
-                    </div>
-                    {parseFloat(transaction.fee) > 0 && (
-                      <div className="text-xs text-slate-500">
-                        Frais: {formatCurrency(parseFloat(transaction.fee))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+    <section className="panel" aria-labelledby="history-title">
+      <header className="flex items-end justify-between border-b border-line px-5 py-4">
+        <div>
+          <p className="label text-brass">{t.label}</p>
+          <h2 id="history-title" className="font-display text-2xl font-semibold text-paper">
+            {t.title}
+          </h2>
         </div>
-      </CardContent>
-    </Card>
+        {transactions.length > 0 && <p className="label">{fmt(t.latest, { count: transactions.length })}</p>}
+      </header>
+
+      {transactions.length === 0 ? (
+        <p className="px-5 py-10 text-center text-paper-dim">{t.empty}</p>
+      ) : (
+        <div className="max-h-[420px] overflow-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-ink-2">
+              <tr className="label text-left text-[10px]">
+                <th scope="col" className="px-5 py-2 font-semibold">{t.date}</th>
+                <th scope="col" className="px-2 py-2 font-semibold">{t.side}</th>
+                <th scope="col" className="px-2 py-2 font-semibold">{t.symbol}</th>
+                <th scope="col" className="hidden px-2 py-2 text-right font-semibold sm:table-cell">{t.qtyPrice}</th>
+                <th scope="col" className="px-5 py-2 text-right font-semibold">{t.amount}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {transactions.map((transaction) => {
+                const tone = TYPE_TONES[transaction.type];
+                const showNative =
+                  transaction.assetCurrency && transaction.assetPrice && transaction.assetCurrency !== currency;
+                return (
+                  <tr key={transaction.id} className="hover:bg-ink-3">
+                    <td className="num whitespace-nowrap px-5 py-2.5 text-paper-dim">
+                      {f.dateShort(transaction.transactionDate)}
+                    </td>
+                    <td className="px-2 py-2.5">
+                      <span
+                        className={cn(
+                          'inline-block rounded-sm border px-1.5 font-label text-[11px] font-semibold uppercase tracking-[0.1em]',
+                          tone
+                        )}
+                      >
+                        {t[transaction.type]}
+                      </span>
+                    </td>
+                    <td className="num px-2 py-2.5 font-semibold text-paper">{transaction.symbol}</td>
+                    <td className="num hidden px-2 py-2.5 text-right text-paper-dim sm:table-cell">
+                      {f.quantity(parseFloat(transaction.quantity))} × {f.currency(parseFloat(transaction.price), currency)}
+                      {showNative && (
+                        <span className="block text-[11px] text-paper-faint">
+                          {fmt(t.quoted, { price: f.currency(parseFloat(transaction.assetPrice!), transaction.assetCurrency!) })}
+                        </span>
+                      )}
+                    </td>
+                    <td className="num whitespace-nowrap px-5 py-2.5 text-right text-paper">
+                      {f.currency(parseFloat(transaction.total), currency)}
+                      {parseFloat(transaction.fee) > 0 && (
+                        <span className="block text-[11px] text-paper-faint">
+                          {fmt(t.feesIncluded, { fee: f.currency(parseFloat(transaction.fee), currency) })}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }

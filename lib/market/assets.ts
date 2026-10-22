@@ -145,6 +145,23 @@ export async function getAssetTypes() {
 }
 
 /**
+ * Type d'actif (code en minuscules : stock, crypto, bond…) pour une liste de symboles
+ * Une seule requête, y compris pour les actifs désactivés
+ */
+export async function getAssetTypesBySymbol(symbols: string[]): Promise<Map<string, string>> {
+  if (symbols.length === 0) return new Map();
+
+  const results = await marketDb`
+    SELECT a.symbol, LOWER(t.code) AS type_code
+    FROM assets a
+    JOIN asset_types t ON t.id = a.asset_type_id
+    WHERE a.symbol IN ${marketDb(symbols)}
+  `;
+
+  return new Map(results.map((row) => [row.symbol as string, row.type_code as string]));
+}
+
+/**
  * Récupérer tous les marchés disponibles
  */
 export async function getMarkets() {
@@ -185,4 +202,47 @@ function mapAssetRow(row: any): Asset {
       label: row.type_label
     }
   };
+}
+// ==========================================
+// CATALOGUE (page « Le jeu »)
+// ==========================================
+
+export interface CatalogCategory {
+  code: string;
+  label: string;
+  count: number;
+  /** Quelques noms d'exemple, par ordre d'identifiant */
+  examples: string[];
+}
+
+const CATALOG_TTL_MS = 60 * 60 * 1000;
+let catalogCache: { value: CatalogCategory[]; expiresAt: number } | null = null;
+
+/**
+ * Actifs négociables par type, avec des exemples. Une requête, en cache 1 h
+ */
+export async function getCatalogSummary(): Promise<CatalogCategory[]> {
+  const now = Date.now();
+  if (catalogCache && catalogCache.expiresAt > now) {
+    return catalogCache.value;
+  }
+
+  const rows = await marketDb`
+    SELECT t.code, t.label, COUNT(*)::int AS count,
+           (ARRAY_AGG(a.name ORDER BY a.id))[1:8] AS examples
+    FROM assets a
+    JOIN asset_types t ON t.id = a.asset_type_id
+    WHERE a.is_active
+    GROUP BY t.code, t.label
+    ORDER BY COUNT(*) DESC
+  `;
+
+  const value = rows.map((row) => ({
+    code: row.code as string,
+    label: row.label as string,
+    count: row.count as number,
+    examples: row.examples as string[],
+  }));
+  catalogCache = { value, expiresAt: now + CATALOG_TTL_MS };
+  return value;
 }

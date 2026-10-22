@@ -5,7 +5,7 @@
  * Doit refléter la base réelle : les statuts / types sont des colonnes `text`
  * avec contrainte CHECK (pas des enums Postgres), et `users.id` référence
  * `auth.users.id` (profil créé par le trigger `on_auth_user_created`).
- * Voir docs/reviewOct2026/sql/02_projet_A_structure.sql
+ * Voir docs/reviewOct2026/sql/02_projet_A_structure.sql et 03_projet_A_devises.sql
  */
 
 import {
@@ -21,6 +21,7 @@ import {
   jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { GAME_CURRENCIES } from '../game/currency';
 
 // ==========================================
 // VALEURS AUTORISÉES (contraintes CHECK en base)
@@ -89,6 +90,8 @@ export const games = pgTable('games', {
     .notNull(),
   currentBalance: decimal('current_balance', { precision: 15, scale: 2 }).notNull(),
   status: text('status', { enum: GAME_STATUSES }).default('active').notNull(),
+  /** Devise de jeu (ISO 4217) : solde, coûts moyens et transactions */
+  currency: text('currency', { enum: GAME_CURRENCIES }).default('EUR').notNull(),
   settings: jsonb('settings')
     .$type<{
       transaction_fees: number;
@@ -134,7 +137,12 @@ export const transactions = pgTable('transactions', {
   symbol: text('symbol').notNull(),
   type: text('type', { enum: TRANSACTION_TYPES }).notNull(),
   quantity: decimal('quantity', { precision: 15, scale: 8 }).notNull(),
+  /** Prix unitaire dans la devise de la partie */
   price: decimal('price', { precision: 18, scale: 6 }).notNull(),
+  /** Conversion : devise et cours d'origine de l'actif, taux appliqué (null : transactions antérieures) */
+  assetCurrency: text('asset_currency'),
+  assetPrice: decimal('asset_price', { precision: 18, scale: 6 }),
+  fxRate: decimal('fx_rate', { precision: 20, scale: 10 }),
   fee: decimal('fee', { precision: 15, scale: 2 }).default('0').notNull(),
   total: decimal('total', { precision: 15, scale: 2 }).notNull(),
   transactionDate: date('transaction_date').notNull(),

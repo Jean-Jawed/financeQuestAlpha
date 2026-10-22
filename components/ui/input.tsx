@@ -27,9 +27,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-slate-300 mb-2">
+          <label htmlFor={props.id} className="label mb-2 block">
             {label}
-            {props.required && <span className="text-red-400 ml-1">*</span>}
+            {props.required && <span className="ml-1 text-loss">*</span>}
           </label>
         )}
 
@@ -38,14 +38,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           type={type}
           className={cn(
             // Base
-            'w-full px-4 py-3 rounded-lg',
-            'bg-slate-900/50 border text-white placeholder-slate-500',
-            'transition-all duration-200',
-            'focus:outline-none focus:ring-2',
+            'h-11 w-full rounded px-3',
+            'border bg-ink text-paper placeholder:text-paper-faint',
+            'transition-colors duration-150',
+            'focus:outline-none focus:ring-1',
+            (type === 'number' || type === 'date') && 'num',
             // States
             error
-              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-600 focus:ring-cyan-500 focus:border-cyan-500',
+              ? 'border-loss focus:border-loss focus:ring-loss'
+              : 'border-line-strong focus:border-brass focus:ring-brass',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             className
           )}
@@ -53,7 +54,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         />
 
         {error && (
-          <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+          <p className="mt-2 flex items-center gap-1 text-sm text-loss">
             <svg
               className="w-4 h-4"
               fill="currentColor"
@@ -70,7 +71,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
 
         {helperText && !error && (
-          <p className="mt-2 text-sm text-slate-400">{helperText}</p>
+          <p className="mt-2 text-sm text-paper-dim">{helperText}</p>
         )}
       </div>
     );

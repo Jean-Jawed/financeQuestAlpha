@@ -5,12 +5,15 @@
 
 import { NextResponse } from 'next/server';
 import { signOut } from '@/lib/auth/session';
+import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
 // API HANDLER
 // ==========================================
 
 export async function POST(req: Request) {
+  const { api, fmt, f } = await getApiI18n();
+
   try {
     // Déconnecter l'utilisateur
     const result = await signOut();
@@ -24,12 +27,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Déconnexion réussie',
+      message: api.loggedOut,
     });
   } catch (error) {
     console.error('[API] Logout error:', error);
     return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
+      { error: api.internal },
       { status: 500 }
     );
   }
