@@ -11,11 +11,13 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { ArticleCard } from '@/components/mag/article-card';
 import { FinalCta } from '@/components/mag/prose';
 import { JsonLd } from '@/components/seo/json-ld';
-import { getArticleBySlug, listArticles, loadArticleBody } from '@/content/mag';
+import { getArticleBySlug, listArticles, listRelated } from '@/content/mag';
+import { loadArticleBody } from '@/content/mag/bodies';
 import { LOCALES, type Locale } from '@/lib/i18n/config';
 import { getI18n, resolveLocale } from '@/lib/i18n/server';
 import { localizePath } from '@/lib/i18n/paths';
 import { absoluteUrl, getSiteUrl, pageMetadata } from '@/lib/seo';
+import { cn } from '@/lib/utils/cn';
 
 type Params = Promise<{ locale: string; slug: string }>;
 
@@ -66,7 +68,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
   const { site, f, fmt, href } = getI18n(locale);
   const t = site.mag;
   const { default: Body, toc } = await loadArticleBody(article.id, locale);
-  const related = listArticles(locale).filter((other) => other.id !== article.id);
+  const related = listRelated(article, locale);
   const otherLocale: Locale = locale === 'fr' ? 'en' : 'fr';
   const url = absoluteUrl(href(article.paths[locale]));
 
@@ -87,6 +89,16 @@ export default async function ArticlePage({ params }: { params: Params }) {
             keywords: article.keywords.join(', '),
             author: { '@type': 'Organization', name: 'FinanceQuest', url: absoluteUrl(href('/')) },
             publisher: { '@id': `${getSiteUrl()}/#studio` },
+            // Fiche : le terme qu'elle définit
+            ...(article.term && {
+              about: {
+                '@type': 'DefinedTerm',
+                name: article.term,
+                description: article.description,
+                url,
+                inDefinedTermSet: { '@type': 'DefinedTermSet', name: t.fichesTitle, url: absoluteUrl(href('/mag')) },
+              },
+            }),
           },
           {
             '@context': 'https://schema.org',
@@ -146,30 +158,37 @@ export default async function ArticlePage({ params }: { params: Params }) {
             height={article.imageHeight}
             priority
             sizes="(min-width: 1024px) 1000px, 100vw"
-            className="engraving h-auto w-full"
+            className="engraving h-auto max-h-[560px] w-full object-cover"
           />
         </div>
       </figure>
 
-      {/* Corps, sommaire en marge sur grand écran */}
-      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-14 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <nav aria-labelledby="toc-title" className="rounded border border-line bg-ink-2 p-5">
-            <p id="toc-title" className="label text-brass">
-              {t.toc}
-            </p>
-            <ol className="mt-3 space-y-2 text-sm">
-              {toc.map((entry, index) => (
-                <li key={entry.id} className="flex gap-2">
-                  <span className="num text-paper-faint">{String(index + 1).padStart(2, '0')}</span>
-                  <a href={`#${entry.id}`} className="text-paper-dim transition-colors hover:text-paper">
-                    {entry.title}
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </nav>
-        </aside>
+      {/* Corps, sommaire en marge sur grand écran (les fiches n'en ont pas) */}
+      <div
+        className={cn(
+          'container mx-auto grid gap-12 px-4 py-14',
+          toc.length > 0 ? 'max-w-6xl lg:grid-cols-[220px_minmax(0,1fr)]' : 'max-w-4xl'
+        )}
+      >
+        {toc.length > 0 && (
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <nav aria-labelledby="toc-title" className="rounded border border-line bg-ink-2 p-5">
+              <p id="toc-title" className="label text-brass">
+                {t.toc}
+              </p>
+              <ol className="mt-3 space-y-2 text-sm">
+                {toc.map((entry, index) => (
+                  <li key={entry.id} className="flex gap-2">
+                    <span className="num text-paper-faint">{String(index + 1).padStart(2, '0')}</span>
+                    <a href={`#${entry.id}`} className="text-paper-dim transition-colors hover:text-paper">
+                      {entry.title}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          </aside>
+        )}
 
         <div className="max-w-[68ch]">
           <Body />
@@ -190,7 +209,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
         <section className="border-t border-line bg-ink-2">
           <div className="container mx-auto max-w-6xl px-4 py-16">
             <h2 className="font-display text-3xl font-semibold text-paper">{t.related}</h2>
-            <div className="mt-8 grid gap-8 md:grid-cols-2">
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((other) => (
                 <ArticleCard key={other.id} article={other} locale={locale} />
               ))}

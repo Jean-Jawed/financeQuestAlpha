@@ -1,14 +1,21 @@
 /**
  * FINANCEQUEST - PAGE: Accueil
  * Direction artistique « La Corbeille » (docs/reviewOct2026/10_direction_artistique.md)
+ * « La cloche d'ouverture » : la cloche et le tableau d'affichage, la gravure qui
+ * s'imprime au défilement, le krach de 2020 rejoué séance par séance, les chiffres en
+ * volets, puis les sections de texte (déroulé, présentation, questions, La Gazette)
+ * et le certificat final.
  */
 
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Logo } from '@/components/brand/logo';
-import { Rosette } from '@/components/brand/guilloche';
-import { TickerTape } from '@/components/brand/ticker-tape';
+import { CorbeilleScene } from '@/components/landing/corbeille-scene';
+import { CrashScene } from '@/components/landing/crash-scene';
+import { FlipCounters } from '@/components/landing/flip-counters';
+import { OpeningBell } from '@/components/landing/opening-bell';
+import { StampedCertificate } from '@/components/landing/stamped-certificate';
 import { Footer } from '@/components/layout/footer';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { JsonLd } from '@/components/seo/json-ld';
@@ -56,8 +63,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const locale = await resolveLocale(params);
   const { ui, site, f, href } = getI18n(locale);
   const t = site.home;
+  const landing = t.landing;
   const ticker = await loadTicker();
-  const articles = listArticles(locale).slice(0, 2);
+  const articles = listArticles(locale, 'article').slice(0, 2);
+  const fiches = listArticles(locale, 'fiche');
 
   const stats = [
     { value: ticker ? f.number(ticker.assetCount, 0) : '240+', label: t.stats.assets },
@@ -87,7 +96,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       />
 
       {/* Barre */}
-      <header className="container mx-auto flex h-20 items-center justify-between gap-4 px-4">
+      <header className="container absolute inset-x-0 top-0 z-20 mx-auto flex h-20 items-center justify-between gap-4 px-4">
         <Logo size="md" />
         <nav className="flex items-center gap-5 sm:gap-6">
           <Link
@@ -113,62 +122,33 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       </header>
 
       <main className="flex-1">
-        {/* Héros */}
-        <section className="container relative mx-auto px-4 pb-12 pt-8 md:pt-16">
-          <div className="mx-auto max-w-4xl text-center">
-            <p className="label mb-6 text-brass">{t.eyebrow}</p>
-            <h1 className="font-display text-5xl font-semibold leading-[0.95] tracking-tight text-paper sm:text-6xl md:text-8xl">
-              {t.title}
-            </h1>
-            <p className="mt-6 font-display text-2xl italic text-paper-dim md:text-3xl">{t.subtitle}</p>
+        <OpeningBell
+          eyebrow={t.eyebrow}
+          title={t.title}
+          subtitle={t.subtitle}
+          ctaPrimary={t.ctaPrimary}
+          ctaSecondary={t.ctaSecondary}
+          signupHref={href('/signup')}
+          loginHref={href('/login')}
+          bellLabel={landing.bellLabel}
+          boardQuestion={landing.boardQuestion}
+          scrollCue={landing.scrollCue}
+        />
 
-            <div className="mt-10 flex flex-col items-center justify-center gap-5 sm:flex-row">
-              <Link
-                href={href('/signup')}
-                className="inline-flex h-14 items-center rounded border border-brass-bright/60 bg-brass px-9 font-label text-lg font-semibold uppercase tracking-[0.14em] text-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_3px_0_#8E7034] transition-colors hover:bg-brass-bright active:translate-y-px"
-              >
-                {t.ctaPrimary}
-              </Link>
-              <Link
-                href={href('/login')}
-                className="text-paper-dim underline decoration-line-strong underline-offset-8 transition-colors hover:text-paper hover:decoration-brass"
-              >
-                {t.ctaSecondary}
-              </Link>
-            </div>
-          </div>
+        <CorbeilleScene
+          alt={t.heroAlt}
+          caption={t.heroCaption}
+          lines={landing.corbeilleLines as [string, string, string]}
+          tickerTitle={t.tickerTitle}
+          ticker={ticker?.items ?? []}
+        />
 
-          <figure className="relative mx-auto mt-14 max-w-6xl">
-            <Rosette
-              size={560}
-              strands={20}
-              strokeWidth={0.35}
-              className="absolute -left-40 -top-24 hidden text-brass/[0.09] md:block"
-            />
-            <div className="relative overflow-hidden rounded border-[6px] border-double border-brass/60 bg-paper p-2 shadow-lift">
-              <Image
-                src="/gravures/corbeille.webp"
-                alt={t.heroAlt}
-                width={1262}
-                height={662}
-                priority
-                sizes="(min-width: 1152px) 1152px, 100vw"
-                className="engraving h-auto w-full"
-              />
-            </div>
-            <figcaption className="label mt-3 text-center text-paper-faint">{t.heroCaption}</figcaption>
-          </figure>
+        <CrashScene {...landing.crash} ctaHref={href('/signup')} />
+
+        {/* Chiffres */}
+        <section className="border-y border-line bg-ink-2">
+          <FlipCounters counters={stats.map((stat) => ({ value: stat.value, label: stat.label }))} />
         </section>
-
-        {/* Bande de cotations réelles */}
-        {ticker && ticker.items.length > 0 && (
-          <section aria-labelledby="ticker-title">
-            <h2 id="ticker-title" className="label container mx-auto mb-2 px-4">
-              {t.tickerTitle}
-            </h2>
-            <TickerTape items={ticker.items} />
-          </section>
-        )}
 
         {/* Déroulé d'une partie */}
         <section className="container mx-auto px-4 py-24">
@@ -195,21 +175,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               </li>
             ))}
           </ol>
-        </section>
-
-        {/* Chiffres */}
-        <section className="border-y border-line bg-ink-2">
-          <dl className="container mx-auto grid grid-cols-2 px-4 md:grid-cols-4">
-            {stats.map((stat, index) => (
-              <div
-                key={stat.label}
-                className={`px-4 py-10 text-center ${index > 0 ? 'md:border-l md:border-line' : ''} ${index % 2 === 1 ? 'border-l border-line md:border-l' : ''}`}
-              >
-                <dd className="font-display text-5xl font-semibold text-brass">{stat.value}</dd>
-                <dt className="label mt-2">{stat.label}</dt>
-              </div>
-            ))}
-          </dl>
         </section>
 
         {/* Présentation : ce qu'est le jeu, en texte (pour les joueurs et les moteurs) */}
@@ -281,28 +246,36 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                 <ArticleCard key={article.id} article={article} locale={locale} />
               ))}
             </div>
+            {/* Les fiches pour débutants, en liens directs */}
+            {fiches.length > 0 && (
+              <nav aria-labelledby="home-fiches" className="mt-10 flex flex-wrap items-center gap-3">
+                <span id="home-fiches" className="label mr-2 text-brass">
+                  {site.mag.fichesTitle}
+                </span>
+                {fiches.map((fiche) => (
+                  <Link
+                    key={fiche.id}
+                    href={href(fiche.paths[locale])}
+                    className="rounded-full border border-line px-4 py-1.5 text-sm text-paper-dim transition-colors hover:border-brass/60 hover:text-paper"
+                  >
+                    {fiche.shortTitle}
+                  </Link>
+                ))}
+              </nav>
+            )}
           </section>
         )}
 
         {/* Appel final */}
         <section className="container mx-auto px-4 pb-24">
-          <div className="certificate relative mx-auto max-w-3xl overflow-hidden px-8 py-14 text-center">
-            <Image
-              src="/gravures/laurier.webp"
-              alt=""
-              width={320}
-              height={320}
-              className="engraving mx-auto -mb-6 h-40 w-40 object-contain opacity-80"
-            />
-            <h2 className="font-display text-4xl font-semibold text-paper">{t.finalTitle}</h2>
-            <p className="mx-auto mt-4 max-w-lg text-paper-dim">{t.finalText}</p>
-            <Link
-              href={href('/signup')}
-              className="mt-8 inline-flex h-12 items-center rounded border border-brass/70 px-7 font-label text-base font-semibold uppercase tracking-[0.14em] text-brass transition-colors hover:bg-brass/10"
-            >
-              {t.finalCta}
-            </Link>
-          </div>
+          <StampedCertificate
+            eyebrow={landing.certificateEyebrow}
+            title={landing.certificateTitle}
+            text={landing.certificateText}
+            stamp={landing.stamp}
+            cta={t.ctaPrimary}
+            href={href('/signup')}
+          />
         </section>
       </main>
 

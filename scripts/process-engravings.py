@@ -66,13 +66,17 @@ ASSETS = [
     ("faillite.jpg", "faillite", 400, INK, 0.06, 0.80, PAPER),
     # Fin de période ou des données : le sablier, en impression positive pour le bilan
     ("sablier.png", "sablier-bilan", 400, INK, 0.06, 0.80, PAPER),
+    # La Gazette, fiches et dossiers (en-tête d'article, 1024 px de source)
+    ("panier.jpg", "panier", 1024, INK, 0.06, 0.80, PAPER),
+    ("tempete.jpg", "tempete", 1024, INK, 0.06, 0.80, PAPER),
+    ("frappe.jpg", "frappe", 1024, INK, 0.06, 0.80, PAPER),
 ]
 
 # Images de partage (Open Graph) : JPEG en impression positive, recadrées au format
 # du cadre de lib/og.tsx (372 x 412), à 2x
 OG_OUT = ROOT / "public" / "og"
 OG_SIZE = (744, 824)
-OG_SOURCES = ["corbeille.jpg", "apprenti.jpg", "automate.jpg"]
+OG_SOURCES = ["corbeille.jpg", "apprenti.jpg", "automate.jpg", "panier.jpg", "tempete.jpg", "frappe.jpg"]
 
 
 def engrave(

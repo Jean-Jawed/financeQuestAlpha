@@ -224,6 +224,7 @@ export const ui: UiMessages = {
       credited: 'Total credited',
       shortNote:
         'The sale proceeds stay locked as collateral. Losses are unlimited if the price rises.',
+      shortLearnMore: 'Learn more',
       refused: 'Order rejected',
       sending: 'Sending…',
       retrying: 'The server is slow to answer: the order is being resent, with no risk of duplicates.',

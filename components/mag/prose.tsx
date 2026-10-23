@@ -5,6 +5,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { articlePath } from '@/content/mag';
+import type { Locale } from '@/lib/i18n/config';
+import { localizePath } from '@/lib/i18n/paths';
 import { cn } from '@/lib/utils/cn';
 
 // ==========================================
@@ -14,7 +17,7 @@ import { cn } from '@/lib/utils/cn';
 /** Intertitre de section, ancré pour le sommaire */
 export function H2({ id, children }: { id: string; children: React.ReactNode }) {
   return (
-    <h2 id={id} className="mt-14 scroll-mt-24 font-display text-3xl font-semibold leading-tight text-paper">
+    <h2 id={id} className="clear-both mt-14 scroll-mt-24 font-display text-3xl font-semibold leading-tight text-paper">
       {children}
     </h2>
   );
@@ -47,9 +50,31 @@ export function List({ children, ordered = false }: { children: React.ReactNode;
   );
 }
 
+/** Lien vers un autre article de La Gazette, par identifiant */
+export function MagLink({ id, locale, children }: { id: string; locale: Locale; children: React.ReactNode }) {
+  return (
+    <Link
+      href={localizePath(locale, articlePath(id, locale))}
+      className="text-paper underline decoration-brass/60 underline-offset-4 transition-colors hover:decoration-brass"
+    >
+      {children}
+    </Link>
+  );
+}
+
 // ==========================================
 // ENCADRÉS
 // ==========================================
+
+/** En tête de fiche : l'essentiel en quelques points */
+export function Summary({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <aside className="certificate mb-10 px-6 py-5">
+      <p className="label text-brass">{title}</p>
+      <ul className="mt-3 space-y-2 pl-5 text-paper marker:text-brass list-[square]">{children}</ul>
+    </aside>
+  );
+}
 
 /** Définition : le terme, puis son explication en une phrase */
 export function Definition({ term, children }: { term: string; children: React.ReactNode }) {

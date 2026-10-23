@@ -2,7 +2,9 @@
  * LA GAZETTE - Ce qu'il faut savoir avant de commencer à trader (français)
  */
 
-import { Definition, Em, H2, InlineCta, KeyFigure, List, P, Table } from '@/components/mag/prose';
+import { ArchiveFigure } from '@/components/mag/figures';
+import { DiversificationDiagram, FeesDiagram, LossRecoveryDiagram, ShortPayoffDiagram, SpreadDiagram } from '@/components/mag/diagrams';
+import { Definition, Em, H2, InlineCta, KeyFigure, List, P } from '@/components/mag/prose';
 import { getSiteMessages } from '@/lib/i18n/messages';
 import { localizePath } from '@/lib/i18n/paths';
 import type { TocEntry } from '../index';
@@ -32,6 +34,13 @@ export default function Article() {
         accompagne toujours le rendement, ce que coûtent les frais, et pourquoi notre propre cerveau est souvent
         notre pire conseiller.
       </P>
+
+      <ArchiveFigure
+        name="bourse-paris-xixe"
+        locale="fr"
+        alt="Le palais de la Bourse de Paris, gravure du XIXe siècle"
+        caption="Le palais Brongniart, siège de la Bourse de Paris de 1826 à 1987. On y criait les cours à la corbeille."
+      />
 
       <H2 id="trader-investir">Trader, investir, spéculer : trois choses différentes</H2>
       <P>
@@ -78,6 +87,8 @@ export default function Article() {
         journée. C’est le prix de référence que retiennent les journaux, les indices et les fonds.
       </P>
 
+      <SpreadDiagram locale="fr" />
+
       <H2 id="rendement-risque">Le rendement ne va jamais sans le risque</H2>
       <P>
         C’est la règle la plus importante de la finance : un rendement espéré plus élevé se paie toujours par un
@@ -89,23 +100,14 @@ export default function Article() {
         dans l’autre.
       </Definition>
       <P>
-        Les grands indices boursiers ont historiquement une volatilité de l’ordre de 15 à 20 % par an. Une action
+        Les grands indices boursiers ont historiquement une volatilité de l’ordre de 15 à 20 % par an. Une action
         seule est en général plus agitée, et une cryptomonnaie comme le bitcoin l’est souvent deux à quatre fois
         plus qu’un indice. Plus la volatilité est forte, plus les pertes temporaires peuvent être profondes, et
         c’est là que l’arithmétique devient cruelle.
       </P>
-      <Table
-        head={['Perte subie', 'Gain nécessaire pour revenir au départ']}
-        rows={[
-          ['−10 %', '+11 %'],
-          ['−20 %', '+25 %'],
-          ['−33 %', '+50 %'],
-          ['−50 %', '+100 %'],
-          ['−80 %', '+400 %'],
-        ]}
-      />
+      <LossRecoveryDiagram locale="fr" />
       <P>
-        Une perte et un gain de même pourcentage ne s’annulent pas : après −50 %, il faut doubler pour revenir au
+        Une perte et un gain de même pourcentage ne s’annulent pas : après −50 %, il faut doubler pour revenir au
         point de départ. C’est pourquoi les traders expérimentés pensent d’abord à limiter leurs pertes, avant de
         chercher à maximiser leurs gains.
       </P>
@@ -123,8 +125,10 @@ export default function Article() {
         qui réagissent différemment (actions, obligations, or, devises) amortit mieux ces chocs que d’accumuler
         des actions semblables.
       </P>
-      <KeyFigure value="5 à 10 %">
-        Une règle de prudence répandue : ne jamais engager plus de 5 à 10 % de son capital sur une seule position.
+      <DiversificationDiagram locale="fr" />
+
+      <KeyFigure value="5 à 10 %">
+        Une règle de prudence répandue : ne jamais engager plus de 5 à 10 % de son capital sur une seule position.
       </KeyFigure>
 
       <InlineCta href={SIGNUP} label={mag.ctaInlineLabel} button={mag.ctaInlineButton}>
@@ -139,9 +143,9 @@ export default function Article() {
         beaucoup d’ordres.
       </P>
       <P>
-        Un exemple simple : avec 0,1 % de frais à l’achat et 0,1 % à la vente, un aller-retour coûte 0,2 % du
-        montant engagé. Cent allers-retours par an sur la totalité du capital, et ce sont 20 % du capital qui
-        partent en frais, avant même le premier gain. Sur le long terme, 1 % de frais annuels en plus suffit à
+        Un exemple simple : avec 0,1 % de frais à l’achat et 0,1 % à la vente, un aller-retour coûte 0,2 % du
+        montant engagé. Cent allers-retours par an sur la totalité du capital, et ce sont 20 % du capital qui
+        partent en frais, avant même le premier gain. Sur le long terme, 1 % de frais annuels en plus suffit à
         réduire d’environ un quart le capital final au bout de trente ans.
       </P>
       <P>
@@ -149,15 +153,24 @@ export default function Article() {
         validation. C’est un bon moyen de sentir combien la fréquence des ordres pèse sur le résultat.
       </P>
 
+      <FeesDiagram locale="fr" />
+
       <H2 id="vente-a-decouvert">Vendre à découvert : gagner à la baisse</H2>
       <Definition term="Vente à découvert">
         Vendre un titre que l’on ne possède pas, en l’empruntant, pour le racheter plus tard. On gagne si le cours
         baisse entre la vente et le rachat ; on perd s’il monte.
       </Definition>
+
+      <ArchiveFigure
+        name="triomphe-ours-1903"
+        locale="fr" layout="side"
+        alt="Caricature d’un ours brandissant une épée au-dessus d’un taureau terrassé, sous la foule de Wall Street"
+        caption="« Le triomphe de l’ours dans l’arène de Wall Street » : l’ours, qui gagne à la baisse, terrasse le taureau. Puck, 1903."
+      />
       <P>
         La vente à découvert est utile : elle permet de parier contre une valeur jugée trop chère, ou de protéger
         un portefeuille. Mais son profil de risque est inversé. À l’achat, la perte maximale est la mise : un titre
-        ne peut pas valoir moins que zéro. À découvert, le gain maximal est de 100 % (si le titre tombe à zéro),
+        ne peut pas valoir moins que zéro. À découvert, le gain maximal est de 100 % (si le titre tombe à zéro),
         alors que la perte n’a <Em>pas de plafond</Em> : un cours peut doubler, tripler, ou davantage.
       </P>
       <P>
@@ -171,10 +184,12 @@ export default function Article() {
         découvert.
       </P>
 
+      <ShortPayoffDiagram locale="fr" />
+
       <H2 id="levier">L’effet de levier et le risque de ruine</H2>
       <P>
         L’effet de levier consiste à engager plus d’argent que l’on n’en possède, en empruntant. Avec un levier de
-        10, une hausse de 1 % rapporte 10 %… et une baisse de 10 % efface la totalité de la mise. Au-delà, le
+        10, une hausse de 1 % rapporte 10 %… et une baisse de 10 % efface la totalité de la mise. Au-delà, le
         courtier exige des fonds supplémentaires (un <Em>appel de marge</Em>) ou ferme la position d’office, au
         pire moment.
       </P>
@@ -182,7 +197,7 @@ export default function Article() {
         Le levier ne change pas la qualité d’une décision ; il change seulement la vitesse à laquelle on gagne ou
         on perd. Pour un débutant, il transforme des erreurs ordinaires en pertes irréversibles. Les régulateurs
         européens obligent d’ailleurs les courtiers en CFD, des produits à fort levier, à afficher la part de
-        comptes de particuliers qui perdent de l’argent : elle dépasse souvent 70 %.
+        comptes de particuliers qui perdent de l’argent : elle dépasse souvent 70 %.
       </P>
 
       <H2 id="biais">Vos pires ennemis : vos propres biais</H2>
@@ -191,6 +206,13 @@ export default function Article() {
         nous ne décidons pas comme des machines à calculer. Quelques biais reviennent sans cesse chez les
         traders.
       </P>
+
+      <ArchiveFigure
+        name="foule-wall-street-1929"
+        locale="fr"
+        alt="Foule dense massée devant la Bourse de New York"
+        caption="Le 24 octobre 1929, le « jeudi noir », la foule se presse devant la Bourse de New York. La panique se propage d’un investisseur à l’autre."
+      />
       <List>
         <li>
           <Em>L’aversion à la perte</Em> : une perte fait environ deux fois plus mal qu’un gain équivalent ne fait

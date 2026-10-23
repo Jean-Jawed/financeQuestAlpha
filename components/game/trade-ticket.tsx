@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n/client';
 import { playSound } from '@/lib/sound';
 import { TRADE_ACTIONS, type TradeAction } from '@/lib/game/scenarios';
+import { articlePath } from '@/content/mag';
 import { cn } from '@/lib/utils/cn';
 import { TimeoutError, fetchWithTimeout } from '@/lib/utils/fetch-timeout';
 import type { GameState } from '@/types/game';
@@ -91,7 +92,7 @@ export function TradeTicket({
   onDone,
 }: TradeTicketProps) {
   const { toast } = useToast();
-  const { m, f, fmt } = useI18n();
+  const { m, f, fmt, locale, href } = useI18n();
   const t = m.game.ticket;
   // Sens proposés à l'ouverture : achat et vente à découvert, selon le scénario
   const openActions = (['buy', 'short'] as const).filter(
@@ -328,7 +329,17 @@ export function TradeTicket({
             <dd className="num text-brass">{f.currency(total, currency)}</dd>
           </div>
           {action === 'short' && (
-            <p className="pt-1 text-xs text-paper-dim">{t.shortNote}</p>
+            <p className="pt-1 text-xs text-paper-dim">
+              {t.shortNote}{' '}
+              <a
+                href={href(articlePath('vente-a-decouvert', locale))}
+                target="_blank"
+                rel="noopener"
+                className="text-brass underline underline-offset-2 hover:text-brass-bright"
+              >
+                {t.shortLearnMore}
+              </a>
+            </p>
           )}
         </dl>
 

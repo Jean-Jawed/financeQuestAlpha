@@ -28,6 +28,8 @@ export default async function MagPage({ params }: { params: Promise<{ locale: st
   const { site, href } = getI18n(locale);
   const t = site.mag;
   const articles = listArticles(locale);
+  const dossiers = articles.filter((article) => article.kind === 'article');
+  const fiches = articles.filter((article) => article.kind === 'fiche');
 
   return (
     <div>
@@ -85,11 +87,29 @@ export default async function MagPage({ params }: { params: Promise<{ locale: st
         </div>
       </section>
 
-      <section className="container mx-auto px-4 pb-24">
-        <div className="grid gap-8 md:grid-cols-2">
-          {articles.map((article) => (
+      <section aria-labelledby="dossiers-title" className="container mx-auto px-4 pb-16">
+        <h2 id="dossiers-title" className="font-display text-3xl font-semibold text-paper">
+          {t.dossiersTitle}
+        </h2>
+        <p className="mt-2 text-paper-dim">{t.dossiersIntro}</p>
+        <div className="mt-8 grid gap-8 md:grid-cols-2">
+          {dossiers.map((article) => (
             <ArticleCard key={article.id} article={article} locale={locale} />
           ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="fiches-title" className="border-t border-line bg-ink-2">
+        <div className="container mx-auto px-4 py-16 pb-24">
+          <h2 id="fiches-title" className="font-display text-3xl font-semibold text-paper">
+            {t.fichesTitle}
+          </h2>
+          <p className="mt-2 text-paper-dim">{t.fichesIntro}</p>
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {fiches.map((article) => (
+              <ArticleCard key={article.id} article={article} locale={locale} />
+            ))}
+          </div>
         </div>
       </section>
     </div>

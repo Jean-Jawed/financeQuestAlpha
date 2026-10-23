@@ -2,6 +2,8 @@
  * LA GAZETTE - Les algorithmes de micro-trading, expliqués simplement (français)
  */
 
+import { ArchiveFigure } from '@/components/mag/figures';
+import { LatencyDiagram, MarketMakingDiagram } from '@/components/mag/diagrams';
 import { Definition, Em, H2, H3, InlineCta, KeyFigure, List, P, Table } from '@/components/mag/prose';
 import { getSiteMessages } from '@/lib/i18n/messages';
 import { localizePath } from '@/lib/i18n/paths';
@@ -28,6 +30,13 @@ export default function Article() {
         algorithmes, en quelques microsecondes, sans intervention humaine. Aux États-Unis, ce trading à haute
         fréquence représente selon les estimations environ la moitié des volumes échangés sur les actions.
       </P>
+
+      <ArchiveFigure
+        name="courtier-telescripteur-1894"
+        locale="fr" layout="side"
+        alt="Un homme en haut-de-forme lit le ruban d’un téléscripteur boursier"
+        caption="En 1894, un courtier lit les cours sur le ruban d’un téléscripteur. L’information arrivait avec plusieurs minutes de retard."
+      />
 
       <H2 id="definition">De quoi parle-t-on ?</H2>
       <P>
@@ -84,10 +93,19 @@ export default function Article() {
           ['Décision d’un algorithme en colocation', 'quelques µs'],
         ]}
       />
+
+      <LatencyDiagram locale="fr" />
       <P>
         Pour descendre encore, les algorithmes les plus rapides ne tournent plus sur des processeurs classiques,
         mais sur des circuits programmables (FPGA) qui réagissent directement aux données reçues par le réseau.
       </P>
+
+      <ArchiveFigure
+        name="telescripteur-edison"
+        locale="fr" layout="side"
+        alt="Téléscripteur boursier d’Edison sous une cloche de verre"
+        caption="Le téléscripteur boursier perfectionné par Thomas Edison vers 1870 : la première machine à diffuser les cours à distance."
+      />
 
       <H2 id="strategies">Les grandes familles de stratégies</H2>
       <H3>La tenue de marché</H3>
@@ -129,6 +147,8 @@ export default function Article() {
         Écrivez vos propres règles, et testez-les séance après séance sur les cours réels.
       </InlineCta>
 
+      <MarketMakingDiagram locale="fr" />
+
       <H2 id="effets">Ce que ces algorithmes changent pour les autres</H2>
       <P>
         Le bilan est partagé. D’un côté, la concurrence entre teneurs de marché électroniques a fortement réduit
@@ -136,7 +156,7 @@ export default function Article() {
         corbeilles. De l’autre, cette liquidité peut disparaître d’un coup, au moment où on en a le plus besoin.
       </P>
       <KeyFigure value="6 mai 2010">
-        Le « krach éclair » : en quelques minutes, le Dow Jones perd près de 1 000 points, environ 9 %, avant de
+        Le « krach éclair » : en quelques minutes, le Dow Jones perd près de 1 000 points, environ 9 %, avant de
         se reprendre presque aussitôt. Des actions s’échangent un instant à un centime.
       </KeyFigure>
       <P>
@@ -158,6 +178,13 @@ export default function Article() {
         et de conserver la trace de leurs ordres. Les Bourses suspendent automatiquement la cotation d’une valeur
         dont le prix s’emballe.
       </P>
+
+      <ArchiveFigure
+        name="activite-wall-street-1908"
+        locale="fr"
+        alt="Gravure d’une foule agitée de courtiers dans Wall Street"
+        caption="« Grande activité dans Wall Street », 1908. Un siècle plus tard, la même agitation se joue en silence, dans des centres de données."
+      />
 
       <H2 id="chez-soi">Peut-on faire du micro-trading chez soi ?</H2>
       <P>

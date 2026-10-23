@@ -84,6 +84,28 @@ const config: Config = {
           from: { opacity: '0' },
           to: { opacity: '1' },
         },
+        // Page d'accueil : la cloche d'ouverture
+        'bell-swing': {
+          '0%': { transform: 'rotate(0)' },
+          '12%': { transform: 'rotate(16deg)' },
+          '30%': { transform: 'rotate(-12deg)' },
+          '48%': { transform: 'rotate(8deg)' },
+          '66%': { transform: 'rotate(-4deg)' },
+          '84%': { transform: 'rotate(2deg)' },
+          '100%': { transform: 'rotate(0)' },
+        },
+        'ring-wave': {
+          '0%': { opacity: '0.7', transform: 'scale(0.6)' },
+          '100%': { opacity: '0', transform: 'scale(2.6)' },
+        },
+        curtain: {
+          '0%': { clipPath: 'inset(0 0 0 0)' },
+          '100%': { clipPath: 'inset(0 0 100% 0)' },
+        },
+        'rise-slow': {
+          from: { opacity: '0', transform: 'translateY(18px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         ticker: 'ticker-scroll 60s linear infinite',
@@ -91,6 +113,11 @@ const config: Config = {
         'flip-in': 'flip-in 320ms ease-out both',
         rise: 'rise 280ms ease-out both',
         fade: 'fade 200ms ease-out both',
+        'bell-swing': 'bell-swing 1.6s cubic-bezier(.36,.07,.19,.97) both',
+        'ring-wave': 'ring-wave 1.4s ease-out both',
+        curtain: 'curtain 1.1s cubic-bezier(.7,0,.2,1) both',
+        'rise-slow': 'rise-slow 700ms cubic-bezier(.2,.7,.2,1) both',
+        'spin-slow': 'spin 160s linear infinite',
       },
     },
   },

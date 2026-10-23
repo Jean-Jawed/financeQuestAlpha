@@ -2,6 +2,8 @@
  * THE GAZETTE - Micro-trading algorithms, explained simply (English)
  */
 
+import { ArchiveFigure } from '@/components/mag/figures';
+import { LatencyDiagram, MarketMakingDiagram } from '@/components/mag/diagrams';
 import { Definition, Em, H2, H3, InlineCta, KeyFigure, List, P, Table } from '@/components/mag/prose';
 import { getSiteMessages } from '@/lib/i18n/messages';
 import { localizePath } from '@/lib/i18n/paths';
@@ -28,6 +30,13 @@ export default function Article() {
         human intervention. In the United States, this high-frequency trading is estimated to account for around
         half of stock trading volume.
       </P>
+
+      <ArchiveFigure
+        name="courtier-telescripteur-1894"
+        locale="en" layout="side"
+        alt="A man in a top hat reads the tape of a stock ticker"
+        caption="In 1894, a broker reads prices off a ticker tape. The information arrived several minutes late."
+      />
 
       <H2 id="definition">What are we talking about?</H2>
       <P>The term covers several things that are worth telling apart.</P>
@@ -81,10 +90,19 @@ export default function Article() {
           ['Decision by a co-located algorithm', 'a few µs'],
         ]}
       />
+
+      <LatencyDiagram locale="en" />
       <P>
         To go even lower, the fastest algorithms no longer run on ordinary processors, but on programmable chips
         (FPGAs) that react directly to the data arriving from the network.
       </P>
+
+      <ArchiveFigure
+        name="telescripteur-edison"
+        locale="en" layout="side"
+        alt="Edison stock ticker under a glass dome"
+        caption="The stock ticker improved by Thomas Edison around 1870: the first machine to broadcast prices at a distance."
+      />
 
       <H2 id="strategies">The main families of strategies</H2>
       <H3>Market making</H3>
@@ -125,6 +143,8 @@ export default function Article() {
         Write your own rules, and test them session after session on real prices.
       </InlineCta>
 
+      <MarketMakingDiagram locale="en" />
+
       <H2 id="effects">What these algorithms change for everyone else</H2>
       <P>
         The verdict is mixed. On the one hand, competition between electronic market makers has sharply narrowed
@@ -153,6 +173,13 @@ export default function Article() {
         to be authorised, to test their algorithms, to be able to switch them off instantly and to keep records of
         their orders. Exchanges automatically halt trading in a stock whose price runs out of control.
       </P>
+
+      <ArchiveFigure
+        name="activite-wall-street-1908"
+        locale="en"
+        alt="Engraving of an agitated crowd of brokers on Wall Street"
+        caption="“Great activity in Wall Street”, 1908. A century later, the same frenzy plays out silently, inside data centres."
+      />
 
       <H2 id="at-home">Can you do micro-trading at home?</H2>
       <P>

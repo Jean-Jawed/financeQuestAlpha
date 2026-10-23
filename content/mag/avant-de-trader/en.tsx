@@ -2,7 +2,9 @@
  * THE GAZETTE - What to know before you start trading (English)
  */
 
-import { Definition, Em, H2, InlineCta, KeyFigure, List, P, Table } from '@/components/mag/prose';
+import { ArchiveFigure } from '@/components/mag/figures';
+import { DiversificationDiagram, FeesDiagram, LossRecoveryDiagram, ShortPayoffDiagram, SpreadDiagram } from '@/components/mag/diagrams';
+import { Definition, Em, H2, InlineCta, KeyFigure, List, P } from '@/components/mag/prose';
 import { getSiteMessages } from '@/lib/i18n/messages';
 import { localizePath } from '@/lib/i18n/paths';
 import type { TocEntry } from '../index';
@@ -31,6 +33,13 @@ export default function Article() {
         much less so. Before your first order, you need to understand what a price is, how risk always comes with
         return, what fees really cost, and why your own brain is often your worst adviser.
       </P>
+
+      <ArchiveFigure
+        name="bourse-paris-xixe"
+        locale="en"
+        alt="The Paris stock exchange palace, 19th-century engraving"
+        caption="The Palais Brongniart, home of the Paris stock exchange from 1826 to 1987, where prices were shouted around the trading ring."
+      />
 
       <H2 id="trading-investing">Trading, investing, speculating: three different things</H2>
       <P>
@@ -77,6 +86,8 @@ export default function Article() {
         reference price used by newspapers, indices and funds.
       </P>
 
+      <SpreadDiagram locale="en" />
+
       <H2 id="risk-return">Return never comes without risk</H2>
       <P>
         This is the most important rule in finance: a higher expected return is always paid for with higher risk.
@@ -92,16 +103,7 @@ export default function Article() {
         an index. The higher the volatility, the deeper temporary losses can be, and that is where arithmetic
         becomes cruel.
       </P>
-      <Table
-        head={['Loss suffered', 'Gain needed to break even']}
-        rows={[
-          ['−10%', '+11%'],
-          ['−20%', '+25%'],
-          ['−33%', '+50%'],
-          ['−50%', '+100%'],
-          ['−80%', '+400%'],
-        ]}
-      />
+      <LossRecoveryDiagram locale="en" />
       <P>
         A loss and a gain of the same percentage do not cancel out: after −50%, you need to double your money to
         get back to where you started. This is why experienced traders think about limiting losses first, before
@@ -119,6 +121,8 @@ export default function Article() {
         once. In 2008 or in March 2020, almost all stocks fell together. Mixing assets that react differently
         (stocks, bonds, gold, currencies) cushions these shocks better than piling up similar stocks.
       </P>
+      <DiversificationDiagram locale="en" />
+
       <KeyFigure value="5 to 10%">
         A widespread rule of prudence: never commit more than 5 to 10% of your capital to a single position.
       </KeyFigure>
@@ -143,11 +147,20 @@ export default function Article() {
         good way to feel how much trading frequency weighs on your results.
       </P>
 
+      <FeesDiagram locale="en" />
+
       <H2 id="short-selling">Short selling: profiting from a fall</H2>
       <Definition term="Short selling">
         Selling a security you do not own, by borrowing it, in order to buy it back later. You gain if the price
         falls between the sale and the buyback; you lose if it rises.
       </Definition>
+
+      <ArchiveFigure
+        name="triomphe-ours-1903"
+        locale="en" layout="side"
+        alt="Cartoon of a bear brandishing a sword over a fallen bull, before the Wall Street crowd"
+        caption="“The triumph of the bear in the Wall Street arena”: the bear, who profits from falling prices, floors the bull. Puck, 1903."
+      />
       <P>
         Short selling is useful: it lets you bet against a stock you find overpriced, or hedge a portfolio. But its
         risk profile is reversed. When you buy, the maximum loss is your stake: a security cannot be worth less
@@ -163,6 +176,8 @@ export default function Article() {
         This is why the proceeds of a short sale stay locked as collateral, and a minimum margin is required.
         FinanceQuest applies the same logic: your net value must cover half of your short positions.
       </P>
+
+      <ShortPayoffDiagram locale="en" />
 
       <H2 id="leverage">Leverage and the risk of ruin</H2>
       <P>
@@ -182,6 +197,13 @@ export default function Article() {
         Behavioural finance has shown it since the work of Daniel Kahneman and Amos Tversky: we do not decide like
         calculators. A few biases keep coming up among traders.
       </P>
+
+      <ArchiveFigure
+        name="foule-wall-street-1929"
+        locale="en"
+        alt="Dense crowd gathered outside the New York Stock Exchange"
+        caption="On 24 October 1929, “Black Thursday”, crowds gather outside the New York Stock Exchange. Panic spreads from one investor to the next."
+      />
       <List>
         <li>
           <Em>Loss aversion</Em>: a loss hurts roughly twice as much as an equivalent gain pleases. So we hold on

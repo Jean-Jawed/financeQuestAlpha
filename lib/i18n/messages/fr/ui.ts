@@ -224,6 +224,7 @@ export const ui = {
       credited: 'Total crédité',
       shortNote:
         'Le produit de la vente reste bloqué en garantie. Perte possible illimitée si le cours monte.',
+      shortLearnMore: 'En savoir plus',
       refused: 'Ordre refusé',
       sending: 'Transmission…',
       retrying: 'Le serveur tarde à répondre : l’ordre est renvoyé, sans risque de doublon.',

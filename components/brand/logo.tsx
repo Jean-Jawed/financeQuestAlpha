@@ -8,7 +8,6 @@
 
 import { useI18n } from '@/lib/i18n/client';
 import { cn } from '@/lib/utils/cn';
-import { wavyCirclePath } from './guilloche';
 
 // ==========================================
 // SCEAU
@@ -36,13 +35,19 @@ export function Seal({ size = 40, className, compact = size < 40 }: SealProps) {
       <g fill="none" stroke="currentColor">
         <circle cx="50" cy="50" r="47.5" strokeWidth="2" />
         <circle cx="50" cy="50" r="44" strokeWidth="0.6" />
-        {Array.from({ length: strands }, (_, i) => (
-          <path
-            key={i}
-            d={wavyCirclePath(50, 50, 38.5, 4, 18, (i / strands) * Math.PI * 2, 216)}
-            strokeWidth={compact ? 0.9 : 0.45}
+        {/* Anneau guilloché : fichier mis en cache, colorié par le masque (voir guilloche.tsx) */}
+        <foreignObject x="0" y="0" width="100" height="100">
+          <span
+            className="block h-full w-full"
+            style={{
+              backgroundColor: 'currentColor',
+              maskImage: `url(/motifs/seal-${strands}.svg)`,
+              WebkitMaskImage: `url(/motifs/seal-${strands}.svg)`,
+              maskSize: 'contain',
+              WebkitMaskSize: 'contain',
+            }}
           />
-        ))}
+        </foreignObject>
         <circle cx="50" cy="50" r="31" strokeWidth="0.8" />
       </g>
       <circle cx="50" cy="50" r="30.4" fill="#0F1D19" />

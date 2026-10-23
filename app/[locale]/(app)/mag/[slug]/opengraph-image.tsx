@@ -26,6 +26,6 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
   return renderOgImage({
     eyebrow: site.mag.name,
     title: article?.title ?? site.mag.title,
-    engraving: article ? article.image.replace('/gravures/', '').replace('.webp', '.jpg') : 'corbeille.jpg',
+    engraving: article ? article.image.split('/').pop()!.replace('.webp', '.jpg') : 'corbeille.jpg',
   });
 }
