@@ -277,7 +277,13 @@ export function TradeTicket({
           )}
         </div>
 
-        <PriceChart symbol={asset.symbol} currentDate={currentDate} currency={quote?.assetCurrency ?? currency} />
+        <PriceChart
+          symbol={asset.symbol}
+          currentDate={currentDate}
+          currency={quote?.assetCurrency ?? currency}
+          // Prix de revient ramené en devise de cotation (la courbe n'est pas convertie)
+          costPrice={averageCost !== undefined && quote && quote.price > 0 ? (averageCost * quote.assetPrice) / quote.price : undefined}
+        />
 
         {/* Quantité */}
         <div className="flex items-end gap-2">

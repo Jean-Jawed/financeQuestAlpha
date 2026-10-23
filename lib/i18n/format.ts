@@ -55,8 +55,13 @@ export function createFormatters(locale: Locale) {
     },
     /** 15 juin 2023 (fr) · June 15, 2023 (en) */
     date: (date: string) => formatDateDisplay(date, intl),
+    /** 15 juin (fr) · Jun 15 (en) : axes des courbes */
+    dayMonth: (date: string) =>
+      new Date(`${date}T00:00:00Z`).toLocaleDateString(intl, { day: 'numeric', month: 'short', timeZone: 'UTC' }),
     /** 15/06/2023 (fr) · 6/15/2023 (en) */
     dateShort: (date: string) => formatDateShort(date, intl),
+    /** 1,2 M (fr) · 1.2M (en) : volumes */
+    compact: (value: number) => value.toLocaleString(intl, { notation: 'compact', maximumFractionDigits: 1 }),
     /** Quantité d'actifs : jusqu'à 8 décimales pour les cryptos */
     quantity: (value: number) =>
       value.toLocaleString(intl, { maximumFractionDigits: value < 1 ? 8 : 4 }),

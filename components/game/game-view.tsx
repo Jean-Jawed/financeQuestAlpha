@@ -14,6 +14,7 @@ import { PositionsPanel } from '@/components/game/positions-panel';
 import { MedalOverlay } from '@/components/game/achievement-medal';
 import { TickerTape } from '@/components/brand/ticker-tape';
 import { AssetList } from '@/components/game/asset-list';
+import { MarketJournal } from '@/components/game/market-journal';
 import { NextDayButton } from '@/components/game/next-day-button';
 import { TransactionHistory } from '@/components/game/transaction-history';
 import { useToast } from '@/hooks/use-toast';
@@ -204,6 +205,17 @@ export function GameView({ gameId }: { gameId: string }) {
 
           {/* Colonne marché */}
           <div className="space-y-6">
+            <MarketJournal
+              gameId={game.id}
+              currentDate={game.currentDate}
+              currency={game.currency}
+              scenario={game.scenario}
+              allowShorting={game.settings.allow_shorting}
+              feeRate={game.settings.transaction_fees}
+              availableCash={portfolio.availableCash}
+              onTradeComplete={handleActionDone}
+            />
+
             <AssetList
               gameId={game.id}
               currentDate={game.currentDate}
