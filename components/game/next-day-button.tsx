@@ -1,6 +1,8 @@
 /**
  * FINANCEQUEST - COMPONENT: NextDayButton
  * La cloche : date en volets, frise de la partie, clôture de la séance
+ * Partie de groupe en tempo synchronisé : le joueur se déclare prêt, la séance
+ * avance quand tout le groupe l'est
  */
 
 'use client';
@@ -31,6 +33,10 @@ interface NextDayButtonProps {
   currency: string;
   /** Appelé avec l'état de la partie renvoyé par la séance */
   onDayAdvanced: (state?: GameState) => void;
+  /** Tempo synchronisé : état de la séance commune (absent pour une partie à son rythme) */
+  sync?: { started: boolean; ready: boolean; readyCount: number; total: number };
+  /** Tempo synchronisé : le joueur est prêt, la séance attend les autres */
+  onWaiting?: () => void;
 }
 
 // ==========================================
@@ -45,10 +51,13 @@ export function NextDayButton({
   totalValue,
   currency,
   onDayAdvanced,
+  sync,
+  onWaiting,
 }: NextDayButtonProps) {
   const { toast } = useToast();
   const { m, f, fmt } = useI18n();
   const t = m.game.nextDay;
+  const g = m.groups.nextDay;
   const [loading, setLoading] = useState(false);
 
   async function handleNextDay() {
@@ -67,6 +76,14 @@ export function NextDayButton({
       if (!res.ok) {
         playSound('refusal');
         toast.error(data.error || t.failed);
+        return;
+      }
+
+      // Tempo synchronisé : prêt, la séance attend les autres joueurs
+      if (data.data?.waiting) {
+        playSound('stamp', 0.5);
+        toast.info(data.message);
+        onWaiting?.();
         return;
       }
 
@@ -106,6 +123,16 @@ export function NextDayButton({
   const elapsedDays = daysBetween(startDate, currentDate);
   const progress = totalDays > 0 ? Math.min((elapsedDays / totalDays) * 100, 100) : 100;
   const isFinished = currentDate >= endDate;
+  const syncBlocked = sync ? !sync.started || sync.ready : false;
+  const label = isFinished
+    ? t.finished
+    : sync
+      ? !sync.started
+        ? g.notStarted
+        : sync.ready
+          ? fmt(g.waiting, { ready: sync.readyCount, total: sync.total })
+          : g.ready
+      : t.close;
 
   return (
     <section className="certificate p-6" aria-label={t.section}>
@@ -137,10 +164,10 @@ export function NextDayButton({
         className="mt-6 w-full"
         onClick={handleNextDay}
         loading={loading}
-        disabled={isFinished}
+        disabled={isFinished || syncBlocked}
       >
-        {isFinished ? t.finished : t.close}
-        {!isFinished && !loading && <span aria-hidden="true">→</span>}
+        {label}
+        {!isFinished && !syncBlocked && !loading && <span aria-hidden="true">→</span>}
       </Button>
       {!isFinished && (
         <p className="mt-2 text-center text-xs text-paper-dim">{t.hint}</p>

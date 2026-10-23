@@ -1,11 +1,11 @@
 /**
  * FINANCEQUEST - DRIZZLE SCHEMA
- * Définitions TypeScript des 6 tables Supabase PostgreSQL (projet FinanceQuest)
+ * Définitions TypeScript des tables Supabase PostgreSQL (projet FinanceQuest)
  *
  * Doit refléter la base réelle : les statuts / types sont des colonnes `text`
  * avec contrainte CHECK (pas des enums Postgres), et `users.id` référence
  * `auth.users.id` (profil créé par le trigger `on_auth_user_created`).
- * Voir docs/reviewOct2026/sql/02_projet_A_structure.sql et 03_projet_A_devises.sql
+ * Voir docs/reviewOct2026/sql/02_projet_A_structure.sql et suivants (06 : groupes)
  */
 
 import {
@@ -18,10 +18,14 @@ import {
   date,
   boolean,
   integer,
+  bigint,
   jsonb,
+  primaryKey,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { GAME_CURRENCIES } from '../game/currency';
+import { GROUP_MODES, GROUP_STATUSES, GROUP_TEMPOS } from '../game/groups';
 
 // ==========================================
 // VALEURS AUTORISÉES (contraintes CHECK en base)
@@ -30,7 +34,18 @@ import { GAME_CURRENCIES } from '../game/currency';
 export const GAME_STATUSES = ['active', 'paused', 'completed'] as const;
 
 /** Raisons de fin de partie (games.end_reason) */
-export const END_REASONS = ['retired', 'period_end', 'data_end', 'bankrupt', 'abandoned'] as const;
+export const END_REASONS = [
+  'retired',
+  'period_end',
+  'data_end',
+  'bankrupt',
+  'abandoned',
+  // Parties de groupe : fin fixée par le groupe, objectif de course atteint, éliminé
+  'group_end',
+  'target_reached',
+  'eliminated',
+] as const;
+
 
 export const TRANSACTION_TYPES = ['buy', 'sell', 'short', 'cover'] as const;
 
@@ -116,6 +131,8 @@ export const games = pgTable('games', {
   endReason: text('end_reason', { enum: END_REASONS }),
   finalValue: decimal('final_value', { precision: 15, scale: 2 }),
   finalReturn: decimal('final_return', { precision: 12, scale: 4 }),
+  /** Partie de groupe : la partie individuelle du joueur au sein du groupe */
+  groupId: uuid('group_id').references((): AnyPgColumn => groups.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -197,6 +214,88 @@ export const userAchievements = pgTable('user_achievements', {
 });
 
 // ==========================================
+// TABLE: groups (parties de groupe)
+// ==========================================
+
+export const groups = pgTable('groups', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** Code d'invitation (8 caractères, lien /groups/join/<code>) */
+  code: text('code').notNull().unique(),
+  name: text('name').notNull(),
+  ownerId: uuid('owner_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  mode: text('mode', { enum: GROUP_MODES }).notNull(),
+  tempo: text('tempo', { enum: GROUP_TEMPOS }).notNull(),
+  scenario: text('scenario').default('libre').notNull(),
+  currency: text('currency', { enum: GAME_CURRENCIES }).notNull(),
+  startDate: date('start_date').notNull(),
+  /** Durée en séances (plafond pour la course) */
+  sessionsTarget: integer('sessions_target').notNull(),
+  /** Course : rendement à atteindre, en % */
+  targetReturn: decimal('target_return', { precision: 8, scale: 2 }),
+  /** Élimination : une sortie toutes les K séances */
+  eliminationEvery: integer('elimination_every'),
+  /** Synchro : la séance avance après ce délai même si un joueur n'est pas prêt */
+  syncTimeoutHours: integer('sync_timeout_hours'),
+  maxPlayers: integer('max_players').default(30).notNull(),
+  status: text('status', { enum: GROUP_STATUSES }).default('open').notNull(),
+  /** Synchro : date de jeu commune */
+  syncDate: date('sync_date'),
+  lastAdvancedAt: timestamp('last_advanced_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  endedAt: timestamp('ended_at', { withTimezone: true }),
+});
+
+export const groupMembers = pgTable(
+  'group_members',
+  {
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    gameId: uuid('game_id')
+      .notNull()
+      .unique()
+      .references(() => games.id, { onDelete: 'cascade' }),
+    /** Synchro : prêt pour la séance suivante */
+    ready: boolean('ready').default(false).notNull(),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.groupId, table.userId] })]
+);
+
+export const groupMessages = pgTable('group_messages', {
+  id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  groupId: uuid('group_id')
+    .notNull()
+    .references(() => groups.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Une ligne par partie et par séance : ce que voient les concurrents */
+export const gameSnapshots = pgTable(
+  'game_snapshots',
+  {
+    gameId: uuid('game_id')
+      .notNull()
+      .references(() => games.id, { onDelete: 'cascade' }),
+    date: date('date').notNull(),
+    totalValue: decimal('total_value', { precision: 15, scale: 2 }).notNull(),
+    ordersCount: integer('orders_count').notNull(),
+    openPositions: integer('open_positions').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.gameId, table.date] })]
+);
+
+// ==========================================
 // RELATIONS (pour Drizzle queries)
 // ==========================================
 
@@ -265,3 +364,7 @@ export type NewAchievement = typeof achievements.$inferInsert;
 
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type NewUserAchievement = typeof userAchievements.$inferInsert;
+
+export type Group = typeof groups.$inferSelect;
+export type GroupMember = typeof groupMembers.$inferSelect;
+export type GroupMessage = typeof groupMessages.$inferSelect;

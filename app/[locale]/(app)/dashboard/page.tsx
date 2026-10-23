@@ -8,6 +8,9 @@ import { redirect } from 'next/navigation';
 import { getSessionState } from '@/lib/auth/session';
 import { WelcomeCard } from '@/components/dashboard/welcome-card';
 import { CreateGameCard } from '@/components/dashboard/create-game-card';
+import { CreateGroupCard } from '@/components/groups/create-group-card';
+import { JoinGroupCard } from '@/components/groups/join-group-card';
+import { groupsByGame } from '@/lib/game/group-server';
 import { GameCard } from '@/components/dashboard/game-card';
 import { db } from '@/lib/db';
 import { games as gamesTable } from '@/lib/db/schema';
@@ -63,6 +66,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
   // Fetch games directement depuis la DB (pas d'API)
   let games: GameWithStats[] = [];
+  let groupOf: Awaited<ReturnType<typeof groupsByGame>> = new Map();
   let gamesPlayed = 0;
   let achievementsTotal = 0;
 
@@ -71,6 +75,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
       where: eq(gamesTable.userId, user.id),
       orderBy: (gamesTable, { desc }) => [desc(gamesTable.updatedAt)],
     });
+
+    groupOf = await groupsByGame(user.id);
 
     games = await Promise.all(
       userGames.map(async (game) => {
@@ -131,11 +137,25 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             {games
               .filter((game) => game.status !== 'completed')
               .map((game) => (
-                <GameCard key={game.id} game={game} />
+                <GameCard key={game.id} game={game} group={groupOf.get(game.id)} />
               ))}
             {activeGames < MAX_ACTIVE_GAMES && (
               <CreateGameCard minDate={coverage.start} maxDate={lastStartDate} isFirst={gamesPlayed === 0} />
             )}
+          </div>
+        </section>
+
+        {/* Parties de groupe : organiser, ou rejoindre avec un code */}
+        <section aria-labelledby="groups-title">
+          <div className="mb-6 border-b border-line pb-3">
+            <h2 id="groups-title" className="font-display text-3xl font-semibold text-paper">
+              {ui.groups.sectionTitle}
+            </h2>
+            <p className="mt-1 text-paper-dim">{ui.groups.sectionIntro}</p>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {activeGames < MAX_ACTIVE_GAMES && <CreateGroupCard minDate={coverage.start} maxDate={lastStartDate} />}
+            <JoinGroupCard />
           </div>
         </section>
 
@@ -148,7 +168,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {endedGames.map((game) => (
-                <GameCard key={game.id} game={game} />
+                <GameCard key={game.id} game={game} group={groupOf.get(game.id)} />
               ))}
             </div>
           </section>

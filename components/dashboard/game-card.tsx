@@ -12,6 +12,7 @@ import { useI18n } from '@/lib/i18n/client';
 import { getScenario } from '@/lib/game/scenarios';
 import { cn } from '@/lib/utils/cn';
 import type { GameWithStats } from '@/types/game';
+import type { GroupMode, GroupTempo } from '@/lib/game/groups';
 
 // ==========================================
 // TYPES
@@ -19,13 +20,15 @@ import type { GameWithStats } from '@/types/game';
 
 interface GameCardProps {
   game: GameWithStats;
+  /** Partie de groupe : nom du groupe, mode et tempo */
+  group?: { name: string; mode: GroupMode; tempo: GroupTempo };
 }
 
 // ==========================================
 // COMPONENT
 // ==========================================
 
-export function GameCard({ game }: GameCardProps) {
+export function GameCard({ game, group }: GameCardProps) {
   const { m, f, fmt, href } = useI18n();
   const t = m.dashboard.gameCard;
   const serial = game.id.replace(/-/g, '').slice(0, 8).toUpperCase();
@@ -51,11 +54,17 @@ export function GameCard({ game }: GameCardProps) {
       {/* En-tête du titre */}
       <div className="relative flex items-start justify-between gap-4">
         <div>
-          <p className="label text-[10px] text-brass">
-            {scenarioName} · {fmt(t.serial, { serial })}
-          </p>
+          {group ? (
+            <p className="label text-[10px] text-brass">
+              {m.groups.badge} · {m.groups.modes[group.mode].name} · {m.groups.tempos[group.tempo].name}
+            </p>
+          ) : (
+            <p className="label text-[10px] text-brass">
+              {scenarioName} · {fmt(t.serial, { serial })}
+            </p>
+          )}
           <h3 className="mt-1 font-display text-xl font-semibold text-paper">
-            {fmt(t.session, { date: f.date(game.startDate) })}
+            {group ? group.name : fmt(t.session, { date: f.date(game.startDate) })}
           </h3>
         </div>
         <GameStatusBadge status={game.status} />

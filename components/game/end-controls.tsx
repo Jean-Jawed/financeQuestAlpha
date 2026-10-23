@@ -18,13 +18,15 @@ import type { GameState } from '@/types/game';
 interface EndControlsProps {
   gameId: string;
   sessionsPlayed: number;
+  /** Partie de groupe : la fin est fixée par le groupe, seul l'abandon reste possible */
+  inGroup?: boolean;
   /** Appelé avec l'état de la partie terminée (bilan) */
   onEnded: (state?: GameState) => void;
 }
 
 type EndChoice = 'retired' | 'abandoned';
 
-export function EndControls({ gameId, sessionsPlayed, onEnded }: EndControlsProps) {
+export function EndControls({ gameId, sessionsPlayed, inGroup = false, onEnded }: EndControlsProps) {
   const { m, fmt } = useI18n();
   const t = m.end;
   const { toast } = useToast();
@@ -65,14 +67,16 @@ export function EndControls({ gameId, sessionsPlayed, onEnded }: EndControlsProp
 
   return (
     <div className="space-y-3">
-      <Button
-        variant="secondary"
-        className="w-full"
-        disabled={!canRetire}
-        onClick={() => setChoice('retired')}
-      >
-        {canRetire ? t.retire : fmt(t.retireLocked, { remaining })}
-      </Button>
+      {!inGroup && (
+        <Button
+          variant="secondary"
+          className="w-full"
+          disabled={!canRetire}
+          onClick={() => setChoice('retired')}
+        >
+          {canRetire ? t.retire : fmt(t.retireLocked, { remaining })}
+        </Button>
+      )}
       <button
         type="button"
         onClick={() => setChoice('abandoned')}

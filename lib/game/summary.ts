@@ -12,8 +12,14 @@ import { getScenario, MIN_SESSIONS_TO_RETIRE } from './scenarios';
 import type { GameSummary } from '@/types/game';
 
 /** Une partie terminée figure-t-elle au classement de son scénario ? */
-export function isRanked(game: Pick<Game, 'status' | 'endReason' | 'sessionsPlayed'>): boolean {
-  return game.status === 'completed' && game.endReason !== 'abandoned' && game.sessionsPlayed >= MIN_SESSIONS_TO_RETIRE;
+/** Partie classée : terminée sans abandon, assez de séances, hors partie de groupe (classée dans son groupe) */
+export function isRanked(game: Pick<Game, 'status' | 'endReason' | 'sessionsPlayed' | 'groupId'>): boolean {
+  return (
+    game.status === 'completed' &&
+    game.endReason !== 'abandoned' &&
+    game.sessionsPlayed >= MIN_SESSIONS_TO_RETIRE &&
+    game.groupId === null
+  );
 }
 
 /**
@@ -49,6 +55,7 @@ async function loadRank(game: Game): Promise<GameSummary['rank']> {
         AND end_reason <> 'abandoned'
         AND sessions_played >= ${MIN_SESSIONS_TO_RETIRE}
         AND scenario = ${game.scenario}
+        AND group_id IS NULL
       ORDER BY user_id, final_return DESC
     )
     SELECT

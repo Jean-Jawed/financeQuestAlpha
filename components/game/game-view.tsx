@@ -1,6 +1,8 @@
 /**
  * FINANCEQUEST - COMPONENT: GameView
  * La partie : séance, portefeuille, positions, cote et livre d'ordres
+ * Partie de groupe : panneau du groupe (classement, messagerie) et, en tempo
+ * synchronisé, séance commune
  */
 
 'use client';
@@ -23,6 +25,8 @@ import { preloadSounds } from '@/lib/sound';
 import { getScenario } from '@/lib/game/scenarios';
 import { EndControls } from '@/components/game/end-controls';
 import { GameSummary } from '@/components/game/game-summary';
+import { GroupPanel } from '@/components/groups/group-panel';
+import type { GroupView } from '@/types/groups';
 import type {
   GameState,
   GameSummary as GameSummaryData,
@@ -47,6 +51,7 @@ export function GameView({ gameId }: { gameId: string }) {
   const [holdings, setHoldings] = useState<HoldingWithValue[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<GameSummaryData | null>(null);
+  const [groupView, setGroupView] = useState<GroupView | null>(null);
 
   function applyState(state: GameState) {
     setGame(state.game);
@@ -93,6 +98,15 @@ export function GameView({ gameId }: { gameId: string }) {
     }
   }
 
+  // Partie de groupe : la séance commune a avancé, ou la partie s'est terminée
+  // (fin du groupe, élimination) sans action du joueur : relire la partie
+  function handleGroupUpdate(view: GroupView) {
+    setGroupView(view);
+    if (game && (view.viewer.date !== game.currentDate || view.viewer.status !== game.status)) {
+      fetchGameData();
+    }
+  }
+
   // Pas d'attente de /api/auth/session : le proxy protège déjà la page
   // et l'API renvoie 401 si la session a expiré
   useEffect(() => {
@@ -114,6 +128,20 @@ export function GameView({ gameId }: { gameId: string }) {
   }
 
   const serial = game.id.replace(/-/g, '').slice(0, 8).toUpperCase();
+  // Relecture du classement après chaque ordre ou séance du joueur
+  const groupRefreshKey = `${game.currentDate}|${transactions.length}|${transactions[0]?.id ?? ''}|${game.status}`;
+  const groupPanel = game.groupId ? (
+    <GroupPanel groupId={game.groupId} refreshKey={groupRefreshKey} onUpdate={handleGroupUpdate} />
+  ) : null;
+  const sync =
+    groupView && groupView.group.tempo === 'synchro'
+      ? {
+          started: groupView.group.status !== 'open',
+          ready: groupView.viewer.ready,
+          readyCount: groupView.sync?.readyCount ?? 0,
+          total: groupView.sync?.total ?? groupView.group.playersCount,
+        }
+      : undefined;
   const scenario = getScenario(game.scenario);
   const scenarioName = (m.scenarios[scenario.id as keyof typeof m.scenarios] as { name: string }).name;
 
@@ -124,6 +152,7 @@ export function GameView({ gameId }: { gameId: string }) {
         <GameSummary
           state={{ game, portfolio, holdings, recentTransactions: transactions, summary }}
         />
+        {groupPanel && <div className="mx-auto max-w-3xl">{groupPanel}</div>}
         <div className="mx-auto max-w-3xl">
           <TransactionHistory transactions={transactions} currency={game.currency} />
         </div>
@@ -186,9 +215,18 @@ export function GameView({ gameId }: { gameId: string }) {
               totalValue={portfolio.totalValue}
               currency={game.currency}
               onDayAdvanced={handleActionDone}
+              sync={sync}
+              onWaiting={() => groupView && setGroupView({ ...groupView, viewer: { ...groupView.viewer, ready: true } })}
             />
 
-            <EndControls gameId={game.id} sessionsPlayed={game.sessionsPlayed} onEnded={handleActionDone} />
+            {groupPanel}
+
+            <EndControls
+              gameId={game.id}
+              sessionsPlayed={game.sessionsPlayed}
+              inGroup={Boolean(game.groupId)}
+              onEnded={handleActionDone}
+            />
 
             <PortfolioSummary portfolio={portfolio} currency={game.currency} />
 

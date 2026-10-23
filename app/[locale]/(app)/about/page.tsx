@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Rosette } from '@/components/brand/guilloche';
+import { GroupShowcase } from '@/components/landing/group-showcase';
 import { getCatalogSummary, type CatalogCategory } from '@/lib/market/assets';
 import { GAME_CURRENCIES, STARTING_CAPITAL } from '@/lib/game/currency';
 import { SHORT_MARGIN_RATIO } from '@/lib/game/portfolio-math';
@@ -109,6 +110,9 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
           </ol>
         </div>
       </section>
+
+      {/* En groupe */}
+      <GroupShowcase locale={locale} />
 
       {/* Catalogue */}
       {catalog.length > 0 && (

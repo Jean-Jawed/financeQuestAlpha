@@ -4,13 +4,14 @@
  */
 
 import { db } from '@/lib/db';
-import { games, type Game } from '@/lib/db/schema';
+import { games, groups, type Game } from '@/lib/db/schema';
 import { and, eq, sql } from 'drizzle-orm';
 import { getApiI18n } from '@/lib/i18n/server';
 import { getNextTradingDate, getPriceCoverage } from '@/lib/market/calendar';
 import { daysBetween } from './achievement-rules';
 import { endGame, type EndReason } from './end';
 import { getScenario } from './scenarios';
+import { groupEndReason } from './groups';
 import { loadGameState, settleAction } from './state';
 import type { GameState } from '@/types/game';
 
@@ -38,8 +39,9 @@ export interface NextDayResult {
  * - Prochain jour de bourse d'après la base prix (week-ends et fériés sautés)
  * - Compte la séance (retraite possible à partir de MIN_SESSIONS_TO_RETIRE)
  * - Vérifie les achievements et renvoie l'état complet de la partie
- * - Termine la partie d'elle-même en cas de faillite, à la dernière séance d'une
- *   période imposée ou à la fin des données de marché
+ * - Termine la partie d'elle-même en cas de faillite, à la fin fixée par son groupe
+ *   (partie de groupe), à la dernière séance d'une période imposée ou à la fin des
+ *   données de marché
  *
  * @param game - Ligne games, déjà lue par l'appelant (contrôle de propriété)
  * @returns Résultat de l'opération
@@ -84,7 +86,11 @@ export async function advanceToNextDay(game: Game): Promise<NextDayResult> {
     const { state, achievementsUnlocked } = await settleAction(updatedGame);
 
     // 5. Fins automatiques
-    const endReason = await automaticEnd(updatedGame, state?.portfolio.totalValue ?? null);
+    const endReason = await automaticEnd(
+      updatedGame,
+      state?.portfolio.totalValue ?? null,
+      state?.portfolio.returnPercentage ?? null
+    );
     if (endReason) {
       return finish(updatedGame, endReason, nextDate, achievementsUnlocked);
     }
@@ -101,11 +107,31 @@ export async function advanceToNextDay(game: Game): Promise<NextDayResult> {
 
 /**
  * La séance qui vient de passer termine-t-elle la partie ?
- * Faillite d'abord, puis dernière séance de la période ou des données
+ * Faillite d'abord, puis règles du groupe, puis dernière séance de la période ou des données
  */
-async function automaticEnd(game: Game, totalValue: number | null): Promise<EndReason | null> {
+async function automaticEnd(
+  game: Game,
+  totalValue: number | null,
+  returnPercentage: number | null
+): Promise<EndReason | null> {
   if (totalValue !== null && totalValue <= 0) {
     return 'bankrupt';
+  }
+
+  if (game.groupId) {
+    const group = await db.query.groups.findFirst({ where: eq(groups.id, game.groupId) });
+    if (group) {
+      const reason = groupEndReason(
+        {
+          mode: group.mode,
+          sessionsTarget: group.sessionsTarget,
+          targetReturn: group.targetReturn === null ? null : parseFloat(group.targetReturn),
+        },
+        game.sessionsPlayed,
+        returnPercentage ?? 0
+      );
+      if (reason) return reason;
+    }
   }
 
   const { period } = getScenario(game.scenario).rules;

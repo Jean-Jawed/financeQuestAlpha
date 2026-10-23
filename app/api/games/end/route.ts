@@ -14,6 +14,7 @@ import { games } from '@/lib/db/schema';
 import { endGame } from '@/lib/game/end';
 import { MIN_SESSIONS_TO_RETIRE } from '@/lib/game/scenarios';
 import { loadGameState } from '@/lib/game/state';
+import { refreshGroupCompletion } from '@/lib/game/group-server';
 import { getApiI18n } from '@/lib/i18n/server';
 
 // ==========================================
@@ -51,6 +52,11 @@ export const POST = withAuth(async (req, { userId }) => {
       return NextResponse.json({ error: api.gameEnded }, { status: 400 });
     }
 
+    // Partie de groupe : la fin est fixée par les règles du groupe ; seul l'abandon est libre
+    if (reason === 'retired' && game.groupId) {
+      return NextResponse.json({ error: api.groupRetire }, { status: 400 });
+    }
+
     // La retraite se mérite : sinon un coup de chance d'un jour suffirait
     if (reason === 'retired' && game.sessionsPlayed < MIN_SESSIONS_TO_RETIRE) {
       return NextResponse.json(
@@ -68,6 +74,8 @@ export const POST = withAuth(async (req, { userId }) => {
     if (!ended) {
       return NextResponse.json({ error: api.gameEnded }, { status: 409 });
     }
+
+    if (ended.groupId) await refreshGroupCompletion(ended.groupId);
 
     const state = await loadGameState(ended);
 

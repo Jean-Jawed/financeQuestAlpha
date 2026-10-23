@@ -25,6 +25,10 @@ const END_IMAGES: Record<EndReason, string> = {
   period_end: '/gravures/sablier-bilan.webp',
   data_end: '/gravures/sablier-bilan.webp',
   abandoned: '/gravures/sablier-bilan.webp',
+  // Parties de groupe
+  group_end: '/gravures/laurier.webp',
+  target_reached: '/gravures/laurier.webp',
+  eliminated: '/gravures/faillite.webp',
 };
 
 export function GameSummary({ state }: { state: GameState }) {

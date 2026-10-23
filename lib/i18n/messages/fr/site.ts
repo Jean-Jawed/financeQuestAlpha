@@ -9,16 +9,16 @@ export const site = {
     siteName: 'FinanceQuest',
     defaultTitle: 'FinanceQuest : jeu de bourse gratuit sur les cours historiques réels',
     defaultDescription:
-      'Simulateur de bourse gratuit : rejouez les marchés séance par séance avec les vrais cours de clôture, sans argent réel. Actions, indices, cryptos, devises, 7 devises de jeu et un classement.',
+      'Simulateur de bourse gratuit : rejouez les marchés séance par séance avec les vrais cours de clôture, sans argent réel. Seul, entre amis ou en classe, avec un classement.',
     keywords:
       'jeu de bourse, simulateur de bourse, simulation boursière, apprendre à trader, trading fictif, bourse virtuelle, portefeuille virtuel, jeu de trading gratuit',
     homeTitle: 'Jeu de bourse gratuit : rejouez les marchés avec les cours réels',
     aboutTitle: 'Les règles du jeu',
     aboutDescription:
-      'Comment se joue FinanceQuest : ordres au cours de clôture, vente à découvert, devises de jeu, catalogue de valeurs. Les règles de la corbeille, expliquées.',
+      'Comment se joue FinanceQuest : ordres au cours de clôture, vente à découvert, devises de jeu, parties de groupe entre amis, catalogue de valeurs.',
     faqTitle: 'Questions fréquentes',
     faqDescription:
-      'Tout savoir sur FinanceQuest : gratuité, origine des cours, déroulement d’une partie, vente à découvert, devises, classement.',
+      'Tout savoir sur FinanceQuest : gratuité, origine des cours, déroulement d’une partie, vente à découvert, devises, parties de groupe, classement.',
     leaderboardTitle: 'Classement des joueurs',
     leaderboardDescription: 'Le tableau d’honneur de FinanceQuest : les meilleures parties terminées, scénario par scénario.',
     loginTitle: 'Connexion',
@@ -76,6 +76,7 @@ export const site = {
       'Cours de clôture historiques réels',
       'Actions, indices, matières premières, cryptos et devises',
       'Sept devises de jeu, un classement au rendement',
+      'Des parties de groupe entre amis ou en classe',
     ],
     faqEyebrow: 'Questions fréquentes',
     faqTitle: 'Avant de commencer',
@@ -122,6 +123,18 @@ export const site = {
       stamp: 'Admis',
     },
     login: 'Se connecter',
+  },
+
+  /** Section « En groupe » (accueil et page Le jeu) */
+  groupsShowcase: {
+    eyebrow: 'En groupe',
+    title: 'Affrontez vos amis, ou toute une classe',
+    text: 'Même scénario, même date de départ, même capital : chacun gère son portefeuille, le meilleur l’emporte. Créez un groupe, partagez son code, et parlez stratégie (ou bluffez) dans la messagerie du groupe.',
+    visibility:
+      'Des autres joueurs, vous ne voyez que trois chiffres : la valeur du portefeuille, le nombre d’ordres et de positions ouvertes. Jamais au-delà de votre propre date.',
+    tempoTitle: 'Deux tempos',
+    modesTitle: 'Cinq façons de s’affronter',
+    cta: 'Organiser une partie de groupe',
   },
 
   about: {
@@ -200,7 +213,15 @@ export const site = {
       },
       {
         q: 'Comment fonctionne le classement ?',
-        a: 'Chaque scénario a son classement. Y figure la meilleure partie terminée de chaque joueur, classée au rendement : la progression en pourcentage de la valeur du portefeuille entre l’ouverture et la retraite. Les parties abandonnées ou de moins de 20 séances n’y figurent pas.',
+        a: 'Chaque scénario a son classement. Y figure la meilleure partie terminée de chaque joueur, classée au rendement : la progression en pourcentage de la valeur du portefeuille entre l’ouverture et la retraite. Les parties abandonnées ou de moins de 20 séances n’y figurent pas. Les parties de groupe ont leur propre classement, au sein du groupe.',
+      },
+      {
+        q: 'Peut-on jouer à plusieurs, entre amis ou en classe ?',
+        a: 'Oui. Créez une partie de groupe depuis votre tableau de bord et partagez son code : tous les joueurs partent de la même date, avec le même scénario, le même capital et la même devise. Cinq modes sont proposés : le sprint (meilleur rendement après un nombre de séances), la course (premier à atteindre un objectif), le marathon de crise (départ juste avant un krach), l’élimination et le duel. Une messagerie permet d’échanger pendant la partie.',
+      },
+      {
+        q: 'Tempo libre ou synchronisé : que choisir ?',
+        a: 'En tempo libre, chacun avance à son rythme ; des autres, vous ne voyez que la valeur du portefeuille, le nombre d’ordres et de positions ouvertes, jamais au-delà de votre propre date. En tempo synchronisé, tout le monde avance ensemble : la séance suivante sonne quand chacun s’est déclaré prêt, ou après un délai de secours. C’est le bon choix pour jouer en même temps, par exemple en classe.',
       },
       {
         q: 'Est-ce que le jeu apprend vraiment à investir ?',

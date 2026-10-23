@@ -10,16 +10,16 @@ export const site: SiteMessages = {
     siteName: 'FinanceQuest',
     defaultTitle: 'FinanceQuest: a free stock market game on real historical prices',
     defaultDescription:
-      'Free stock market simulator: replay the markets one session at a time with real closing prices, no real money involved. Stocks, indices, crypto, currencies, 7 game currencies and a leaderboard.',
+      'Free stock market simulator: replay the markets one session at a time with real closing prices, no real money involved. Alone, with friends or in class, with a leaderboard.',
     keywords:
       'stock market game, stock market simulator, trading simulator, learn to trade, paper trading, virtual stock exchange, virtual portfolio, free trading game',
     homeTitle: 'Free stock market game: replay the markets with real prices',
     aboutTitle: 'How the game works',
     aboutDescription:
-      'How FinanceQuest is played: orders at the closing price, short selling, game currencies, the list of securities. The rules of the trading floor, explained.',
+      'How FinanceQuest is played: orders at the closing price, short selling, game currencies, group games with friends, the list of securities.',
     faqTitle: 'Frequently asked questions',
     faqDescription:
-      'Everything about FinanceQuest: is it free, where prices come from, how a game works, short selling, currencies, the leaderboard.',
+      'Everything about FinanceQuest: is it free, where prices come from, how a game works, short selling, currencies, group games, the leaderboard.',
     leaderboardTitle: 'Player leaderboard',
     leaderboardDescription: 'The FinanceQuest roll of honour: the best finished games, scenario by scenario.',
     loginTitle: 'Log in',
@@ -77,6 +77,7 @@ export const site: SiteMessages = {
       'Real historical closing prices',
       'Stocks, indices, commodities, crypto and currencies',
       'Seven game currencies, a leaderboard ranked by return',
+      'Group games with friends or in class',
     ],
     faqEyebrow: 'Frequently asked questions',
     faqTitle: 'Before you start',
@@ -123,6 +124,18 @@ export const site: SiteMessages = {
       stamp: 'Admitted',
     },
     login: 'Log in',
+  },
+
+  /** “Group play” section (home and How it works page) */
+  groupsShowcase: {
+    eyebrow: 'Group play',
+    title: 'Take on your friends, or a whole class',
+    text: 'Same scenario, same start date, same capital: everyone manages their own portfolio, and the best one wins. Create a group, share its code, and talk strategy (or bluff) in the group chat.',
+    visibility:
+      'Of the other players, you only see three numbers: portfolio value, number of orders and open positions. Never beyond your own date.',
+    tempoTitle: 'Two tempos',
+    modesTitle: 'Five ways to compete',
+    cta: 'Organise a group game',
   },
 
   about: {
@@ -201,7 +214,15 @@ export const site: SiteMessages = {
       },
       {
         q: 'How does the leaderboard work?',
-        a: 'Each scenario has its own leaderboard. It lists each player’s best finished game, ranked by return: the percentage change in portfolio value between opening and retirement. Abandoned games and games under 20 sessions are not ranked.',
+        a: 'Each scenario has its own leaderboard. It lists each player’s best finished game, ranked by return: the percentage change in portfolio value between opening and retirement. Abandoned games and games under 20 sessions are not ranked. Group games have their own standings, within the group.',
+      },
+      {
+        q: 'Can several people play together, with friends or in class?',
+        a: 'Yes. Create a group game from your dashboard and share its code: all players start on the same date, with the same scenario, capital and currency. Five modes are available: the sprint (best return after a number of sessions), the race (first to reach a target), the crisis marathon (starting just before a crash), elimination and the duel. A chat lets players talk during the game.',
+      },
+      {
+        q: 'Free or synchronised tempo: which to choose?',
+        a: 'In free tempo, everyone moves at their own pace; of the others, you only see their portfolio value, number of orders and open positions, never beyond your own date. In synchronised tempo, everyone moves together: the next session rings when all players are ready, or after a fallback delay. It is the right choice to play at the same time, in class for instance.',
       },
       {
         q: 'Does the game really teach you how to invest?',

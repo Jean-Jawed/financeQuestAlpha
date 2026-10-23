@@ -14,6 +14,7 @@ import { Logo } from '@/components/brand/logo';
 import { CorbeilleScene } from '@/components/landing/corbeille-scene';
 import { CrashScene } from '@/components/landing/crash-scene';
 import { FlipCounters } from '@/components/landing/flip-counters';
+import { GroupShowcase } from '@/components/landing/group-showcase';
 import { OpeningBell } from '@/components/landing/opening-bell';
 import { StampedCertificate } from '@/components/landing/stamped-certificate';
 import { Footer } from '@/components/layout/footer';
@@ -149,6 +150,9 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         <section className="border-y border-line bg-ink-2">
           <FlipCounters counters={stats.map((stat) => ({ value: stat.value, label: stat.label }))} />
         </section>
+
+        {/* En groupe : entre amis ou en classe */}
+        <GroupShowcase locale={locale} />
 
         {/* Déroulé d'une partie */}
         <section className="container mx-auto px-4 py-24">

@@ -11,6 +11,7 @@ import { calculatePortfolio, calculateHoldingsValues } from './calculations';
 import { checkAndUnlockAchievements, getUnlockedAchievements } from './achievements';
 import { daysBetween } from './achievement-rules';
 import { loadGameSummary } from './summary';
+import { recordSnapshot } from './snapshots';
 import { getPriceCoverage } from '@/lib/market/calendar';
 import { getApiI18n } from '@/lib/i18n/server';
 import type { GameState, PortfolioCalculation } from '@/types/game';
@@ -117,6 +118,8 @@ export async function settleAction(game: Game): Promise<ActionOutcome> {
   const [unlocked, built] = await Promise.all([
     checkAndUnlockAchievements(game.id, portfolio),
     buildGameState(game, portfolio),
+    // Partie de groupe : ce que voient les concurrents à cette date
+    portfolio ? recordSnapshot(game, portfolio.totalValue).catch((error) => console.error('[Snapshot]', error)) : null,
   ]);
 
   // Les succès lus par l'état peuvent précéder ou suivre leur déblocage : union

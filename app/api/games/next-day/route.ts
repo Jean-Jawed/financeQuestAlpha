@@ -1,6 +1,8 @@
 /**
  * FINANCEQUEST - API ROUTE: NEXT DAY
  * POST /api/games/next-day
+ * Partie de groupe en tempo synchronisé : le joueur se déclare prêt ; la séance
+ * avance pour tout le groupe quand tous les joueurs en lice le sont
  */
 
 import { NextResponse } from 'next/server';
@@ -9,7 +11,9 @@ import { requireOwnership } from '@/lib/auth/middleware';
 import { db } from '@/lib/db';
 import { games } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { advanceToNextDay } from '@/lib/game/next-day';
+import { advanceToNextDay, type NextDayResult } from '@/lib/game/next-day';
+import { loadGroup, markReady, refreshGroupCompletion } from '@/lib/game/group-server';
+import { groupErrorResponse } from '@/lib/game/group-api';
 import { z } from 'zod';
 import { getApiI18n } from '@/lib/i18n/server';
 
@@ -54,8 +58,28 @@ export const POST = withAuth(async (req, { userId }) => {
 
     await requireOwnership(userId, game.userId);
 
-    // 3. Avancer d'un jour
-    const result = await advanceToNextDay(game);
+    // 3. Avancer d'un jour (tempo synchronisé : quand tout le groupe est prêt)
+    let result: NextDayResult;
+    if (game.groupId) {
+      const group = await loadGroup(game.groupId);
+
+      if (group.tempo === 'synchro' && game.status === 'active') {
+        const outcome = await markReady(group, game);
+        if (!outcome.result) {
+          return NextResponse.json({
+            success: true,
+            data: { waiting: true, readyCount: outcome.readyCount, total: outcome.total },
+            message: fmt(api.groupWaiting, { ready: outcome.readyCount, total: outcome.total }),
+          });
+        }
+        result = outcome.result;
+      } else {
+        result = await advanceToNextDay(game);
+        if (result.endReason) await refreshGroupCompletion(group.id);
+      }
+    } else {
+      result = await advanceToNextDay(game);
+    }
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
@@ -79,6 +103,6 @@ export const POST = withAuth(async (req, { userId }) => {
       return NextResponse.json({ error: api.forbidden }, { status: 403 });
     }
 
-    return NextResponse.json({ error: api.internal }, { status: 500 });
+    return groupErrorResponse(error, api, 'Next day');
   }
 });

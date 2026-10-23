@@ -76,6 +76,7 @@ export async function GET(req: Request) {
           AND g.end_reason <> 'abandoned'
           AND g.sessions_played >= ${MIN_SESSIONS_TO_RETIRE}
           AND g.scenario = ${scenario}
+          AND g.group_id IS NULL
           ${since}
         ORDER BY g.user_id, g.final_return DESC, g.ended_at ASC
       ) best
