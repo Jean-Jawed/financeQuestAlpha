@@ -142,6 +142,12 @@ def main() -> None:
             missing.append(symbol)
             continue
         closes = period['Close'] * factor
+        # Clôtures nulles ou négatives (pétrole WTI le 20 avril 2020 : −37,63 $) : le jeu
+        # ne sait pas acheter à un prix négatif ; ce jour-là, il reprend la clôture précédente
+        for day in closes[closes <= 0].index:
+            dropped.append(f'{symbol} le {day} ({closes[day]:.2f})')
+        closes = closes[closes > 0]
+        period = period.loc[closes.index]
         # Premiers cours parasites (ex. OP-USD avant sa vraie cotation) : un saut de plus
         # de ×10 en une séance invalide tout ce qui précède
         jumps = closes / closes.shift(1)
@@ -151,8 +157,8 @@ def main() -> None:
             dropped.append(f'{symbol} avant le {cut}')
             closes = closes[closes.index >= cut]
             period = period[period.index >= cut]
-        moves = closes.pct_change().abs()
-        for day, move in moves[moves > MAX_DAILY_MOVE].items():
+        moves = closes.pct_change()
+        for day, move in moves[moves.abs() > MAX_DAILY_MOVE].items():
             big_moves.append(f'{symbol} {day} {move:+.0%}')
         for day, close in closes.items():
             volume = period.at[day, 'Volume']
