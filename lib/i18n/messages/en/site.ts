@@ -32,6 +32,13 @@ export const site: SiteMessages = {
       'Articles from the FinanceQuest Gazette: understand the stock market, trading concepts and strategies, then practise without risk.',
     ogAlt: 'FinanceQuest: replay the stock market with real prices',
     gameGenre: 'Stock market simulation',
+    profileTitle: 'My profile',
+    welcomeTitle: 'Your broker card',
+    forgotTitle: 'Forgot your password',
+    resetTitle: 'New password',
+    privacyTitle: 'Privacy policy',
+    privacyDescription:
+      'What data FinanceQuest collects, why, where it is stored, for how long, and how to delete your account.',
   },
 
   home: {
@@ -173,6 +180,66 @@ export const site: SiteMessages = {
       'Capital, costs and gains are kept in the currency chosen when the game opens. The leaderboard compares returns, not amounts.',
     finalTitle: 'The bell is about to ring',
     finalCta: 'Open a game',
+  },
+
+  /** Privacy policy (/privacy) */
+  privacy: {
+    eyebrow: 'Privacy',
+    title: 'Your data, plainly',
+    updated: 'Last updated: 31 October 2026',
+    intro:
+      'FinanceQuest is a free game with no advertising. We only collect what the game needs, we sell nothing and share nothing for commercial purposes.',
+    sections: [
+      {
+        title: 'What we collect',
+        items: [
+          'Your account: email address, username, password (stored encrypted by our authentication provider, never readable by us).',
+          'Your profile, if you choose to fill it in: avatar, personal motto, country, stock market experience, preferred game currency and language.',
+          'Your play: games, orders, achievements, group games and messages sent in groups.',
+          'The bare technical minimum: session cookies (staying logged in) and a language cookie, a sound preference stored in your browser, and your IP address processed briefly to limit abuse.',
+        ],
+      },
+      {
+        title: 'Why',
+        items: [
+          'To run the game: save your games, compute the leaderboard, host group games.',
+          'To let you log in and recover your password.',
+          'No advertising, no profiling, no reselling.',
+        ],
+      },
+      {
+        title: 'What other players see',
+        items: [
+          'Your username and avatar, on the leaderboard and in your group games.',
+          'Your personal motto and country, if your profile is public (set in your profile).',
+          'In a group: your messages, and three figures from your game (portfolio value, number of orders and open positions).',
+          'Your email address is never displayed.',
+        ],
+      },
+      {
+        title: 'Where your data lives',
+        items: [
+          'Database and authentication: Supabase, hosted in the European Union.',
+          'Website hosting: Vercel.',
+          'Avatars: Supabase file storage.',
+        ],
+      },
+      {
+        title: 'For how long',
+        items: [
+          'As long as your account exists.',
+          'When you delete your account, everything is erased immediately and permanently: profile, games, orders, achievements, messages. Groups you organised pass to their longest-standing member.',
+        ],
+      },
+      {
+        title: 'Your rights',
+        items: [
+          'View and correct your information: from the “My profile” page.',
+          'Delete your account: the “Delete my account” button on the “My profile” page.',
+          'For any other request, write to the game’s publisher, Virgule Studio (virgule-studio.fr). You may also contact your data protection authority.',
+        ],
+      },
+    ],
   },
 
   faq: {

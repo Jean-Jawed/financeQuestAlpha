@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { TradeTicket } from '@/components/game/trade-ticket';
+import { TradeTicket, type TradeSelection } from '@/components/game/trade-ticket';
 import { useI18n } from '@/lib/i18n/client';
 import { getScenario } from '@/lib/game/scenarios';
 import { cn } from '@/lib/utils/cn';
@@ -30,6 +30,10 @@ interface PositionsPanelProps {
   scenario: string;
   /** Appelé avec l'état de la partie renvoyé par l'ordre */
   onTradeComplete: (state?: GameState) => void;
+  /** Écran de jeu : la position choisie s'affiche au centre (sinon : ticket en fenêtre) */
+  onSelect?: (selection: TradeSelection) => void;
+  /** Posé sur le bois d'un cadre (écran de jeu) : sans fond ni bordure propres */
+  framed?: boolean;
 }
 
 // ==========================================
@@ -42,7 +46,10 @@ function PositionRow({
   actionLabel,
   lockedLabel,
   onAction,
+  compact = false,
 }: {
+  /** Colonne étroite : sans le cours d'origine */
+  compact?: boolean;
   holding: HoldingWithValue;
   currency: string;
   actionLabel: string;
@@ -55,7 +62,7 @@ function PositionRow({
   const up = holding.profitLoss >= 0;
 
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-5 py-3">
+    <li className={cn('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3', compact ? 'px-2' : 'px-5')}>
       <div className="min-w-0">
         <p className="flex items-baseline gap-2">
           <span className="num font-semibold text-paper">{holding.symbol}</span>
@@ -63,7 +70,7 @@ function PositionRow({
         </p>
         <p className="num text-xs text-paper-dim">
           {f.quantity(quantity)} × {f.currency(parseFloat(holding.averageCost), currency)}
-          {holding.assetCurrency !== currency && holding.assetPrice > 0 && (
+          {!compact && holding.assetCurrency !== currency && holding.assetPrice > 0 && (
             <span className="text-paper-faint">
               {' · '}
               {fmt(m.game.positions.quoted, { price: f.currency(holding.assetPrice, holding.assetCurrency) })}
@@ -111,17 +118,29 @@ export function PositionsPanel({
   feeRate,
   scenario,
   onTradeComplete,
+  onSelect,
+  framed = false,
 }: PositionsPanelProps) {
   const allowed = getScenario(scenario).rules.actions;
   const { m, fmt } = useI18n();
   const t = m.game.positions;
   const [selected, setSelected] = useState<HoldingWithValue | null>(null);
 
+  function pick(holding: HoldingWithValue) {
+    if (!onSelect) return setSelected(holding);
+    onSelect({
+      asset: { symbol: holding.symbol, name: holding.name },
+      mode: holding.isShort ? 'cover' : 'sell',
+      heldQuantity: parseFloat(holding.quantity),
+      averageCost: parseFloat(holding.averageCost),
+    });
+  }
+
   const longs = holdings.filter((h) => !h.isShort);
   const shorts = holdings.filter((h) => h.isShort);
 
   return (
-    <section className="panel" aria-labelledby="positions-title">
+    <section className={framed ? undefined : 'panel'} aria-labelledby="positions-title">
       <header className="border-b border-line px-5 py-4">
         <p className="label text-brass">{t.label}</p>
         <h2 id="positions-title" className="font-display text-2xl font-semibold text-paper">
@@ -150,7 +169,8 @@ export function PositionsPanel({
                     currency={currency}
                     actionLabel={t.sell}
                     lockedLabel={allowed.includes('sell') ? undefined : t.locked}
-                    onAction={() => setSelected(holding)}
+                    onAction={() => pick(holding)}
+                    compact={framed}
                   />
                 ))}
               </ul>
@@ -170,7 +190,8 @@ export function PositionsPanel({
                     currency={currency}
                     actionLabel={t.cover}
                     lockedLabel={allowed.includes('cover') ? undefined : t.locked}
-                    onAction={() => setSelected(holding)}
+                    onAction={() => pick(holding)}
+                    compact={framed}
                   />
                 ))}
               </ul>

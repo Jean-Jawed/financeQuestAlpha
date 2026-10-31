@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { signUp, emailExists } from '@/lib/auth/session';
 import { z } from 'zod';
 import { getApiI18n } from '@/lib/i18n/server';
+import { cleanName, nameIssue } from '@/lib/profile/rules';
 
 // ==========================================
 // VALIDATION SCHEMA
@@ -22,8 +23,8 @@ const signupSchema = z.object({
     .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre'),
   name: z
     .string()
-    .min(2, 'Le nom doit contenir au moins 2 caractères')
-    .max(50, 'Le nom ne peut pas dépasser 50 caractères'),
+    .transform(cleanName)
+    .refine((name) => nameIssue(name) === null, 'Pseudo invalide (3 à 24 caractères : lettres, chiffres, espace, - _ .)'),
 });
 
 // ==========================================

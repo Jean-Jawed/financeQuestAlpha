@@ -36,6 +36,12 @@ export function Footer() {
                 {m.nav[link.key]}
               </Link>
             ))}
+            <Link
+              href={href('/privacy')}
+              className="font-label text-xs font-semibold uppercase tracking-label text-paper-dim transition-colors hover:text-paper"
+            >
+              {m.footer.privacy}
+            </Link>
           </nav>
 
           <p className="text-center md:text-right">

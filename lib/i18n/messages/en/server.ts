@@ -78,6 +78,16 @@ export const server: ServerMessages = {
     groupJoined: 'You joined “{name}”. Good luck!',
     groupStarted: 'Off we go: the bell rings for everyone',
     groupWaiting: 'Ready. Waiting for the other players ({ready} of {total}).',
+    nameTaken: 'This username is already taken',
+    nameLength: 'Usernames are 3 to 24 characters long',
+    nameChars: 'Username: letters, digits, space, “-”, “_” and “.” only',
+    nameBanned: 'This username is not allowed',
+    nameLocked: 'You can change your username again on {date}',
+    mottoInvalid: 'Motto too long or not allowed',
+    invalidAvatar: 'Unknown avatar',
+    deleteConfirm: 'The username you typed does not match',
+    profileSaved: 'Profile saved',
+    accountDeleted: 'Account deleted',
   },
 
   assetTypes: {

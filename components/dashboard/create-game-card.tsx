@@ -6,6 +6,9 @@
 'use client';
 
 import { useState } from 'react';
+import { Frame } from '@/components/machine/frame';
+import { EnamelButton } from '@/components/machine/instruments';
+import { showXp } from '@/components/xp/xp-feedback';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -36,13 +39,15 @@ interface CreateGameCardProps {
   maxDate: string;
   /** Aucune partie encore : libellé d'accueil */
   isFirst?: boolean;
+  /** Devise de jeu préférée du profil */
+  defaultCurrency?: GameCurrency;
 }
 
 // ==========================================
 // COMPONENT
 // ==========================================
 
-export function CreateGameCard({ minDate, maxDate, isFirst = false }: CreateGameCardProps) {
+export function CreateGameCard({ minDate, maxDate, isFirst = false, defaultCurrency }: CreateGameCardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { m, f, fmt, locale } = useI18n();
@@ -52,7 +57,7 @@ export function CreateGameCard({ minDate, maxDate, isFirst = false }: CreateGame
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
-  const [currency, setCurrency] = useState<GameCurrency>(DEFAULT_GAME_CURRENCY);
+  const [currency, setCurrency] = useState<GameCurrency>(defaultCurrency ?? DEFAULT_GAME_CURRENCY);
   const [scenario, setScenario] = useState<ScenarioId>(DEFAULT_SCENARIO);
   // Période imposée : la date de départ est celle du scénario
   const period = getScenario(scenario).rules.period;
@@ -84,6 +89,7 @@ export function CreateGameCard({ minDate, maxDate, isFirst = false }: CreateGame
 
       playSound('opening');
       toast.success(data.message || t.success);
+      showXp(data.data?.xp);
       setIsModalOpen(false);
       router.refresh(); // Recharger la page pour afficher la nouvelle partie
     } catch (error) {
@@ -94,25 +100,22 @@ export function CreateGameCard({ minDate, maxDate, isFirst = false }: CreateGame
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setIsModalOpen(true)}
-        className="group relative flex min-h-[320px] flex-col items-center justify-center overflow-hidden rounded border border-dashed border-brass/50 bg-ink/40 p-8 text-center transition-colors hover:border-brass hover:bg-ink-2"
-      >
+      {/* Cadre miroir ; le bouton émaillé couvre toute la carte (lien étiré) */}
+      <Frame variant="mirror" outerClassName="group h-full" className="flex min-h-[300px] flex-col items-center justify-center p-7 text-center">
         <Image
           src="/gravures/sablier.webp"
           alt=""
           width={140}
           height={140}
-          className="engraving h-28 w-28 object-contain opacity-70 transition-opacity group-hover:opacity-100"
+          className="engraving h-24 w-24 object-contain opacity-75 transition-opacity group-hover:opacity-100"
         />
-        <p className="label mt-4 text-brass">{isFirst ? t.firstTitle : t.blankTitle}</p>
-        <h3 className="mt-2 font-display text-2xl font-semibold text-paper">{t.title}</h3>
+        <p className="label mt-3 text-brass-bright">{isFirst ? t.firstTitle : t.blankTitle}</p>
+        <h3 className="mt-1 font-display text-2xl font-semibold text-paper">{t.title}</h3>
         <p className="mt-2 max-w-xs text-sm text-paper-dim">{t.cardText}</p>
-        <span className="mt-6 inline-flex h-10 items-center rounded border border-brass-bright/60 bg-brass px-5 font-label text-sm font-semibold uppercase tracking-[0.14em] text-ink shadow-[0_2px_0_#8E7034] transition-colors group-hover:bg-brass-bright">
+        <EnamelButton tone="brass" className="mt-5 after:absolute after:inset-0 after:content-['']" onClick={() => setIsModalOpen(true)}>
           {t.cta}
-        </span>
-      </button>
+        </EnamelButton>
+      </Frame>
 
       {/* Modal */}
       <Modal

@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getSessionState } from '@/lib/auth/session';
 import { WelcomeCard } from '@/components/dashboard/welcome-card';
+import { Plate } from '@/components/machine/frame';
 import { CreateGameCard } from '@/components/dashboard/create-game-card';
 import { CreateGroupCard } from '@/components/groups/create-group-card';
 import { JoinGroupCard } from '@/components/groups/join-group-card';
@@ -20,6 +21,8 @@ import { getUnlockedAchievements } from '@/lib/game/achievements';
 import { getRemainingDays } from '@/lib/game/next-day';
 import { getPriceCoverage } from '@/lib/market/calendar';
 import { ProfileMissing } from '@/components/dashboard/profile-missing';
+import { ProfileReminder } from '@/components/dashboard/profile-reminder';
+import { loadProfile } from '@/lib/profile/server';
 import { getI18n, resolveLocale } from '@/lib/i18n/server';
 import { pageMetadata } from '@/lib/seo';
 import { latestStartDate } from '@/lib/game/scenarios';
@@ -58,6 +61,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   }
 
   const user = session.user;
+  // Préférences du profil : devise de jeu présélectionnée à la création
+  const profile = await loadProfile(user.id);
+  const preferredCurrency = profile?.preferredCurrency ?? undefined;
 
   // Plage de dates jouable (base prix) : bornes du sélecteur de date, avec assez
   // de séances devant soi pour pouvoir prendre sa retraite
@@ -117,56 +123,66 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
   return (
     <div className="container mx-auto px-4 py-10">
-      <div className="space-y-12">
+      <div className="space-y-14">
         <WelcomeCard
           name={user.name}
+          avatarId={user.avatarId}
+          xpTotal={user.xpTotal}
+          motto={profile?.motto ?? null}
           gamesPlayed={gamesPlayed}
           achievementsUnlocked={achievementsTotal}
           bestReturn={bestReturn}
         />
 
+        {!user.onboardingDone && <ProfileReminder name={user.name} avatarId={user.avatarId} />}
+
         <section aria-labelledby="games-title">
-          <div className="mb-6 flex items-end justify-between gap-4 border-b border-line pb-3">
-            <h2 id="games-title" className="font-display text-3xl font-semibold text-paper">
-              {ui.dashboard.myGames}
-            </h2>
+          <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
+            <Plate as="h2" className="font-display text-base normal-case tracking-normal">
+              <span id="games-title">{ui.dashboard.myGames}</span>
+            </Plate>
             <p className="label">{fmt(ui.dashboard.activeGames, { active: activeGames, max: MAX_ACTIVE_GAMES })}</p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
             {games
               .filter((game) => game.status !== 'completed')
               .map((game) => (
                 <GameCard key={game.id} game={game} group={groupOf.get(game.id)} />
               ))}
             {activeGames < MAX_ACTIVE_GAMES && (
-              <CreateGameCard minDate={coverage.start} maxDate={lastStartDate} isFirst={gamesPlayed === 0} />
+              <CreateGameCard
+                minDate={coverage.start}
+                maxDate={lastStartDate}
+                isFirst={gamesPlayed === 0}
+                defaultCurrency={preferredCurrency}
+              />
             )}
           </div>
         </section>
 
         {/* Parties de groupe : organiser, ou rejoindre avec un code */}
         <section aria-labelledby="groups-title">
-          <div className="mb-6 border-b border-line pb-3">
-            <h2 id="groups-title" className="font-display text-3xl font-semibold text-paper">
-              {ui.groups.sectionTitle}
-            </h2>
-            <p className="mt-1 text-paper-dim">{ui.groups.sectionIntro}</p>
+          <div className="mb-7">
+            <Plate as="h2" className="font-display text-base normal-case tracking-normal">
+              <span id="groups-title">{ui.groups.sectionTitle}</span>
+            </Plate>
+            <p className="mt-3 text-paper-dim">{ui.groups.sectionIntro}</p>
           </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {activeGames < MAX_ACTIVE_GAMES && <CreateGroupCard minDate={coverage.start} maxDate={lastStartDate} />}
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+            {activeGames < MAX_ACTIVE_GAMES && <CreateGroupCard minDate={coverage.start} maxDate={lastStartDate} defaultCurrency={preferredCurrency} />}
             <JoinGroupCard />
           </div>
         </section>
 
         {endedGames.length > 0 && (
           <section aria-labelledby="archive-title">
-            <div className="mb-6 border-b border-line pb-3">
-              <h2 id="archive-title" className="font-display text-3xl font-semibold text-paper">
-                {ui.dashboard.archive}
-              </h2>
+            <div className="mb-7">
+              <Plate as="h2" className="font-display text-base normal-case tracking-normal">
+                <span id="archive-title">{ui.dashboard.archive}</span>
+              </Plate>
             </div>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
               {endedGames.map((game) => (
                 <GameCard key={game.id} game={game} group={groupOf.get(game.id)} />
               ))}

@@ -31,6 +31,13 @@ export const site = {
       'Les articles de La Gazette de FinanceQuest : comprendre la bourse, les notions de trading et les stratégies, avant de s’entraîner sans risque.',
     ogAlt: 'FinanceQuest : rejouez la Bourse avec les cours réels',
     gameGenre: 'Simulation boursière',
+    profileTitle: 'Mon profil',
+    welcomeTitle: 'Votre carte d’agent',
+    forgotTitle: 'Mot de passe oublié',
+    resetTitle: 'Nouveau mot de passe',
+    privacyTitle: 'Politique de confidentialité',
+    privacyDescription:
+      'Les données que FinanceQuest collecte, pourquoi, où elles sont stockées, combien de temps, et comment supprimer votre compte.',
   },
 
   home: {
@@ -172,6 +179,66 @@ export const site = {
       'Capital, coûts et gains sont tenus dans la devise choisie à l’ouverture. Le classement compare les rendements, pas les montants.',
     finalTitle: 'La cloche va sonner',
     finalCta: 'Ouvrir une partie',
+  },
+
+  /** Politique de confidentialité (/privacy) */
+  privacy: {
+    eyebrow: 'Confidentialité',
+    title: 'Vos données, en clair',
+    updated: 'Mise à jour : 31 octobre 2026',
+    intro:
+      'FinanceQuest est un jeu gratuit, sans publicité. Nous ne collectons que ce qui sert au jeu, nous ne vendons rien et ne partageons rien à des fins commerciales.',
+    sections: [
+      {
+        title: 'Ce que nous collectons',
+        items: [
+          'Votre compte : adresse email, pseudo, mot de passe (stocké chiffré par notre prestataire d’authentification, jamais lisible par nous).',
+          'Votre profil, si vous choisissez de le remplir : avatar, devise personnelle, pays, expérience de la Bourse, devise de jeu et langue préférées.',
+          'Votre jeu : parties, ordres, succès, parties de groupe et messages envoyés dans les groupes.',
+          'Le strict nécessaire technique : cookies de session (rester connecté) et de langue, préférence de son enregistrée dans votre navigateur, adresse IP traitée un court instant pour limiter les abus.',
+        ],
+      },
+      {
+        title: 'Pourquoi',
+        items: [
+          'Faire fonctionner le jeu : sauvegarder vos parties, calculer le classement, animer les parties de groupe.',
+          'Vous permettre de vous connecter et de récupérer votre mot de passe.',
+          'Aucune publicité, aucun profilage, aucune revente.',
+        ],
+      },
+      {
+        title: 'Ce que voient les autres joueurs',
+        items: [
+          'Votre pseudo et votre avatar, au classement et dans vos parties de groupe.',
+          'Votre devise personnelle et votre pays, si votre profil est public (réglable dans votre profil).',
+          'Dans un groupe : vos messages, et trois chiffres de votre partie (valeur du portefeuille, nombre d’ordres et de positions ouvertes).',
+          'Votre adresse email n’est jamais affichée.',
+        ],
+      },
+      {
+        title: 'Où sont vos données',
+        items: [
+          'Base de données et authentification : Supabase, hébergée dans l’Union européenne.',
+          'Hébergement du site : Vercel.',
+          'Avatars : stockage de fichiers Supabase.',
+        ],
+      },
+      {
+        title: 'Combien de temps',
+        items: [
+          'Tant que votre compte existe.',
+          'Quand vous supprimez votre compte, tout est effacé immédiatement et définitivement : profil, parties, ordres, succès, messages. Les groupes que vous organisiez passent à leur membre le plus ancien.',
+        ],
+      },
+      {
+        title: 'Vos droits',
+        items: [
+          'Consulter et corriger vos informations : depuis la page « Mon profil ».',
+          'Supprimer votre compte : bouton « Supprimer mon compte » de la page « Mon profil ».',
+          'Pour toute autre demande, écrivez à l’éditeur du jeu, Virgule Studio (virgule-studio.fr). Vous pouvez aussi saisir la CNIL (cnil.fr).',
+        ],
+      },
+    ],
   },
 
   faq: {

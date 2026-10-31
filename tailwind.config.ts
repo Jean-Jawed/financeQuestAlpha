@@ -33,6 +33,8 @@ const config: Config = {
           DEFAULT: '#C9A45C', // laiton
           bright: '#E3C47E',
           deep: '#8E7034',
+          shine: '#F4D891', // arête éclairée des moulures
+          shadow: '#5A3F12', // gorge des moulures
         },
         gain: {
           DEFAULT: '#5DAE80', // vert billet
@@ -41,6 +43,33 @@ const config: Config = {
         loss: {
           DEFAULT: '#D9603F', // vermillon de tampon
           deep: '#A8381F',
+        },
+        // Salle des machines (docs/reviewOct2026/phase3/03_refonte_da.md)
+        wood: {
+          dark: '#1E110A', // noyer : veines sombres
+          DEFAULT: '#3E2314',
+          light: '#603821',
+          edge: '#24150B', // bord des panneaux
+        },
+        ivory: {
+          DEFAULT: '#F2E8D2', // cartes nacrées
+          deep: '#E3D6B8',
+          line: '#A8956A',
+          ink: '#2A2014', // texte sur ivoire
+          dim: '#6B5B3E',
+        },
+        glass: '#0E1714', // écran d'instrument encastré
+        enamel: {
+          green: '#2B7350',
+          'green-light': '#3F9468',
+          red: '#963722',
+          'red-light': '#B9503A',
+        },
+        // Expérience (niveaux, barre d'XP) : améthyste
+        xp: {
+          DEFAULT: '#A47CFF',
+          bright: '#C9B3FF',
+          deep: '#7C5CFF',
         },
       },
       fontFamily: {
@@ -106,6 +135,17 @@ const config: Config = {
           from: { opacity: '0', transform: 'translateY(18px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        odometer: {
+          from: { opacity: '0.2', transform: 'translateY(-35%)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'xp-float': {
+          '0%': { opacity: '0', transform: 'translateY(12px) scale(0.9)' },
+          '15%': { opacity: '1', transform: 'translateY(0) scale(1.05)' },
+          '25%': { transform: 'scale(1)' },
+          '80%': { opacity: '1', transform: 'translateY(-6px)' },
+          '100%': { opacity: '0', transform: 'translateY(-22px)' },
+        },
       },
       animation: {
         ticker: 'ticker-scroll 60s linear infinite',
@@ -118,6 +158,8 @@ const config: Config = {
         curtain: 'curtain 1.1s cubic-bezier(.7,0,.2,1) both',
         'rise-slow': 'rise-slow 700ms cubic-bezier(.2,.7,.2,1) both',
         'spin-slow': 'spin 160s linear infinite',
+        'xp-float': 'xp-float 2.4s ease-out both',
+        odometer: 'odometer 0.55s cubic-bezier(.2,.9,.3,1.1) both',
       },
     },
   },

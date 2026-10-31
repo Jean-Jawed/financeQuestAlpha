@@ -12,6 +12,8 @@ import { checkAndUnlockAchievements, getUnlockedAchievements } from './achieveme
 import { daysBetween } from './achievement-rules';
 import { loadGameSummary } from './summary';
 import { recordSnapshot } from './snapshots';
+import { achievementGrants } from '@/lib/xp/hooks';
+import { awardXp, type XpGrant, type XpOutcome } from '@/lib/xp/server';
 import { getPriceCoverage } from '@/lib/market/calendar';
 import { getApiI18n } from '@/lib/i18n/server';
 import type { GameState, PortfolioCalculation } from '@/types/game';
@@ -25,6 +27,8 @@ export interface ActionOutcome {
   state: GameState | null;
   /** Succès débloqués par l'action */
   achievementsUnlocked: Array<{ name: string; points: number }>;
+  /** XP gagnée par l'action (ordre ou séance, succès compris) ; null : rien de nouveau */
+  xp: XpOutcome | null;
 }
 
 // ==========================================
@@ -111,8 +115,9 @@ export async function loadGameState(game: Game): Promise<GameState | null> {
  * Le portfolio est calculé une fois ; succès et état sont chargés en parallèle
  *
  * @param game - Ligne games à jour (renvoyée par l'UPDATE … RETURNING de l'action)
+ * @param grants - XP de l'action (ordre, séance), versée avec celle des succès débloqués
  */
-export async function settleAction(game: Game): Promise<ActionOutcome> {
+export async function settleAction(game: Game, grants: XpGrant[] = []): Promise<ActionOutcome> {
   const portfolio = await calculatePortfolio(game.id, game.currentDate);
 
   const [unlocked, built] = await Promise.all([
@@ -128,10 +133,20 @@ export async function settleAction(game: Game): Promise<ActionOutcome> {
     built.state.game.achievementsUnlocked = built.achievementIds.size;
   }
 
+  // XP : l'action et ses succès, en une écriture
+  const xp = await awardXp(game.userId, [
+    ...grants,
+    ...(await achievementGrants(
+      game,
+      unlocked.map(({ achievement }) => ({ id: achievement.id, points: achievement.points }))
+    ).catch(() => [])),
+  ]);
+
   // Nom affiché dans la langue du joueur (clé : le nom stocké en base)
   const { server } = await getApiI18n();
 
   return {
+    xp,
     state: built?.state ?? null,
     achievementsUnlocked: unlocked.map((a) => ({
       name: server.achievements[a.achievement.name]?.name ?? a.achievement.name,

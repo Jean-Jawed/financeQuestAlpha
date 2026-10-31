@@ -7,6 +7,7 @@
 'use client';
 
 import { useState } from 'react';
+import { showXp } from '@/components/xp/xp-feedback';
 import { Button } from '@/components/ui/button';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +58,7 @@ export function EndControls({ gameId, sessionsPlayed, inGroup = false, onEnded }
       // La cloche sonne la dernière séance du joueur
       playSound(choice === 'retired' ? 'bell' : 'refusal');
       setChoice(null);
+      showXp(data.data?.xp);
       onEnded(data.data?.state);
     } catch {
       toast.error(m.common.networkError);

@@ -21,11 +21,14 @@ import {
   bigint,
   jsonb,
   primaryKey,
+  unique,
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { GAME_CURRENCIES } from '../game/currency';
 import { GROUP_MODES, GROUP_STATUSES, GROUP_TEMPOS } from '../game/groups';
+import { EXPERIENCE_LEVELS } from '../profile/rules';
+import { LOCALES } from '../i18n/config';
 
 // ==========================================
 // VALEURS AUTORISÉES (contraintes CHECK en base)
@@ -87,7 +90,27 @@ export const users = pgTable('users', {
     .primaryKey()
     .references(() => authUsers.id, { onDelete: 'cascade' }),
   email: text('email').notNull().unique(),
+  /** Pseudo public : 3 à 24 caractères, unique sans tenir compte de la casse */
   name: text('name').notNull(),
+  /** Profil (script 08) : voir lib/profile/rules.ts et lib/profile/avatars.ts */
+  avatarId: text('avatar_id'),
+  /** Réservé : photo envoyée par le joueur (pas encore utilisé) */
+  avatarUrl: text('avatar_url'),
+  motto: text('motto'),
+  country: text('country'),
+  experience: text('experience', { enum: EXPERIENCE_LEVELS }),
+  preferredCurrency: text('preferred_currency', { enum: GAME_CURRENCIES }),
+  locale: text('locale', { enum: LOCALES }),
+  profilePublic: boolean('profile_public').default(true).notNull(),
+  /** Écran d'accueil après inscription vu ou passé */
+  onboardingDoneAt: timestamp('onboarding_done_at', { withTimezone: true }),
+  nameChangedAt: timestamp('name_changed_at', { withTimezone: true }),
+  /** XP (script 09) : compteurs dérivés du journal xp_events (lib/xp) */
+  xpTotal: integer('xp_total').default(0).notNull(),
+  level: integer('level').default(1).notNull(),
+  restedReserve: integer('rested_reserve').default(0).notNull(),
+  lastPlayDay: date('last_play_day'),
+  streakDays: integer('streak_days').default(0).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -212,6 +235,29 @@ export const userAchievements = pgTable('user_achievements', {
     .references(() => achievements.id, { onDelete: 'cascade' }),
   unlockedAt: timestamp('unlocked_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ==========================================
+// TABLE: xp_events (journal de l'XP, script 09)
+// ==========================================
+
+export const xpEvents = pgTable(
+  'xp_events',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    gameId: uuid('game_id').references(() => games.id, { onDelete: 'set null' }),
+    groupId: uuid('group_id').references((): AnyPgColumn => groups.id, { onDelete: 'set null' }),
+    /** Nature du gain (session, order, discover-asset…) et clé métier : (user, kind, ref) unique */
+    kind: text('kind').notNull(),
+    ref: text('ref').notNull(),
+    xp: integer('xp').notNull(),
+    ruleVersion: integer('rule_version').default(1).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique('xp_events_once').on(table.userId, table.kind, table.ref)]
+);
 
 // ==========================================
 // TABLE: groups (parties de groupe)
@@ -358,6 +404,8 @@ export type NewHolding = typeof holdings.$inferInsert;
 
 export type Transaction = typeof transactions.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
+
+export type XpEvent = typeof xpEvents.$inferSelect;
 
 export type Achievement = typeof achievements.$inferSelect;
 export type NewAchievement = typeof achievements.$inferInsert;

@@ -13,6 +13,7 @@ import { eq, and } from 'drizzle-orm';
 import { validateCover } from '@/lib/game/validations';
 import { calculateTransactionPreview } from '@/lib/game/calculations';
 import { settleAction } from '@/lib/game/state';
+import { orderGrants } from '@/lib/xp/hooks';
 import { DuplicateOrderError, duplicateOrderResponse, findClientOrder } from '@/lib/game/client-orders';
 import { getQuote } from '@/lib/market/prices';
 import { checkScenarioOrder } from '@/lib/game/scenario-orders';
@@ -174,9 +175,10 @@ export const POST = withAuth(async (req, { userId }) => {
     // 8. Succès et état de la partie (la page n'a pas à la relire)
     // L'ordre est enregistré : un échec du recalcul ne doit pas le faire passer pour
     // refusé (le joueur réessaierait). Sans état, la page relit la partie.
-    const { state, achievementsUnlocked } = await settleAction(updatedGame).catch((error) => {
+    // XP de l'ordre (et de ses découvertes) versée avec celle des succès
+    const { state, achievementsUnlocked, xp } = await settleAction(updatedGame, await orderGrants(updatedGame, transaction, pnl > 0 ? 'win' : 'loss')).catch((error) => {
       console.error('[API] Recalcul après ordre impossible :', error);
-      return { state: null, achievementsUnlocked: [] };
+      return { state: null, achievementsUnlocked: [], xp: null };
     });
 
     return NextResponse.json(
@@ -189,6 +191,7 @@ export const POST = withAuth(async (req, { userId }) => {
           pnl: pnl.toFixed(2),
           state,
           achievementsUnlocked,
+          xp,
         },
         message: fmt(api.coverDone, { quantity: f.quantity(quantity), symbol }),
       },

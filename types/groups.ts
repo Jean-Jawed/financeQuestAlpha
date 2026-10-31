@@ -8,6 +8,7 @@ export interface GroupStanding {
   rank: number;
   userId: string;
   name: string;
+  avatarId: string | null;
   isYou: boolean;
   /** Date de l'instantané affiché (au plus tard celle du joueur qui regarde) */
   date: string;
@@ -27,6 +28,7 @@ export interface GroupStanding {
 export interface GroupMessageView {
   id: number;
   name: string;
+  avatarId: string | null;
   body: string;
   createdAt: string;
   isYou: boolean;

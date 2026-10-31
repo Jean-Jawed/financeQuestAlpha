@@ -14,7 +14,7 @@ import { getPathLocale, localizePath, stripLocale } from '@/lib/i18n/paths';
 // ==========================================
 
 // Routes protégées (nécessitent authentification), chemins sans langue
-const PROTECTED_ROUTES = ['/dashboard', '/game', '/admin'];
+const PROTECTED_ROUTES = ['/dashboard', '/game', '/admin', '/profile', '/welcome'];
 
 // ==========================================
 // RATE LIMITING (Simple in-memory)

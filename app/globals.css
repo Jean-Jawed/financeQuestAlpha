@@ -93,6 +93,203 @@
   .engraving {
     @apply pointer-events-none select-none;
   }
+
+  /* ==========================================
+     SALLE DES MACHINES : matières
+     docs/reviewOct2026/phase3/03_refonte_da.md
+     ========================================== */
+
+  /* Noyer verni : texture, lumière en haut, ombre en bas, liseré clair */
+  .wood {
+    position: relative;
+    color: theme('colors.paper.DEFAULT');
+    background-image:
+      linear-gradient(180deg, rgb(255 214 160 / 0.1) 0%, rgb(255 214 160 / 0) 18%, transparent 70%, rgb(0 0 0 / 0.35) 100%),
+      url('/textures/noyer.webp');
+    background-size: 100% 100%, 620px auto;
+    box-shadow:
+      inset 0 2px 0 rgb(255 222 170 / 0.18),
+      inset 0 0 0 1px rgb(20 10 4 / 0.9),
+      inset 0 -6px 14px rgb(0 0 0 / 0.45);
+  }
+
+  /* Cadre d'outil : moulure de laiton bombée autour d'un panneau de noyer */
+  .frame-tool {
+    position: relative;
+    padding: 11px;
+    border-radius: 16px;
+    background:
+      linear-gradient(180deg, rgb(255 250 225 / 0.55) 0%, rgb(255 250 225 / 0) 9%, transparent 88%, rgb(30 18 4 / 0.55) 100%),
+      linear-gradient(150deg, #f4d891 0%, #c29245 22%, #7a5720 48%, #d7ae62 72%, #8d6a2b 100%);
+    box-shadow:
+      0 0 0 1px #24170a,
+      0 18px 34px rgb(0 0 0 / 0.65),
+      0 3px 0 rgb(0 0 0 / 0.55),
+      inset 0 2px 1px rgb(255 248 220 / 0.85),
+      inset 0 -2px 2px rgb(40 25 5 / 0.85),
+      inset 4px 0 4px rgb(255 240 200 / 0.25),
+      inset -4px 0 4px rgb(40 25 5 / 0.45),
+      inset 0 0 0 4px rgb(120 86 30 / 0.35);
+  }
+  .frame-tool > .wood {
+    border-radius: 8px;
+    outline: 1px solid rgb(255 236 180 / 0.55);
+    outline-offset: 2px;
+  }
+
+  /* Cadre miroir : moulure, fine bande de noyer, filet, puis la glace (courbes, compteur) */
+  .frame-mirror {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #5a3f12 0%, #f4d891 18%, #b98c42 45%, #7a5720 70%, #e2bd6e 88%, #4e3712 100%);
+    box-shadow:
+      0 0 0 1px #1e1408,
+      0 18px 34px rgb(0 0 0 / 0.65),
+      inset 0 1px 1px rgb(255 250 225 / 0.8),
+      inset 0 -1px 2px rgb(30 18 4 / 0.9);
+  }
+  .frame-mirror-wood {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 9px;
+    border-radius: 9px;
+    background-image: linear-gradient(180deg, rgb(255 214 160 / 0.12), rgb(0 0 0 / 0.35)), url('/textures/noyer.webp');
+    background-size: 100% 100%, 500px auto;
+    box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.7), inset 0 -1px 0 rgb(255 222 170 / 0.2);
+  }
+  .frame-mirror-fillet {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 3px;
+    border-radius: 7px;
+    background: linear-gradient(180deg, #f4d891, #8d6a2b 50%, #e2bd6e);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
+  }
+  .frame-mirror-glass {
+    flex: 1;
+    position: relative;
+    border-radius: 5px;
+    background: radial-gradient(120% 70% at 50% 0%, rgb(227 196 126 / 0.07), transparent 60%), theme('colors.glass');
+    box-shadow: inset 0 0 0 5px theme('colors.glass'), inset 0 0 0 6px rgb(201 164 92 / 0.45), inset 0 0 34px rgb(0 0 0 / 0.65);
+  }
+
+  /* Écran d'instrument encastré (listes, compteurs) */
+  .glass {
+    position: relative;
+    border-radius: 8px;
+    border: 2px solid theme('colors.wood.edge');
+    background: radial-gradient(120% 60% at 30% 0%, rgb(255 255 255 / 0.06), transparent 55%), theme('colors.glass');
+    box-shadow: inset 0 0 22px rgb(0 0 0 / 0.9), 0 1px 0 rgb(255 214 160 / 0.15);
+  }
+
+  /* Carte ivoire nacrée */
+  .ivory {
+    border-radius: 6px;
+    border: 1px solid theme('colors.ivory.line');
+    background: linear-gradient(180deg, #f5edda 0%, theme('colors.ivory.deep') 100%);
+    color: theme('colors.ivory.ink');
+    box-shadow: inset 0 1px 0 #fffdf6, 0 2px 4px rgb(0 0 0 / 0.45);
+  }
+
+  /* Plaque gravée en laiton, deux vis */
+  .plate {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 1.4rem;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #edcf86 0%, #c39a4c 50%, #9a7431 100%);
+    color: #2e1f08;
+    text-shadow: 0 1px 0 rgb(255 240 200 / 0.55);
+    box-shadow: inset 0 1px 0 rgb(255 250 225 / 0.7), inset 0 -1px 0 rgb(60 40 10 / 0.55), 0 2px 3px rgb(0 0 0 / 0.6);
+  }
+  .plate::before,
+  .plate::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    margin-top: -3px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff2c2, #8a6526 70%);
+    box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.5);
+  }
+  .plate::before {
+    left: 7px;
+  }
+  .plate::after {
+    right: 7px;
+  }
+
+  /* Boutons émaillés : vrai enfoncement */
+  .enamel {
+    border-radius: 10px;
+    border: 1px solid rgb(0 0 0 / 0.5);
+    color: #f7f0de;
+    text-shadow: 0 1px 0 rgb(0 0 0 / 0.45);
+    transition: transform 70ms, box-shadow 70ms, filter 150ms;
+  }
+  .enamel:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+  .enamel:active:not(:disabled) {
+    transform: translateY(4px);
+  }
+  .enamel:disabled {
+    filter: grayscale(0.5) brightness(0.8);
+    cursor: not-allowed;
+  }
+  .enamel-green {
+    background: linear-gradient(180deg, theme('colors.enamel.green-light') 0%, theme('colors.enamel.green') 100%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 4px 0 #15402b, 0 6px 10px rgb(0 0 0 / 0.5);
+  }
+  .enamel-green:active:not(:disabled) {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 0 0 #15402b;
+  }
+  .enamel-red {
+    background: linear-gradient(180deg, theme('colors.enamel.red-light') 0%, theme('colors.enamel.red') 100%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 4px 0 #561a0e, 0 6px 10px rgb(0 0 0 / 0.5);
+  }
+  .enamel-red:active:not(:disabled) {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 0 0 #561a0e;
+  }
+  .enamel-brass {
+    color: #2a1c07;
+    text-shadow: 0 1px 0 rgb(255 240 200 / 0.5);
+    background: linear-gradient(180deg, #edcf86 0%, #c09449 55%, #9a7231 100%);
+    box-shadow: inset 0 1px 0 rgb(255 250 225 / 0.75), 0 5px 0 #5a3f12, 0 8px 14px rgb(0 0 0 / 0.55);
+  }
+  .enamel-brass:active:not(:disabled) {
+    box-shadow: inset 0 1px 0 rgb(255 250 225 / 0.6), 0 1px 0 #5a3f12;
+  }
+
+  /* Tambour de compteur mécanique */
+  .drum {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0.78em;
+    padding: 4px 3px;
+    margin: 0 1px;
+    border-radius: 4px;
+    color: #f4ecd8;
+    background: linear-gradient(180deg, #050505 0%, #2b2b2b 45%, #1a1a1a 55%, #050505 100%);
+    box-shadow: inset 0 0 0 1px #3a3a3a, 0 1px 0 rgb(255 214 160 / 0.2);
+  }
+
+  /* Filigranes posés à cheval sur un cadre */
+  .ornament {
+    position: absolute;
+    z-index: 4;
+    pointer-events: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

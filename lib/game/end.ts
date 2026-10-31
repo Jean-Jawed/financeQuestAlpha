@@ -10,6 +10,8 @@ import { eq } from 'drizzle-orm';
 import { getQuotes } from '@/lib/market/prices';
 import { calculateTransactionPreview } from './portfolio-math';
 import type { END_REASONS } from '@/lib/db/schema';
+import { gameEndGrants } from '@/lib/xp/hooks';
+import { awardXp, type XpOutcome } from '@/lib/xp/server';
 
 export type EndReason = (typeof END_REASONS)[number];
 
@@ -18,9 +20,24 @@ export type EndReason = (typeof END_REASONS)[number];
  * Toutes les positions sont soldées à la date en jeu : les longues vendues,
  * les courtes rachetées. La partie passe en « completed » avec sa valeur finale.
  *
- * @returns La partie terminée, ou null si elle l'était déjà (double clic, séance concurrente)
+ * Puis l'XP de fin de partie (fin, performance, rang, scénario découvert)
+ *
+ * @returns La partie terminée et l'XP gagnée, ou null si elle l'était déjà (double clic, séance concurrente)
  */
-export async function endGame(gameId: string, reason: EndReason): Promise<Game | null> {
+export async function endGame(gameId: string, reason: EndReason): Promise<{ game: Game; xp: XpOutcome | null } | null> {
+  const ended = await closeGame(gameId, reason);
+  if (!ended) return null;
+
+  const xp = await gameEndGrants(ended)
+    .then((grants) => awardXp(ended.userId, grants))
+    .catch((error) => {
+      console.error('[XP] Fin de partie :', error);
+      return null;
+    });
+  return { game: ended, xp };
+}
+
+async function closeGame(gameId: string, reason: EndReason): Promise<Game | null> {
   return db.transaction(async (tx) => {
     // Verrou : un ordre ou une séance concurrente attend la fin de la clôture
     const [game] = await tx.select().from(games).where(eq(games.id, gameId)).for('update');

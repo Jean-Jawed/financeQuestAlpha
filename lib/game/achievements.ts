@@ -14,13 +14,17 @@ import { eq, asc } from 'drizzle-orm';
 import { calculatePortfolio } from './calculations';
 import {
   IMPLEMENTED_CRITERIA,
+  achievementProgress,
   evaluateAchievement,
+  pickNearest,
   replayTransactions,
   type AchievementContext,
+  type AchievementProgress,
 } from './achievement-rules';
 import { getQuotes } from '@/lib/market/prices';
 import { getAssetTypesBySymbol } from '@/lib/market/assets';
 import type { Achievement } from '@/types/database';
+import type { Game } from '@/lib/db/schema';
 import type { PortfolioCalculation } from '@/types/game';
 
 /** Capital de référence des seuils de valeur (achievements « portfolio_value ») */
@@ -60,6 +64,89 @@ async function getAchievementDefinitions(): Promise<Achievement[]> {
 // ACHIEVEMENT CHECKING
 // ==========================================
 
+/** Contexte d'évaluation d'une partie, chargé une fois */
+interface LoadedContext {
+  game: Game;
+  definitions: Achievement[];
+  unlockedIds: Set<string>;
+  ctx: AchievementContext;
+  replay: ReturnType<typeof replayTransactions>;
+}
+
+/**
+ * Charger partie, définitions, succès débloqués, transactions et positions en parallèle,
+ * puis portfolio, valeurs des longs et types d'actifs
+ */
+async function loadAchievementContext(gameId: string, portfolio?: PortfolioCalculation | null): Promise<LoadedContext | null> {
+  const [game, definitions, unlockedRows, transactionRows, holdingRows] = await Promise.all([
+    db.query.games.findFirst({ where: eq(games.id, gameId) }),
+    getAchievementDefinitions(),
+    db
+      .select({ achievementId: userAchievements.achievementId })
+      .from(userAchievements)
+      .where(eq(userAchievements.gameId, gameId)),
+    db.query.transactions.findMany({
+      where: eq(transactions.gameId, gameId),
+      orderBy: [asc(transactions.transactionDate), asc(transactions.createdAt)],
+    }),
+    db.query.holdings.findMany({ where: eq(holdings.gameId, gameId) }),
+  ]);
+
+  if (!game) {
+    console.error('[Achievements] Game not found');
+    return null;
+  }
+
+  const longHoldings = holdingRows.filter((h) => !h.isShort);
+  const symbols = [...new Set([...transactionRows.map((t) => t.symbol), ...holdingRows.map((h) => h.symbol)])];
+
+  const [resolvedPortfolio, quotes, assetTypeBySymbol] = await Promise.all([
+    portfolio ?? calculatePortfolio(gameId, game.currentDate),
+    getQuotes([...new Set(longHoldings.map((h) => h.symbol))], game.currentDate, game.currency),
+    getAssetTypesBySymbol(symbols),
+  ]);
+
+  if (!resolvedPortfolio) {
+    return null;
+  }
+
+  const longValueBySymbol = new Map<string, number>();
+  for (const holding of longHoldings) {
+    const price = quotes.get(holding.symbol)?.price ?? 0;
+    longValueBySymbol.set(
+      holding.symbol,
+      (longValueBySymbol.get(holding.symbol) ?? 0) + parseFloat(holding.quantity) * price
+    );
+  }
+
+  const ctx: AchievementContext = {
+    startDate: game.startDate,
+    currentDate: game.currentDate,
+    transactions: transactionRows.map((t) => ({
+      type: t.type,
+      symbol: t.symbol,
+      quantity: parseFloat(t.quantity),
+      price: parseFloat(t.price),
+      date: t.transactionDate,
+    })),
+    longValueBySymbol,
+    assetTypeBySymbol,
+    // Seuils « portfolio_value » pensés pour un capital de 10 000 :
+    // ramener la valeur à cette échelle, quelle que soit la devise de jeu
+    totalValue:
+      (resolvedPortfolio.totalValue / parseFloat(game.initialBalance)) * ACHIEVEMENT_REFERENCE_CAPITAL,
+    returnPercentage: resolvedPortfolio.returnPercentage,
+  };
+
+  return {
+    game,
+    definitions,
+    unlockedIds: new Set(unlockedRows.map((u) => u.achievementId)),
+    ctx,
+    replay: replayTransactions(ctx.transactions),
+  };
+}
+
 /**
  * Vérifier et débloquer tous les achievements pour un game
  * Appelé après chaque transaction ou next-day
@@ -73,97 +160,28 @@ export async function checkAndUnlockAchievements(
   portfolio?: PortfolioCalculation | null
 ): Promise<UnlockedAchievement[]> {
   try {
-    // 1. Charger le contexte en parallèle
-    const [game, allAchievements, unlockedRows, transactionRows, holdingRows] = await Promise.all([
-      db.query.games.findFirst({ where: eq(games.id, gameId) }),
-      getAchievementDefinitions(),
-      db
-        .select({ achievementId: userAchievements.achievementId })
-        .from(userAchievements)
-        .where(eq(userAchievements.gameId, gameId)),
-      db.query.transactions.findMany({
-        where: eq(transactions.gameId, gameId),
-        orderBy: [asc(transactions.transactionDate), asc(transactions.createdAt)],
-      }),
-      db.query.holdings.findMany({ where: eq(holdings.gameId, gameId) }),
-    ]);
+    const loaded = await loadAchievementContext(gameId, portfolio);
+    if (!loaded) return [];
+    const { game, definitions, unlockedIds, ctx, replay } = loaded;
 
-    if (!game) {
-      console.error('[Achievements] Game not found');
-      return [];
-    }
-
-    // 2. Ne garder que les achievements à vérifier
-    const unlockedIdSet = new Set(unlockedRows.map((u) => u.achievementId));
-    const pending = allAchievements.filter(
-      (a) => !unlockedIdSet.has(a.id) && IMPLEMENTED_CRITERIA.has(a.criteriaType)
-    );
-
-    if (pending.length === 0) {
-      return [];
-    }
-
-    // 3. Compléter le contexte (portfolio, valeurs des longs, types d'actifs)
-    const longHoldings = holdingRows.filter((h) => !h.isShort);
-    const symbols = [
-      ...new Set([...transactionRows.map((t) => t.symbol), ...holdingRows.map((h) => h.symbol)]),
-    ];
-
-    const [resolvedPortfolio, quotes, assetTypeBySymbol] = await Promise.all([
-      portfolio ?? calculatePortfolio(gameId, game.currentDate),
-      getQuotes([...new Set(longHoldings.map((h) => h.symbol))], game.currentDate, game.currency),
-      getAssetTypesBySymbol(symbols),
-    ]);
-
-    if (!resolvedPortfolio) {
-      return [];
-    }
-
-    const longValueBySymbol = new Map<string, number>();
-    for (const holding of longHoldings) {
-      const price = quotes.get(holding.symbol)?.price ?? 0;
-      longValueBySymbol.set(
-        holding.symbol,
-        (longValueBySymbol.get(holding.symbol) ?? 0) + parseFloat(holding.quantity) * price
-      );
-    }
-
-    const ctx: AchievementContext = {
-      startDate: game.startDate,
-      currentDate: game.currentDate,
-      transactions: transactionRows.map((t) => ({
-        type: t.type,
-        symbol: t.symbol,
-        quantity: parseFloat(t.quantity),
-        price: parseFloat(t.price),
-        date: t.transactionDate,
-      })),
-      longValueBySymbol,
-      assetTypeBySymbol,
-      // Seuils « portfolio_value » pensés pour un capital de 10 000 :
-      // ramener la valeur à cette échelle, quelle que soit la devise de jeu
-      totalValue:
-        (resolvedPortfolio.totalValue / parseFloat(game.initialBalance)) * ACHIEVEMENT_REFERENCE_CAPITAL,
-      returnPercentage: resolvedPortfolio.returnPercentage,
-    };
-
-    const replay = replayTransactions(ctx.transactions);
-
-    // 4. Évaluer en mémoire
-    const toUnlock = pending.filter((achievement) =>
-      evaluateAchievement(
-        achievement.criteriaType,
-        (achievement.criteriaValue ?? {}) as Record<string, unknown>,
-        ctx,
-        replay
-      )
+    // Achievements à vérifier, évalués en mémoire
+    const toUnlock = definitions.filter(
+      (achievement) =>
+        !unlockedIds.has(achievement.id) &&
+        IMPLEMENTED_CRITERIA.has(achievement.criteriaType) &&
+        evaluateAchievement(
+          achievement.criteriaType,
+          (achievement.criteriaValue ?? {}) as Record<string, unknown>,
+          ctx,
+          replay
+        )
     );
 
     if (toUnlock.length === 0) {
       return [];
     }
 
-    // 5. Débloquer en une requête (idempotent grâce à UNIQUE (game_id, achievement_id))
+    // Débloquer en une requête (idempotent grâce à UNIQUE (game_id, achievement_id))
     const inserted = await db
       .insert(userAchievements)
       .values(
@@ -186,6 +204,31 @@ export async function checkAndUnlockAchievements(
     console.error('[Achievements] Error checking achievements:', error);
     return [];
   }
+}
+
+/**
+ * Le succès le plus proche d'être débloqué dans la partie (progression mesurable),
+ * null si tout est débloqué ou rien n'est mesurable
+ */
+export async function loadNearestAchievement(
+  gameId: string
+): Promise<{ achievement: Achievement; progress: AchievementProgress } | null> {
+  const loaded = await loadAchievementContext(gameId);
+  if (!loaded) return null;
+  const { definitions, unlockedIds, ctx, replay } = loaded;
+
+  const candidates = definitions.flatMap((achievement) => {
+    if (unlockedIds.has(achievement.id)) return [];
+    const progress = achievementProgress(
+      achievement.criteriaType,
+      (achievement.criteriaValue ?? {}) as Record<string, unknown>,
+      ctx,
+      replay
+    );
+    return progress ? [{ achievement, progress }] : [];
+  });
+
+  return pickNearest(candidates);
 }
 
 // ==========================================

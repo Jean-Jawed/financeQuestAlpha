@@ -17,6 +17,7 @@ const PUBLIC_PAGES: Array<{ path: string; priority: number; changeFrequency: 'da
   { path: '/mag', priority: 0.8, changeFrequency: 'weekly' },
   { path: '/leaderboard', priority: 0.5, changeFrequency: 'daily' },
   { path: '/signup', priority: 0.6, changeFrequency: 'monthly' },
+  { path: '/privacy', priority: 0.2, changeFrequency: 'monthly' },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

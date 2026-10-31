@@ -4,6 +4,8 @@
  */
 
 import { NextResponse } from 'next/server';
+import { gameCreatedGrants } from '@/lib/xp/hooks';
+import { awardXp } from '@/lib/xp/server';
 import { withAuth } from '@/lib/auth/middleware';
 import { db } from '@/lib/db';
 import { games } from '@/lib/db/schema';
@@ -120,12 +122,16 @@ export const POST = withAuth(async (req, { userId }) => {
       })
       .returning();
 
+    // XP : partie ouverte, première partie dans cette devise
+    const xp = await awardXp(userId, gameCreatedGrants(newGame));
+
     // Retourner le game créé avec message d'ajustement si nécessaire
     return NextResponse.json(
       {
         success: true,
         data: {
           game: newGame,
+          xp,
           // Prefetch info removed as we use direct DB
           prefetchResult: {
             recordsStored: 0,

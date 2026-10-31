@@ -16,6 +16,8 @@ import { useI18n } from '@/lib/i18n/client';
 import { stripLocale } from '@/lib/i18n/paths';
 import { cn } from '@/lib/utils/cn';
 import { MobileNav } from './mobile-nav';
+import { PlayerAvatar } from '@/components/profile/player-avatar';
+import { LevelBadge, XpBar } from '@/components/xp/xp-feedback';
 
 // ==========================================
 // NAVIGATION
@@ -68,8 +70,9 @@ export function Header() {
               })}
             </nav>
 
-            <div className="flex items-center gap-4">
-              <LanguageSwitcher />
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Téléphone : la langue se choisit dans le menu */}
+              <LanguageSwitcher className="max-sm:hidden" />
               <SoundToggle className="hidden md:inline-flex" />
 
               {/* Visiteur sur une page publique (magazine, FAQ) : accès à la connexion */}
@@ -84,10 +87,26 @@ export function Header() {
 
               {user && (
                 <>
-                  <span className="hidden text-right leading-tight xl:block">
-                    <span className="label block text-[10px]">{m.nav.broker}</span>
-                    <span className="font-display text-sm italic text-paper">{user.name}</span>
-                  </span>
+                  <Link
+                    href={href('/profile')}
+                    aria-label={m.nav.profile}
+                    aria-current={pathname === '/profile' ? 'page' : undefined}
+                    className="group flex items-center gap-3"
+                  >
+                    <span className="hidden w-36 text-right leading-tight xl:block">
+                      <span className="font-display text-sm italic text-paper group-hover:text-brass">{user.name}</span>
+                      <XpBar xpTotal={user.xpTotal} className="mt-1" />
+                    </span>
+                    <span className="relative">
+                      <PlayerAvatar
+                        avatarId={user.avatarId}
+                        name={user.name}
+                        size={36}
+                        className="transition-shadow group-hover:ring-2 group-hover:ring-brass"
+                      />
+                      <LevelBadge xpTotal={user.xpTotal} className="absolute -bottom-1.5 -right-2" />
+                    </span>
+                  </Link>
                   <button
                     onClick={logout}
                     className="hidden font-label text-xs font-semibold uppercase tracking-label text-paper-dim transition-colors hover:text-loss md:block"
@@ -117,6 +136,7 @@ export function Header() {
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
         onLogout={user ? logout : undefined}
+        user={user}
         showLogin={!user && !loading}
       />
     </>

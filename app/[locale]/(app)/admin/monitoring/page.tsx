@@ -180,7 +180,81 @@ export default function AdminMonitoringPage() {
             </div>
           </CardContent>
         </Card>
+
+        <ModerationCard />
       </div>
     </div>
+  );
+}
+
+// ==========================================
+// MODÉRATION
+// ==========================================
+
+/** Réinitialiser le pseudo, la devise ou l'avatar d'un joueur (signalement) */
+function ModerationCard() {
+  const { toast } = useToast();
+  const [name, setName] = useState('');
+  const [resetName, setResetName] = useState(true);
+  const [resetMotto, setResetMotto] = useState(true);
+  const [resetAvatar, setResetAvatar] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setSending(true);
+    try {
+      const res = await fetch('/api/admin/moderate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, resetName, resetMotto, resetAvatar }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Modération impossible');
+        return;
+      }
+      toast.success(data.message);
+      setName('');
+    } catch {
+      toast.error('Erreur réseau');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const options = [
+    { label: 'Pseudo → « Agent XXXX »', value: resetName, set: setResetName },
+    { label: 'Effacer la devise', value: resetMotto, set: setResetMotto },
+    { label: 'Avatar au hasard', value: resetAvatar, set: setResetAvatar },
+  ];
+
+  return (
+    <Card variant="glass">
+      <CardHeader>
+        <CardTitle>Modération d’un profil</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Pseudo actuel du joueur"
+            aria-label="Pseudo actuel du joueur"
+            required
+            className="h-10 w-full rounded border border-line-strong bg-ink px-3 text-paper focus:border-brass focus:outline-none"
+          />
+          {options.map((option) => (
+            <label key={option.label} className="flex items-center gap-2 text-sm text-paper-dim">
+              <input type="checkbox" checked={option.value} onChange={(event) => option.set(event.target.checked)} />
+              {option.label}
+            </label>
+          ))}
+          <Button type="submit" size="sm" loading={sending} disabled={!name.trim() || !(resetName || resetMotto || resetAvatar)}>
+            Appliquer
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

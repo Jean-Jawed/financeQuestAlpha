@@ -28,6 +28,8 @@ const PERIOD_DAYS: Record<Period, number | null> = {
 type Row = {
   game_id: string;
   user_name: string;
+  avatar_id: string | null;
+  country: string | null;
   final_value: string;
   final_return: string;
   currency: string;
@@ -68,7 +70,9 @@ export async function GET(req: Request) {
     const { rows } = await db.execute<Row>(sql`
       SELECT * FROM (
         SELECT DISTINCT ON (g.user_id)
-          g.id AS game_id, u.name AS user_name, g.final_value, g.final_return,
+          g.id AS game_id, u.name AS user_name, u.avatar_id,
+          CASE WHEN u.profile_public THEN u.country END AS country,
+          g.final_value, g.final_return,
           g.currency, g.sessions_played, g.ended_at
         FROM games g
         JOIN users u ON u.id = g.user_id
@@ -90,6 +94,8 @@ export async function GET(req: Request) {
         rank: index + 1,
         gameId: row.game_id,
         userName: row.user_name,
+        avatarId: row.avatar_id,
+        country: row.country,
         totalValue: parseFloat(row.final_value),
         currency: row.currency,
         returnPercentage,

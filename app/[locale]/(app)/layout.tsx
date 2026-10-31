@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ToastContainer } from '@/components/ui/toast';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { XpOverlay } from '@/components/xp/xp-feedback';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1">{children}</main>
         <Footer />
         <ToastContainer />
+        <XpOverlay />
       </div>
     </AuthProvider>
   );

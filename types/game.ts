@@ -48,6 +48,8 @@ export interface GameSettings {
 
 export interface HoldingWithValue extends Holding {
   name: string;
+  /** Catégorie d'actif (asset_types.code : STOCK, CRYPTO…), pour la couleur et la répartition */
+  assetType: string | null;
   /** Devise de cotation de l'actif et cours d'origine */
   assetCurrency: string;
   assetPrice: number;

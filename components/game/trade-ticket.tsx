@@ -10,8 +10,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EnamelButton } from '@/components/machine/instruments';
 import { PriceChart } from '@/components/game/price-chart';
 import { showMedals } from '@/components/game/achievement-medal';
+import { showXp } from '@/components/xp/xp-feedback';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n/client';
 import { playSound } from '@/lib/sound';
@@ -30,6 +32,14 @@ export type { TradeAction };
 export interface TicketAsset {
   symbol: string;
   name: string;
+}
+
+/** Actif choisi (carnet, positions, journal) : ouvert, ou position à vendre / racheter */
+export interface TradeSelection {
+  asset: TicketAsset;
+  mode: 'open' | 'sell' | 'cover';
+  heldQuantity?: number;
+  averageCost?: number;
 }
 
 interface TradeTicketProps {
@@ -54,6 +64,10 @@ interface TradeTicketProps {
   onClose: () => void;
   /** Appelé avec l'état de la partie renvoyé par l'ordre */
   onDone: (state?: GameState) => void;
+  /** Guichet posé dans l'écran (bureau) plutôt qu'en fenêtre */
+  inline?: boolean;
+  /** Courbe dans le ticket (la version posée l'affiche à part, en grand) */
+  showChart?: boolean;
 }
 
 interface QuoteState {
@@ -90,6 +104,8 @@ export function TradeTicket({
   availableCash,
   onClose,
   onDone,
+  inline = false,
+  showChart = true,
 }: TradeTicketProps) {
   const { toast } = useToast();
   const { m, f, fmt, locale, href } = useI18n();
@@ -107,8 +123,10 @@ export function TradeTicket({
   // Identifiant de l'ordre : un renvoi après une réponse perdue n'est pas réexécuté
   const orderId = useRef<string | null>(null);
 
-  // Le ticket se détache du carnet
-  useEffect(() => playSound('ticket', 0.8), []);
+  // Le ticket se détache du carnet (la version posée est déjà là)
+  useEffect(() => {
+    if (!inline) playSound('ticket', 0.8);
+  }, [inline]);
 
   // Cours du jour, converti dans la devise de la partie
   useEffect(() => {
@@ -203,6 +221,7 @@ export function TradeTicket({
         window.setTimeout(() => playSound('till', 0.8), 260);
       }
       showMedals(data.data?.achievementsUnlocked);
+      showXp(data.data?.xp);
       setTimeout(() => {
         onDone(data.data?.state);
         onClose();
@@ -223,8 +242,7 @@ export function TradeTicket({
   const verb = t[ACTIONS[action].verb];
   const showConversion = quote && quote.assetCurrency !== currency;
 
-  return (
-    <Modal isOpen onClose={() => !loading && onClose()} title={`${asset.symbol} · ${asset.name}`} size="lg">
+  const body = (
       <div className="relative space-y-5">
         {/* Choix du sens (ouverture seulement) */}
         {mode === 'open' && openActions.length > 1 && (
@@ -278,13 +296,15 @@ export function TradeTicket({
           )}
         </div>
 
-        <PriceChart
-          symbol={asset.symbol}
-          currentDate={currentDate}
-          currency={quote?.assetCurrency ?? currency}
-          // Prix de revient ramené en devise de cotation (la courbe n'est pas convertie)
-          costPrice={averageCost !== undefined && quote && quote.price > 0 ? (averageCost * quote.assetPrice) / quote.price : undefined}
-        />
+        {showChart && (
+          <PriceChart
+            symbol={asset.symbol}
+            currentDate={currentDate}
+            currency={quote?.assetCurrency ?? currency}
+            // Prix de revient ramené en devise de cotation (la courbe n'est pas convertie)
+            costPrice={averageCost !== undefined && quote && quote.price > 0 ? (averageCost * quote.assetPrice) / quote.price : undefined}
+          />
+        )}
 
         {/* Quantité */}
         <div className="flex items-end gap-2">
@@ -352,19 +372,44 @@ export function TradeTicket({
           </div>
         )}
       </div>
+  );
 
+  const confirm = (
+    <EnamelButton
+      tone={action === 'buy' || action === 'cover' ? 'green' : 'red'}
+      size={inline ? 'lg' : 'md'}
+      onClick={submit}
+      disabled={loading || !validQty || !quote || overHeld}
+      className={inline ? 'w-full' : undefined}
+    >
+      {loading ? t.sending : `${verb}${validQty ? ` ${f.quantity(qty)} ${asset.symbol}` : ''}`}
+    </EnamelButton>
+  );
+
+  if (inline) {
+    return (
+      <div className="space-y-4">
+        {body}
+        <div className="flex flex-wrap gap-3">
+          {mode !== 'open' && (
+            <Button variant="ghost" onClick={onClose} disabled={loading}>
+              {m.common.cancel}
+            </Button>
+          )}
+          <div className="min-w-[220px] flex-1">{confirm}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Modal isOpen onClose={() => !loading && onClose()} title={`${asset.symbol} · ${asset.name}`} size="lg">
+      {body}
       <ModalFooter>
         <Button variant="ghost" onClick={onClose} disabled={loading}>
           {m.common.cancel}
         </Button>
-        <Button
-          variant={action === 'short' ? 'danger' : 'primary'}
-          onClick={submit}
-          loading={loading}
-          disabled={!validQty || !quote || overHeld}
-        >
-          {loading ? t.sending : verb}
-        </Button>
+        {confirm}
       </ModalFooter>
     </Modal>
   );

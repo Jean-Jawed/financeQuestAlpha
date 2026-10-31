@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PerformanceBadge } from '@/components/ui/badge';
+import { PlayerAvatar } from '@/components/profile/player-avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n/client';
 import { INTL_LOCALE } from '@/lib/i18n/config';
@@ -26,9 +27,11 @@ interface GroupPanelProps {
   refreshKey: string;
   /** Vue du groupe à jour (la page en tire l'état de la séance commune) */
   onUpdate?: (view: GroupView) => void;
+  /** Posé sur le bois d'un cadre (écran de jeu) */
+  framed?: boolean;
 }
 
-export function GroupPanel({ groupId, refreshKey, onUpdate }: GroupPanelProps) {
+export function GroupPanel({ groupId, refreshKey, onUpdate, framed = false }: GroupPanelProps) {
   const { m, f, fmt, href, locale } = useI18n();
   const t = m.groups.panel;
   const { toast } = useToast();
@@ -160,7 +163,7 @@ export function GroupPanel({ groupId, refreshKey, onUpdate }: GroupPanelProps) {
     : null;
 
   return (
-    <section className="certificate p-5" aria-labelledby="group-title">
+    <section className={framed ? 'p-1' : 'certificate p-5'} aria-labelledby="group-title">
       {/* Règles et progression */}
       <header>
         <p className="label text-[10px] text-brass">
@@ -235,7 +238,8 @@ export function GroupPanel({ groupId, refreshKey, onUpdate }: GroupPanelProps) {
         {messages.length === 0 && <p className="text-sm text-paper-faint">{t.chatEmpty}</p>}
         {messages.map((message) => (
           <div key={message.id} className={cn('group text-sm', message.isYou && 'text-right')}>
-            <p className="label text-[10px]">
+            <p className={cn('label flex items-center gap-1.5 text-[10px]', message.isYou && 'justify-end')}>
+              <PlayerAvatar avatarId={message.avatarId} name={message.name} size={18} />
               {message.isYou ? t.you : message.name} ·{' '}
               {new Date(message.createdAt).toLocaleTimeString(INTL_LOCALE[locale], { hour: '2-digit', minute: '2-digit' })}
               {group.isOwner && (
@@ -300,7 +304,8 @@ export function GroupPanel({ groupId, refreshKey, onUpdate }: GroupPanelProps) {
 
     return (
       <li key={standing.userId} className={cn('flex items-start gap-3 py-2.5', standing.isYou && 'text-brass')}>
-        <span className="num w-6 shrink-0 pt-0.5 text-paper-faint">{standing.rank}</span>
+        <span className="num w-5 shrink-0 pt-1 text-paper-faint">{standing.rank}</span>
+        <PlayerAvatar avatarId={standing.avatarId} name={standing.name} size={32} />
         <div className="min-w-0 flex-1">
           <p className={cn('truncate font-semibold', standing.isYou ? 'text-brass' : 'text-paper')}>
             {standing.name}

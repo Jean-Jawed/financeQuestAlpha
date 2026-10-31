@@ -96,6 +96,12 @@ export function LoginForm() {
             disabled={loading}
           />
 
+          <div className="-mt-2 text-right">
+            <Link href={href('/forgot-password')} className="text-xs text-paper-dim underline-offset-4 hover:text-brass hover:underline">
+              {t.login.forgot}
+            </Link>
+          </div>
+
           <button type="submit" disabled={loading} className={SUBMIT_CLASS}>
             {loading ? t.login.submitting : t.login.submit}
           </button>

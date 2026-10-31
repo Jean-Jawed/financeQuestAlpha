@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { and, eq, sql } from 'drizzle-orm';
 import { Rosette } from '@/components/brand/guilloche';
 import { JoinGroupButton } from '@/components/groups/join-group-button';
+import { PlayerAvatar } from '@/components/profile/player-avatar';
 import { getSessionState } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { groupMembers, users } from '@/lib/db/schema';
@@ -52,7 +53,7 @@ export default async function JoinGroupPage({ params }: { params: Params }) {
 
   const [[{ count }], [owner], [membership]] = await Promise.all([
     db.select({ count: sql<number>`COUNT(*)::int` }).from(groupMembers).where(eq(groupMembers.groupId, group.id)),
-    db.select({ name: users.name }).from(users).where(eq(users.id, group.ownerId)),
+    db.select({ name: users.name, avatarId: users.avatarId }).from(users).where(eq(users.id, group.ownerId)),
     userId
       ? db
           .select({ gameId: groupMembers.gameId })
@@ -80,7 +81,12 @@ export default async function JoinGroupPage({ params }: { params: Params }) {
         <div className="relative">
           <p className="label text-brass">{t.invitedTo}</p>
           <h1 className="mt-3 font-display text-4xl font-semibold text-paper">{group.name}</h1>
-          {owner && <p className="mt-2 text-paper-dim">{fmt(t.organiser, { name: owner.name })}</p>}
+          {owner && (
+            <p className="mt-3 flex items-center justify-center gap-2 text-paper-dim">
+              <PlayerAvatar avatarId={owner.avatarId} name={owner.name} size={32} />
+              {fmt(t.organiser, { name: owner.name })}
+            </p>
+          )}
 
           <dl className="mx-auto mt-8 grid max-w-lg grid-cols-2 gap-4 text-left text-sm">
             <div className="col-span-2 rounded border border-line bg-ink p-4">

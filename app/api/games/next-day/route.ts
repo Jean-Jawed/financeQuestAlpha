@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { mergeOutcomes } from '@/lib/xp/server';
 import { withAuth } from '@/lib/auth/middleware';
 import { requireOwnership } from '@/lib/auth/middleware';
 import { db } from '@/lib/db';
@@ -68,11 +69,11 @@ export const POST = withAuth(async (req, { userId }) => {
         if (!outcome.result) {
           return NextResponse.json({
             success: true,
-            data: { waiting: true, readyCount: outcome.readyCount, total: outcome.total },
+            data: { waiting: true, readyCount: outcome.readyCount, total: outcome.total, xp: outcome.xp },
             message: fmt(api.groupWaiting, { ready: outcome.readyCount, total: outcome.total }),
           });
         }
-        result = outcome.result;
+        result = { ...outcome.result, xp: mergeOutcomes(outcome.xp, outcome.result.xp ?? null) };
       } else {
         result = await advanceToNextDay(game);
         if (result.endReason) await refreshGroupCompletion(group.id);
@@ -93,6 +94,7 @@ export const POST = withAuth(async (req, { userId }) => {
         state: result.state,
         achievementsUnlocked: result.achievementsUnlocked || [],
         endReason: result.endReason ?? null,
+        xp: result.xp ?? null,
       },
       message: fmt(api.advanced, { date: f.date(result.newDate!) }),
     });

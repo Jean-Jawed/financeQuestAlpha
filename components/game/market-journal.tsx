@@ -8,7 +8,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { TradeTicket, type TicketAsset } from '@/components/game/trade-ticket';
+import { TradeTicket, type TicketAsset, type TradeSelection } from '@/components/game/trade-ticket';
 import { useI18n } from '@/lib/i18n/client';
 import { getScenario } from '@/lib/game/scenarios';
 import { cn } from '@/lib/utils/cn';
@@ -24,6 +24,10 @@ interface MarketJournalProps {
   feeRate: number;
   availableCash: number;
   onTradeComplete: (state?: GameState) => void;
+  /** Écran de jeu : l'actif choisi s'affiche au centre (sinon : ticket en fenêtre) */
+  onSelect?: (selection: TradeSelection) => void;
+  /** Posé sur le bois d'un cadre (écran de jeu) : sans fond ni bordure propres */
+  framed?: boolean;
 }
 
 type Period = 'day' | 'week';
@@ -96,6 +100,8 @@ export function MarketJournal({
   feeRate,
   availableCash,
   onTradeComplete,
+  onSelect,
+  framed = false,
 }: MarketJournalProps) {
   const { m, fmt } = useI18n();
   const t = m.game.journal;
@@ -120,12 +126,19 @@ export function MarketJournal({
     };
   }, [currentDate, scenario]);
 
+  // Écran de jeu : l'actif s'affiche au centre ; sinon, ticket en fenêtre
+  function pick(mover: TicketAsset) {
+    const asset = { symbol: mover.symbol, name: mover.name };
+    if (onSelect) onSelect({ asset, mode: 'open' });
+    else setSelected(asset);
+  }
+
   const ranking = data ? data[period] : null;
   const breadth = data?.breadth;
   const total = breadth ? breadth.up + breadth.down + breadth.flat : 0;
 
   return (
-    <section className="panel" aria-labelledby="journal-title">
+    <section className={framed ? undefined : 'panel'} aria-labelledby="journal-title">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line px-5 py-4">
         <div>
           <p className="label text-brass">{t.label}</p>
@@ -191,8 +204,8 @@ export function MarketJournal({
 
           {/* Palmarès */}
           <div className="grid gap-4 py-3 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-line">
-            <MoverList title={t.gainers} movers={ranking.gainers} onSelect={(mover) => setSelected(mover)} />
-            <MoverList title={t.losers} movers={ranking.losers} onSelect={(mover) => setSelected(mover)} />
+            <MoverList title={t.gainers} movers={ranking.gainers} onSelect={pick} />
+            <MoverList title={t.losers} movers={ranking.losers} onSelect={pick} />
           </div>
           <p className="border-t border-line px-5 py-2 text-[11px] text-paper-faint">{t.note}</p>
         </>

@@ -8,6 +8,7 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import type { User } from '@supabase/supabase-js';
+import { randomAvatarId } from '@/lib/profile/avatars';
 
 // ==========================================
 // TYPES
@@ -17,6 +18,12 @@ export interface SessionUser {
   id: string;
   email: string;
   name: string;
+  /** Avatar par défaut (lib/profile/avatars.ts), null : initiales */
+  avatarId: string | null;
+  /** Écran d'accueil après inscription vu ou passé */
+  onboardingDone: boolean;
+  /** Expérience totale (niveau et titre : lib/xp/rules.ts) */
+  xpTotal: number;
   createdAt: Date;
 }
 
@@ -81,6 +88,9 @@ export async function getSessionState(): Promise<SessionState> {
         id: dbUser.id,
         email: dbUser.email,
         name: dbUser.name,
+        avatarId: dbUser.avatarId,
+        onboardingDone: dbUser.onboardingDoneAt !== null,
+        xpTotal: dbUser.xpTotal,
         createdAt: dbUser.createdAt,
       },
     };
@@ -185,7 +195,7 @@ export async function signUp(
       email,
       password,
       options: {
-        data: { name: name.trim() },
+        data: { name: name.trim(), avatar: randomAvatarId() },
       },
     });
 

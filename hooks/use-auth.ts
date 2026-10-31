@@ -12,10 +12,13 @@ import { useEffect } from 'react';
 // TYPES
 // ==========================================
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
+  avatarId: string | null;
+  onboardingDone: boolean;
+  xpTotal: number;
   createdAt: Date;
 }
 
@@ -142,6 +145,9 @@ export function useAuth() {
  * Hook pour forcer la vérification de la session
  * Utile après login/signup
  */
+/** Store hors composants (XP après une action) */
+export { useAuthStore };
+
 export function useRefreshSession() {
   const checkSession = useAuthStore((state) => state.checkSession);
   return checkSession;

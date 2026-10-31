@@ -22,6 +22,14 @@ import { endGame } from './end';
 import { compareStandings, INVITE_ALPHABET, MESSAGE_COOLDOWN_MS, type StandingInput } from './groups';
 import { advanceToNextDay, type NextDayResult } from './next-day';
 import { recordSnapshot } from './snapshots';
+import {
+  eliminationSurvivedXp,
+  groupCompletedXp,
+  groupJoinedXp,
+  groupMessageXp,
+  groupPunctualXp,
+} from '@/lib/xp/hooks';
+import type { XpOutcome } from '@/lib/xp/server';
 import type { GroupView, GroupStanding } from '@/types/groups';
 
 // ==========================================
@@ -123,6 +131,7 @@ export async function createGroup(ownerId: string, input: NewGroupInput): Promis
 
     if (group) {
       const game = await createMemberGame(group, ownerId);
+      await groupJoinedXp(group, ownerId, game).catch((error) => console.error('[XP] Groupe créé :', error));
       return { group, game };
     }
   }
@@ -144,7 +153,9 @@ export async function joinGroup(userId: string, group: Group): Promise<Game> {
   if (members.some((member) => member.userId === userId)) throw new GroupError('groupAlreadyMember', 409);
   if (members.length >= group.maxPlayers) throw new GroupError('groupFull');
 
-  return createMemberGame(group, userId);
+  const game = await createMemberGame(group, userId);
+  await groupJoinedXp(group, userId, game).catch((error) => console.error('[XP] Groupe rejoint :', error));
+  return game;
 }
 
 // ==========================================
@@ -181,10 +192,13 @@ export async function refreshGroupCompletion(groupId: string): Promise<void> {
     .where(and(eq(games.groupId, groupId), eq(games.status, 'active')));
 
   if (Number(count) === 0) {
-    await db
+    const [completed] = await db
       .update(groups)
       .set({ status: 'completed', endedAt: new Date() })
-      .where(and(eq(groups.id, groupId), sql`${groups.status} <> 'completed'`));
+      .where(and(eq(groups.id, groupId), sql`${groups.status} <> 'completed'`))
+      .returning();
+    // Une seule fois : la mise à jour conditionnelle désigne l'appel qui clôt le groupe
+    if (completed) await groupCompletedXp(completed).catch((error) => console.error('[XP] Groupe terminé :', error));
   }
 }
 
@@ -277,6 +291,11 @@ async function eliminate(group: Group, results: Map<string, NextDayResult>): Pro
     const value = (game: Game) => results.get(game.id)?.state?.portfolio.totalValue ?? parseFloat(game.currentBalance);
     const last = [...remaining].sort((a, b) => value(a) - value(b))[0];
     await endGame(last.id, 'eliminated');
+    await eliminationSurvivedXp(
+      group,
+      remaining.filter((game) => game.id !== last.id),
+      sessions
+    ).catch((error) => console.error('[XP] Élimination :', error));
   }
 
   const survivors = await activeGames(group.id);
@@ -295,6 +314,8 @@ export async function advanceIfOverdue(group: Group): Promise<boolean> {
 export interface ReadyOutcome {
   /** La séance a avancé (ce joueur était le dernier attendu) */
   advanced: boolean;
+  /** Ponctualité : prêt avant le délai de secours */
+  xp: XpOutcome | null;
   result: NextDayResult | null;
   readyCount: number;
   total: number;
@@ -304,10 +325,13 @@ export interface ReadyOutcome {
 export async function markReady(group: Group, game: Game): Promise<ReadyOutcome> {
   if (group.status !== 'running') throw new GroupError('groupNotStarted');
 
-  await db
+  const [marked] = await db
     .update(groupMembers)
     .set({ ready: true })
-    .where(and(eq(groupMembers.groupId, group.id), eq(groupMembers.gameId, game.id)));
+    .where(and(eq(groupMembers.groupId, group.id), eq(groupMembers.gameId, game.id), eq(groupMembers.ready, false)))
+    .returning();
+  const deadline = syncDeadline(group);
+  const xp = marked && (!deadline || deadline.getTime() > Date.now()) ? await groupPunctualXp(group, game) : null;
 
   const rows = await db
     .select({ ready: groupMembers.ready })
@@ -317,11 +341,11 @@ export async function markReady(group: Group, game: Game): Promise<ReadyOutcome>
   const readyCount = rows.filter((row) => row.ready).length;
 
   if (readyCount < rows.length) {
-    return { advanced: false, result: null, readyCount, total: rows.length };
+    return { advanced: false, result: null, readyCount, total: rows.length, xp };
   }
 
   const results = await advanceGroup(group);
-  return { advanced: results !== null, result: results?.get(game.id) ?? null, readyCount, total: rows.length };
+  return { advanced: results !== null, result: results?.get(game.id) ?? null, readyCount, total: rows.length, xp };
 }
 
 // ==========================================
@@ -341,7 +365,8 @@ export async function postMessage(group: Group, userId: string, body: string): P
     throw new GroupError('messageTooFast', 429);
   }
 
-  await db.insert(groupMessages).values({ groupId: group.id, userId, body });
+  const [message] = await db.insert(groupMessages).values({ groupId: group.id, userId, body }).returning({ id: groupMessages.id });
+  await groupMessageXp(group, userId, message.id).catch((error) => console.error('[XP] Message :', error));
 }
 
 /** Modération : l'organisateur peut retirer un message */
@@ -376,7 +401,7 @@ export async function loadGroupView(groupId: string, userId: string, afterMessag
   const viewerDate = viewerGame.status === 'completed' ? END_OF_TIME : viewerGame.currentDate;
 
   const memberRows = await db
-    .select({ member: groupMembers, game: games, name: users.name })
+    .select({ member: groupMembers, game: games, name: users.name, avatarId: users.avatarId })
     .from(groupMembers)
     .innerJoin(games, eq(games.id, groupMembers.gameId))
     .innerJoin(users, eq(users.id, groupMembers.userId))
@@ -394,7 +419,7 @@ export async function loadGroupView(groupId: string, userId: string, afterMessag
           .orderBy(gameSnapshots.gameId, desc(gameSnapshots.date));
   const snapshotOf = new Map(snapshots.map((snapshot) => [snapshot.gameId, snapshot]));
 
-  const inputs = memberRows.map(({ member, game, name }) => {
+  const inputs = memberRows.map(({ member, game, name, avatarId }) => {
     const snapshot = snapshotOf.get(game.id);
     const initial = parseFloat(game.initialBalance);
     // Partie terminée, et fin déjà atteinte à la date de celui qui regarde : valeur finale
@@ -414,6 +439,7 @@ export async function loadGroupView(groupId: string, userId: string, afterMessag
     const standing: StandingInput & Omit<GroupStanding, 'rank'> = {
       userId: member.userId,
       name,
+      avatarId,
       isYou: member.userId === userId,
       date: endedForViewer ? game.currentDate : (snapshot?.date ?? game.startDate),
       ahead: game.currentDate > viewerDate,
@@ -435,7 +461,7 @@ export async function loadGroupView(groupId: string, userId: string, afterMessag
     .map(({ eliminated: _eliminated, finishedAt: _finishedAt, ...standing }, index) => ({ ...standing, rank: index + 1 }));
 
   const messageRows = await db
-    .select({ message: groupMessages, name: users.name })
+    .select({ message: groupMessages, name: users.name, avatarId: users.avatarId })
     .from(groupMessages)
     .innerJoin(users, eq(users.id, groupMessages.userId))
     .where(
@@ -477,9 +503,10 @@ export async function loadGroupView(groupId: string, userId: string, afterMessag
       ready: memberRows.find((row) => row.member.userId === userId)?.member.ready ?? false,
     },
     standings,
-    messages: messageRows.reverse().map(({ message, name }) => ({
+    messages: messageRows.reverse().map(({ message, name, avatarId }) => ({
       id: message.id,
       name,
+      avatarId,
       body: message.body,
       createdAt: message.createdAt.toISOString(),
       isYou: message.userId === userId,

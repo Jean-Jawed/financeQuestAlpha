@@ -81,7 +81,8 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex animate-fade items-center justify-center p-4"
+      // Téléphone : la fenêtre monte du bas de l'écran, à portée du pouce
+      className="fixed inset-0 z-50 flex animate-fade items-end justify-center sm:items-center sm:p-4"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -94,7 +95,7 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          'certificate relative max-h-[calc(100vh-2rem)] w-full overflow-y-auto shadow-lift',
+          'certificate relative max-h-[92vh] w-full overflow-y-auto shadow-lift max-sm:rounded-b-none max-sm:rounded-t-2xl sm:max-h-[calc(100vh-2rem)]',
           'animate-rise',
           sizes[size]
         )}

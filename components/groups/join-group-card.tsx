@@ -6,8 +6,9 @@
 'use client';
 
 import { useState } from 'react';
+import { Frame } from '@/components/machine/frame';
+import { EnamelButton } from '@/components/machine/instruments';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n/client';
 import { INVITE_CODE_PATTERN } from '@/lib/game/groups';
 
@@ -20,8 +21,9 @@ export function JoinGroupCard() {
   const valid = INVITE_CODE_PATTERN.test(normalized);
 
   return (
+    <Frame outerClassName="h-full" className="flex min-h-[220px] flex-col justify-center p-6">
     <form
-      className="flex min-h-[220px] flex-col justify-center rounded border border-line bg-ink-2 p-6"
+      className="flex flex-col justify-center"
       onSubmit={(event) => {
         event.preventDefault();
         if (valid) router.push(href(`/groups/join/${normalized}`));
@@ -37,12 +39,13 @@ export function JoinGroupCard() {
           placeholder={t.placeholder}
           aria-label={t.placeholder}
           autoCapitalize="characters"
-          className="num h-11 min-w-0 flex-1 rounded border border-line-strong bg-ink px-3 text-lg uppercase tracking-[0.25em] text-paper focus:border-brass focus:outline-none focus:ring-1 focus:ring-brass"
+          className="num h-11 min-w-0 flex-1 rounded border border-ivory-line bg-ivory px-3 text-lg uppercase tracking-[0.25em] text-ivory-ink shadow-[inset_0_2px_3px_rgba(0,0,0,0.3)] focus:border-brass focus:outline-none focus:ring-1 focus:ring-brass"
         />
-        <Button type="submit" disabled={!valid}>
+        <EnamelButton type="submit" tone="green" disabled={!valid}>
           {t.cta}
-        </Button>
+        </EnamelButton>
       </div>
     </form>
+    </Frame>
   );
 }

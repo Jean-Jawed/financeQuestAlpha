@@ -75,11 +75,11 @@ export const POST = withAuth(async (req, { userId }) => {
       return NextResponse.json({ error: api.gameEnded }, { status: 409 });
     }
 
-    if (ended.groupId) await refreshGroupCompletion(ended.groupId);
+    if (ended.game.groupId) await refreshGroupCompletion(ended.game.groupId);
 
-    const state = await loadGameState(ended);
+    const state = await loadGameState(ended.game);
 
-    return NextResponse.json({ success: true, data: { state } });
+    return NextResponse.json({ success: true, data: { state, xp: ended.xp } });
   } catch (error) {
     console.error('[API] End game error:', error);
 

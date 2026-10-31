@@ -230,3 +230,124 @@ export function evaluateAchievement(
       return false;
   }
 }
+
+// ==========================================
+// PROGRESSION (« le succès le plus proche »)
+// ==========================================
+
+export interface AchievementProgress {
+  /** Où en est le joueur, et ce qu'il faut atteindre (unité : voir `unit`) */
+  current: number;
+  target: number;
+  /** De 0 (rien) à 1 (atteint) */
+  ratio: number;
+  unit: 'count' | 'percent' | 'days' | 'value';
+}
+
+/** Capital de référence des seuils de valeur (achievements « portfolio_value ») */
+const REFERENCE_CAPITAL = 10_000;
+
+function progress(current: number, target: number, unit: AchievementProgress['unit']): AchievementProgress | null {
+  if (!Number.isFinite(target) || target <= 0) return null;
+  return { current, target, ratio: Math.min(Math.max(current / target, 0), 1), unit };
+}
+
+/**
+ * Progression mesurable vers un succès, null si le critère est tout ou rien
+ * (ou non évalué). Mêmes données que evaluateAchievement.
+ */
+export function achievementProgress(
+  criteriaType: string,
+  criteriaValue: CriteriaValue,
+  ctx: AchievementContext,
+  replay: ReplayResult
+): AchievementProgress | null {
+  const minCount = num(criteriaValue.min_count, 1);
+
+  switch (criteriaType) {
+    case 'first_transaction':
+      return progress(ctx.transactions.length, 1, 'count');
+
+    case 'transaction_count':
+      return progress(ctx.transactions.length, minCount, 'count');
+
+    case 'asset_count':
+      return progress(ctx.longValueBySymbol.size, minCount, 'count');
+
+    case 'portfolio_value': {
+      // Progression sur le gain : de 10 000 au seuil (12 000, 15 000…)
+      const target = num(criteriaValue.min_value, Infinity);
+      const p = progress(ctx.totalValue - REFERENCE_CAPITAL, target - REFERENCE_CAPITAL, 'value');
+      return p && { ...p, current: ctx.totalValue, target };
+    }
+
+    case 'return_percentage':
+      return progress(ctx.returnPercentage, num(criteriaValue.min_return, Infinity), 'percent');
+
+    case 'specific_trade': {
+      if (typeof criteriaValue.transaction_type === 'string') {
+        const type = criteriaValue.transaction_type;
+        return progress(ctx.transactions.filter((tx) => tx.type === type).length, minCount, 'count');
+      }
+      if (typeof criteriaValue.asset_type === 'string') {
+        const assetType = criteriaValue.asset_type.toLowerCase();
+        const symbols = new Set(
+          ctx.transactions
+            .filter((tx) => tx.type === 'buy' && ctx.assetTypeBySymbol.get(tx.symbol) === assetType)
+            .map((tx) => tx.symbol)
+        );
+        return progress(symbols.size, minCount, 'count');
+      }
+      return null;
+    }
+
+    case 'days_played':
+      return progress(daysBetween(ctx.startDate, ctx.currentDate), num(criteriaValue.min_days, Infinity), 'days');
+
+    case 'hold_duration': {
+      let longest = 0;
+      for (const openedAt of replay.openLongSince.values()) {
+        longest = Math.max(longest, daysBetween(openedAt, ctx.currentDate));
+      }
+      return progress(longest, num(criteriaValue.min_days, Infinity), 'days');
+    }
+
+    case 'profitable_trades': {
+      const minProfit = num(criteriaValue.min_profit, 0);
+      return progress(replay.profitableSellsPct.filter((pct) => pct >= minProfit).length, minCount, 'count');
+    }
+
+    case 'short_profit':
+      return progress(replay.profitableCovers, minCount, 'count');
+
+    case 'sector_focus': {
+      const sector = typeof criteriaValue.sector === 'string' ? criteriaValue.sector.toLowerCase() : '';
+      if (sector !== 'crypto') return null;
+      let total = 0;
+      let inSector = 0;
+      for (const [symbol, value] of ctx.longValueBySymbol) {
+        total += value;
+        if (ctx.assetTypeBySymbol.get(symbol) === sector) inSector += value;
+      }
+      return progress(total > 0 ? (inSector / total) * 100 : 0, num(criteriaValue.min_percentage, 100), 'percent');
+    }
+
+    default:
+      return null;
+  }
+}
+
+/**
+ * Le succès le plus proche parmi ceux pas encore débloqués : la plus forte
+ * progression, à égalité le moins de points ; sans progression entamée, le plus facile
+ */
+export function pickNearest<T extends { points: number }>(
+  candidates: Array<{ achievement: T; progress: AchievementProgress }>
+): { achievement: T; progress: AchievementProgress } | null {
+  const open = candidates.filter((c) => c.progress.ratio < 1);
+  const started = open.filter((c) => c.progress.ratio > 0);
+  // Rien d'entamé (partie qui commence) : le plus facile
+  const pool = started.length > 0 ? started : open;
+  pool.sort((a, b) => b.progress.ratio - a.progress.ratio || a.achievement.points - b.achievement.points);
+  return pool[0] ?? null;
+}

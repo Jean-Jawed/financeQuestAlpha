@@ -13,6 +13,8 @@ import { endGame, type EndReason } from './end';
 import { getScenario } from './scenarios';
 import { groupEndReason } from './groups';
 import { loadGameState, settleAction } from './state';
+import { sessionGrants } from '@/lib/xp/hooks';
+import { mergeOutcomes, type XpOutcome } from '@/lib/xp/server';
 import type { GameState } from '@/types/game';
 
 // ==========================================
@@ -27,6 +29,8 @@ export interface NextDayResult {
   achievementsUnlocked?: Array<{ name: string; points: number }>;
   /** La séance a terminé la partie (faillite, fin de période ou des données) */
   endReason?: EndReason;
+  /** XP gagnée par la séance (et la fin de partie qu'elle a provoquée) */
+  xp?: XpOutcome | null;
   error?: string;
 }
 
@@ -62,7 +66,7 @@ export async function advanceToNextDay(game: Game): Promise<NextDayResult> {
 
     if (!nextDate || (period && nextDate > period.end)) {
       // Plus aucune séance à jouer : la partie se termine à la date actuelle
-      return finish(game, period ? 'period_end' : 'data_end', game.currentDate, []);
+      return finish(game, period ? 'period_end' : 'data_end', game.currentDate, [], null);
     }
 
     // 3. Mettre à jour le game, seulement s'il est encore à la date lue
@@ -83,7 +87,10 @@ export async function advanceToNextDay(game: Game): Promise<NextDayResult> {
 
     // 4. Portfolio à la nouvelle date, succès et état de la partie
     //    (la séance est passée même si l'état manque : la page le relira)
-    const { state, achievementsUnlocked } = await settleAction(updatedGame);
+    const { state, achievementsUnlocked, xp } = await settleAction(
+      updatedGame,
+      await sessionGrants(updatedGame, game.currentDate).catch(() => [])
+    );
 
     // 5. Fins automatiques
     const endReason = await automaticEnd(
@@ -92,10 +99,10 @@ export async function advanceToNextDay(game: Game): Promise<NextDayResult> {
       state?.portfolio.returnPercentage ?? null
     );
     if (endReason) {
-      return finish(updatedGame, endReason, nextDate, achievementsUnlocked);
+      return finish(updatedGame, endReason, nextDate, achievementsUnlocked, xp);
     }
 
-    return { success: true, newDate: nextDate, state: state ?? undefined, achievementsUnlocked };
+    return { success: true, newDate: nextDate, state: state ?? undefined, achievementsUnlocked, xp };
   } catch (error) {
     console.error('[NextDay] Error:', error);
     return {
@@ -149,11 +156,19 @@ async function finish(
   game: Game,
   reason: EndReason,
   date: string,
-  achievementsUnlocked: Array<{ name: string; points: number }>
+  achievementsUnlocked: Array<{ name: string; points: number }>,
+  xp: XpOutcome | null
 ): Promise<NextDayResult> {
   const ended = await endGame(game.id, reason);
-  const state = await loadGameState(ended ?? game);
-  return { success: true, newDate: date, state: state ?? undefined, achievementsUnlocked, endReason: reason };
+  const state = await loadGameState(ended?.game ?? game);
+  return {
+    success: true,
+    newDate: date,
+    state: state ?? undefined,
+    achievementsUnlocked,
+    endReason: reason,
+    xp: mergeOutcomes(xp, ended?.xp ?? null),
+  };
 }
 
 /**

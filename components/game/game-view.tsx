@@ -1,17 +1,22 @@
 /**
  * FINANCEQUEST - COMPONENT: GameView
- * La partie : séance, portefeuille, positions, cote et livre d'ordres
- * Partie de groupe : panneau du groupe (classement, messagerie) et, en tempo
- * synchronisé, séance commune
+ * La partie, « salle des machines » (docs/reviewOct2026/phase3/03_refonte_da.md)
+ *
+ * Bureau (1024 px et plus) : fiche du joueur, compteur de valeur et pupitre de
+ * séance ; puis carnet de cotes, l'actif choisi (courbe en cadre miroir et
+ * guichet posé) et le portefeuille ; enfin journal du marché et livre d'ordres.
+ * Téléphone : bandeau collant (médaillon, XP, valeur), onglets en plaques,
+ * barre d'action en bas (passer un ordre, séance suivante), ticket en tiroir.
+ *
+ * Partie de groupe : panneau du groupe et, en tempo synchronisé, séance commune.
  */
 
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LoadingPage } from '@/components/ui/loading-spinner';
-import { PortfolioSummary } from '@/components/game/portfolio-summary';
 import Link from 'next/link';
+import { LoadingPage } from '@/components/ui/loading-spinner';
 import { PositionsPanel } from '@/components/game/positions-panel';
 import { MedalOverlay } from '@/components/game/achievement-medal';
 import { TickerTape } from '@/components/brand/ticker-tape';
@@ -19,13 +24,20 @@ import { AssetList } from '@/components/game/asset-list';
 import { MarketJournal } from '@/components/game/market-journal';
 import { NextDayButton } from '@/components/game/next-day-button';
 import { TransactionHistory } from '@/components/game/transaction-history';
+import { PriceChart } from '@/components/game/price-chart';
+import { TradeTicket, type TradeSelection } from '@/components/game/trade-ticket';
+import { AllocationBar, NextAchievement, PlayerPlate, ValueCounter } from '@/components/game/machine-panels';
+import { EndControls } from '@/components/game/end-controls';
+import { GameSummary } from '@/components/game/game-summary';
+import { GroupPanel } from '@/components/groups/group-panel';
+import { Frame, Plate } from '@/components/machine/frame';
+import { EnamelButton, Gauge } from '@/components/machine/instruments';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n/client';
 import { preloadSounds } from '@/lib/sound';
 import { getScenario } from '@/lib/game/scenarios';
-import { EndControls } from '@/components/game/end-controls';
-import { GameSummary } from '@/components/game/game-summary';
-import { GroupPanel } from '@/components/groups/group-panel';
+import { cn } from '@/lib/utils/cn';
 import type { GroupView } from '@/types/groups';
 import type {
   GameState,
@@ -36,6 +48,8 @@ import type {
 } from '@/types/game';
 import type { Transaction } from '@/types/database';
 
+type MobileTab = 'chart' | 'positions' | 'book' | 'market' | 'group';
+
 // ==========================================
 // PAGE
 // ==========================================
@@ -44,6 +58,8 @@ export function GameView({ gameId }: { gameId: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const { m, f, fmt, href } = useI18n();
+  const t = m.game.machine;
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const [loading, setLoading] = useState(true);
   const [game, setGame] = useState<GameWithStats | null>(null);
@@ -52,6 +68,15 @@ export function GameView({ gameId }: { gameId: string }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<GameSummaryData | null>(null);
   const [groupView, setGroupView] = useState<GroupView | null>(null);
+
+  // Actif affiché au centre (courbe et guichet), choisi dans le carnet, les positions ou le journal
+  const [selection, setSelection] = useState<TradeSelection | null>(null);
+  // Remet le guichet à zéro (quantité, sens) à chaque nouveau choix ou ordre passé
+  const [deskKey, setDeskKey] = useState(0);
+  // Devise de cotation de l'actif choisi : la courbe n'est pas convertie
+  const [quoteCurrency, setQuoteCurrency] = useState<string | null>(null);
+  const [ticketOpen, setTicketOpen] = useState(false);
+  const [tab, setTab] = useState<MobileTab>('chart');
 
   function applyState(state: GameState) {
     setGame(state.game);
@@ -70,7 +95,20 @@ export function GameView({ gameId }: { gameId: string }) {
     }
   }
 
-  // Fetch game data
+  // Ordre passé depuis le guichet : l'actif reste affiché, le guichet repart en ouverture
+  function handleTradeDone(state?: GameState) {
+    handleActionDone(state);
+    setSelection((current) => current && { asset: current.asset, mode: 'open' });
+    setDeskKey((key) => key + 1);
+  }
+
+  function select(next: TradeSelection) {
+    setSelection(next);
+    setDeskKey((key) => key + 1);
+    // Téléphone : le ticket monte en tiroir
+    if (!isDesktop) setTicketOpen(true);
+  }
+
   async function fetchGameData() {
     try {
       const res = await fetch(`/api/games/${gameId}`);
@@ -90,7 +128,7 @@ export function GameView({ gameId }: { gameId: string }) {
       }
 
       applyState(data.data);
-    } catch (error) {
+    } catch {
       toast.error(m.common.networkError);
       router.push(href('/dashboard'));
     } finally {
@@ -110,14 +148,40 @@ export function GameView({ gameId }: { gameId: string }) {
   // Pas d'attente de /api/auth/session : le proxy protège déjà la page
   // et l'API renvoie 401 si la session a expiré
   useEffect(() => {
-    if (gameId) {
-      fetchGameData();
-    }
+    if (gameId) fetchGameData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
 
   // Sons du jeu décodés pendant la lecture de la partie, prêts au premier ordre
   useEffect(() => preloadSounds(), []);
+
+  // Actif affiché par défaut : la plus grosse position, sinon l'indice du scénario
+  useEffect(() => {
+    if (!game || selection) return;
+    const biggest = [...holdings].filter((h) => !h.isShort).sort((a, b) => b.currentValue - a.currentValue)[0];
+    const benchmark = getScenario(game.scenario).benchmark;
+    setSelection({
+      asset: biggest ? { symbol: biggest.symbol, name: biggest.name } : { symbol: benchmark, name: benchmark },
+      mode: 'open',
+    });
+  }, [game, holdings, selection]);
+
+  // Devise de cotation de l'actif choisi
+  const selectedSymbol = selection?.asset.symbol;
+  const currentDate = game?.currentDate;
+  const gameCurrency = game?.currency;
+  useEffect(() => {
+    if (!selectedSymbol || !currentDate || !gameCurrency) return;
+    let cancelled = false;
+    const params = new URLSearchParams({ symbol: selectedSymbol, date: currentDate, currency: gameCurrency });
+    fetch(`/api/market/price?${params.toString()}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => !cancelled && setQuoteCurrency(json?.data?.assetCurrency ?? null))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSymbol, currentDate, gameCurrency]);
 
   if (loading) {
     return <LoadingPage />;
@@ -128,11 +192,12 @@ export function GameView({ gameId }: { gameId: string }) {
   }
 
   const serial = game.id.replace(/-/g, '').slice(0, 8).toUpperCase();
-  // Relecture du classement après chaque ordre ou séance du joueur
-  const groupRefreshKey = `${game.currentDate}|${transactions.length}|${transactions[0]?.id ?? ''}|${game.status}`;
-  const groupPanel = game.groupId ? (
-    <GroupPanel groupId={game.groupId} refreshKey={groupRefreshKey} onUpdate={handleGroupUpdate} />
-  ) : null;
+  // Relecture du classement et du prochain succès après chaque ordre ou séance du joueur
+  const refreshKey = `${game.currentDate}|${transactions.length}|${transactions[0]?.id ?? ''}|${game.status}`;
+  const scenario = getScenario(game.scenario);
+  const scenarioName = (m.scenarios[scenario.id as keyof typeof m.scenarios] as { name: string }).name;
+  const allowed = scenario.rules.actions;
+
   const sync =
     groupView && groupView.group.tempo === 'synchro'
       ? {
@@ -142,17 +207,20 @@ export function GameView({ gameId }: { gameId: string }) {
           total: groupView.sync?.total ?? groupView.group.playersCount,
         }
       : undefined;
-  const scenario = getScenario(game.scenario);
-  const scenarioName = (m.scenarios[scenario.id as keyof typeof m.scenarios] as { name: string }).name;
+  const you = groupView?.standings.find((standing) => standing.isYou);
+  const groupRank = you && groupView ? { rank: you.rank, total: groupView.standings.length } : null;
+
+  const groupPanel = (framed: boolean) =>
+    game.groupId ? (
+      <GroupPanel groupId={game.groupId} refreshKey={refreshKey} onUpdate={handleGroupUpdate} framed={framed} />
+    ) : null;
 
   // Partie terminée : le bilan, puis le livre d'ordres
   if (game.status === 'completed') {
     return (
       <div className="container mx-auto space-y-10 px-4 py-10">
-        <GameSummary
-          state={{ game, portfolio, holdings, recentTransactions: transactions, summary }}
-        />
-        {groupPanel && <div className="mx-auto max-w-3xl">{groupPanel}</div>}
+        <GameSummary state={{ game, portfolio, holdings, recentTransactions: transactions, summary }} />
+        {game.groupId && <div className="mx-auto max-w-3xl">{groupPanel(false)}</div>}
         <div className="mx-auto max-w-3xl">
           <TransactionHistory transactions={transactions} currency={game.currency} />
         </div>
@@ -166,110 +234,308 @@ export function GameView({ gameId }: { gameId: string }) {
     .filter((h) => h.dayChangePercent !== null)
     .map((h) => ({ symbol: h.symbol, name: h.name, changePercent: h.dayChangePercent as number }));
 
+  const cashShare = portfolio.totalValue > 0 ? (Math.max(portfolio.availableCash, 0) / portfolio.totalValue) * 100 : 100;
+  const selectedTrades = selection
+    ? transactions
+        .filter((tx) => tx.symbol === selection.asset.symbol)
+        .map((tx) => ({ date: tx.transactionDate, type: tx.type }))
+    : [];
+
+  // ---------- Pièces partagées entre bureau et téléphone ----------
+
+  const nextDay = (layout: 'desk' | 'bar') => (
+    <NextDayButton
+      layout={layout}
+      gameId={game.id}
+      currentDate={game.currentDate}
+      startDate={game.startDate}
+      endDate={scenario.rules.period?.end ?? game.dataEndDate ?? game.currentDate}
+      totalValue={portfolio.totalValue}
+      currency={game.currency}
+      onDayAdvanced={handleActionDone}
+      sync={sync}
+      onWaiting={() => groupView && setGroupView({ ...groupView, viewer: { ...groupView.viewer, ready: true } })}
+      aside={layout === 'desk' ? <Gauge value={cashShare} label={t.cashShare} size={84} /> : undefined}
+    />
+  );
+
+  const ticket = (inline: boolean) =>
+    selection && (
+      <TradeTicket
+        key={`${selection.asset.symbol}-${selection.mode}-${deskKey}`}
+        inline={inline}
+        showChart={!inline}
+        gameId={game.id}
+        currentDate={game.currentDate}
+        currency={game.currency}
+        feeRate={game.settings.transaction_fees}
+        asset={selection.asset}
+        mode={selection.mode}
+        allowShorting={game.settings.allow_shorting}
+        allowedActions={allowed}
+        heldQuantity={selection.heldQuantity}
+        averageCost={selection.averageCost}
+        availableCash={portfolio.availableCash}
+        onClose={() => {
+          setTicketOpen(false);
+          setSelection((current) => current && { asset: current.asset, mode: 'open' });
+        }}
+        onDone={handleTradeDone}
+      />
+    );
+
+  const chart = selection && (
+    <Frame variant="mirror" className="p-4 sm:p-6">
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 className="font-display text-2xl font-semibold text-paper sm:text-3xl">{selection.asset.name}</h2>
+        <span className="num text-sm text-paper-dim">{selection.asset.symbol}</span>
+      </div>
+      <PriceChart
+        key={selection.asset.symbol}
+        symbol={selection.asset.symbol}
+        currentDate={game.currentDate}
+        currency={quoteCurrency ?? game.currency}
+        trades={selectedTrades}
+        framed
+      />
+    </Frame>
+  );
+
+  const positions = (
+    <Frame className="space-y-4 p-4">
+      <PositionsPanel
+        framed
+        holdings={holdings}
+        gameId={game.id}
+        currentDate={game.currentDate}
+        currency={game.currency}
+        feeRate={game.settings.transaction_fees}
+        scenario={game.scenario}
+        onTradeComplete={handleActionDone}
+        onSelect={select}
+      />
+      <AllocationBar holdings={holdings} portfolio={portfolio} />
+    </Frame>
+  );
+
+  const book = (
+    <Frame className="overflow-hidden p-0" corners={isDesktop}>
+      <AssetList
+        framed
+        gameId={game.id}
+        currentDate={game.currentDate}
+        currency={game.currency}
+        allowShorting={game.settings.allow_shorting}
+        scenario={game.scenario}
+        feeRate={game.settings.transaction_fees}
+        availableCash={portfolio.availableCash}
+        onTradeComplete={handleActionDone}
+        onSelect={select}
+        activeSymbol={selection?.asset.symbol}
+      />
+    </Frame>
+  );
+
+  const journal = (
+    <Frame className="overflow-hidden p-0">
+      <MarketJournal
+        framed
+        gameId={game.id}
+        currentDate={game.currentDate}
+        currency={game.currency}
+        scenario={game.scenario}
+        allowShorting={game.settings.allow_shorting}
+        feeRate={game.settings.transaction_fees}
+        availableCash={portfolio.availableCash}
+        onTradeComplete={handleActionDone}
+        onSelect={select}
+      />
+    </Frame>
+  );
+
+  const history = (
+    <Frame className="overflow-hidden p-0">
+      <TransactionHistory framed transactions={transactions} currency={game.currency} />
+    </Frame>
+  );
+
+  const endControls = (
+    <EndControls gameId={game.id} sessionsPlayed={game.sessionsPlayed} inGroup={Boolean(game.groupId)} onEnded={handleActionDone} />
+  );
+
+  const meta = (
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <Link href={href('/dashboard')} className="label transition-colors hover:text-paper">
+          {m.game.back}
+        </Link>
+        <h1 className="mt-1 font-display text-2xl font-semibold text-paper md:text-3xl">
+          {fmt(m.game.openedOn, { date: f.date(game.startDate) })}
+        </h1>
+      </div>
+      <dl className="flex flex-wrap gap-5 text-right">
+        <div>
+          <dt className="label text-[10px]">{m.scenarios.label}</dt>
+          <dd className="font-display text-paper">{scenarioName}</dd>
+        </div>
+        <div>
+          <dt className="label text-[10px]">{m.game.serial}</dt>
+          <dd className="num text-paper">{fmt(m.game.serialValue, { serial })}</dd>
+        </div>
+        <div>
+          <dt className="label text-[10px]">{m.game.currency}</dt>
+          <dd className="num text-paper">{game.currency}</dd>
+        </div>
+        <div>
+          <dt className="label text-[10px]">{m.game.fees}</dt>
+          <dd className="num text-paper">{f.percent(game.settings.transaction_fees, 2, false)}</dd>
+        </div>
+      </dl>
+    </header>
+  );
+
+  // ---------- Bureau ----------
+
+  if (isDesktop) {
+    return (
+      <div>
+        {tickerItems.length >= 3 && <TickerTape items={tickerItems} />}
+
+        <div className="container mx-auto space-y-8 px-4 py-8">
+          {meta}
+
+          <section className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_minmax(0,1fr)] items-stretch gap-6">
+            <PlayerPlate achievements={game.achievementsUnlocked} sessions={game.sessionsPlayed} groupRank={groupRank} />
+            <ValueCounter portfolio={portfolio} currency={game.currency} rollKey={game.currentDate} />
+            <Frame className="p-5">{nextDay('desk')}</Frame>
+          </section>
+
+          <section className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1.1fr)]">
+            <div className="xl:sticky xl:top-20">{book}</div>
+
+            <div className="min-w-0 space-y-6">
+              {chart}
+              <Frame className="space-y-4 p-5">
+                <Plate>{t.desk}</Plate>
+                {ticket(true)}
+              </Frame>
+            </div>
+
+            <div className="col-span-2 grid gap-6 lg:grid-cols-2 xl:col-span-1 xl:grid-cols-1">
+              {positions}
+              <NextAchievement gameId={game.id} currency={game.currency} refreshKey={refreshKey} />
+              {game.groupId && <Frame className="p-3">{groupPanel(true)}</Frame>}
+              {endControls}
+            </div>
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-2">
+            {journal}
+            {history}
+          </section>
+        </div>
+
+        <MedalOverlay />
+      </div>
+    );
+  }
+
+  // ---------- Téléphone et petite tablette ----------
+
+  const tabs: Array<{ id: MobileTab; label: string }> = [
+    { id: 'chart', label: t.tabs.chart },
+    { id: 'positions', label: t.tabs.positions },
+    { id: 'book', label: t.tabs.book },
+    { id: 'market', label: t.tabs.market },
+    ...(game.groupId ? [{ id: 'group' as const, label: t.tabs.group }] : []),
+  ];
+  const up = portfolio.profitLoss >= 0;
+
   return (
-    <div>
-      {tickerItems.length >= 3 && <TickerTape items={tickerItems} />}
-
-      <div className="container mx-auto px-4 py-8">
-        {/* En-tête du titre */}
-        <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
-          <div>
-            <Link
-              href={href('/dashboard')}
-              className="label transition-colors hover:text-paper"
-            >
-              {m.game.back}
-            </Link>
-            <h1 className="mt-2 font-display text-3xl font-semibold text-paper md:text-4xl">
-              {fmt(m.game.openedOn, { date: f.date(game.startDate) })}
-            </h1>
+    <div className="pb-28">
+      {/* Bandeau collant : le joueur et sa valeur */}
+      <div className="wood sticky top-16 z-30 border-b-2 border-brass-deep shadow-[0_6px_14px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center gap-3 px-4 py-2.5">
+          <PlayerPlate compact achievements={game.achievementsUnlocked} sessions={game.sessionsPlayed} className="flex-1" />
+          <div className="shrink-0 text-right">
+            <p className="num text-lg font-semibold text-paper">{f.currency(portfolio.totalValue, game.currency)}</p>
+            <p className={cn('num text-xs', up ? 'text-gain' : 'text-loss')}>
+              {up ? '▲ ' : '▼ '}
+              {f.percent(portfolio.returnPercentage, 2)}
+            </p>
           </div>
-          <dl className="flex flex-wrap gap-6 text-right">
-            <div>
-              <dt className="label text-[10px]">{m.scenarios.label}</dt>
-              <dd className="font-display text-paper">{scenarioName}</dd>
-            </div>
-            <div>
-              <dt className="label text-[10px]">{m.game.serial}</dt>
-              <dd className="num text-paper">{fmt(m.game.serialValue, { serial })}</dd>
-            </div>
-            <div>
-              <dt className="label text-[10px]">{m.game.currency}</dt>
-              <dd className="num text-paper">{game.currency}</dd>
-            </div>
-            <div>
-              <dt className="label text-[10px]">{m.game.fees}</dt>
-              <dd className="num text-paper">{f.percent(game.settings.transaction_fees, 2, false)}</dd>
-            </div>
-          </dl>
-        </header>
+        </div>
+        <p className="num border-t border-black/30 px-4 py-1 text-center text-xs text-paper-dim">
+          {f.date(game.currentDate)} · {fmt(t.session, { count: game.sessionsPlayed })}
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
-          {/* Colonne portefeuille */}
-          <div className="space-y-6">
-            <NextDayButton
-              gameId={game.id}
-              currentDate={game.currentDate}
-              startDate={game.startDate}
-              endDate={scenario.rules.period?.end ?? game.dataEndDate ?? game.currentDate}
-              totalValue={portfolio.totalValue}
-              currency={game.currency}
-              onDayAdvanced={handleActionDone}
-              sync={sync}
-              onWaiting={() => groupView && setGroupView({ ...groupView, viewer: { ...groupView.viewer, ready: true } })}
-            />
+      {/* Onglets en plaques */}
+      <nav aria-label={t.tabsLabel} className="flex gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {tabs.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setTab(item.id)}
+            aria-pressed={tab === item.id}
+            className={cn(
+              'min-h-[40px] shrink-0 rounded px-4 font-label text-xs font-semibold uppercase tracking-label',
+              tab === item.id ? 'plate' : 'border border-wood-edge bg-black/20 text-paper-dim'
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
 
-            {groupPanel}
+      <div className="space-y-6 px-4">
+        {tab === 'chart' && (
+          <>
+            {chart}
+            <NextAchievement gameId={game.id} currency={game.currency} refreshKey={refreshKey} />
+          </>
+        )}
+        {tab === 'positions' && (
+          <>
+            <ValueCounter compact portfolio={portfolio} currency={game.currency} rollKey={game.currentDate} />
+            <Frame className="flex items-center justify-between gap-4 p-4">
+              <div>
+                <p className="label text-[10px]">{m.game.summary.cash}</p>
+                <p className="num text-lg text-paper">{f.currency(portfolio.availableCash, game.currency)}</p>
+              </div>
+              <Gauge value={cashShare} label={t.cashShare} size={84} />
+            </Frame>
+            {positions}
+            {endControls}
+          </>
+        )}
+        {tab === 'book' && book}
+        {tab === 'market' && (
+          <>
+            {journal}
+            {history}
+          </>
+        )}
+        {tab === 'group' && game.groupId && <Frame className="p-2">{groupPanel(true)}</Frame>}
+        {meta}
+      </div>
 
-            <EndControls
-              gameId={game.id}
-              sessionsPlayed={game.sessionsPlayed}
-              inGroup={Boolean(game.groupId)}
-              onEnded={handleActionDone}
-            />
-
-            <PortfolioSummary portfolio={portfolio} currency={game.currency} />
-
-            <PositionsPanel
-              holdings={holdings}
-              gameId={game.id}
-              currentDate={game.currentDate}
-              currency={game.currency}
-              feeRate={game.settings.transaction_fees}
-              scenario={game.scenario}
-              onTradeComplete={handleActionDone}
-            />
-          </div>
-
-          {/* Colonne marché */}
-          <div className="space-y-6">
-            <MarketJournal
-              gameId={game.id}
-              currentDate={game.currentDate}
-              currency={game.currency}
-              scenario={game.scenario}
-              allowShorting={game.settings.allow_shorting}
-              feeRate={game.settings.transaction_fees}
-              availableCash={portfolio.availableCash}
-              onTradeComplete={handleActionDone}
-            />
-
-            <AssetList
-              gameId={game.id}
-              currentDate={game.currentDate}
-              currency={game.currency}
-              allowShorting={game.settings.allow_shorting}
-              scenario={game.scenario}
-              feeRate={game.settings.transaction_fees}
-              availableCash={portfolio.availableCash}
-              onTradeComplete={handleActionDone}
-            />
-
-            <TransactionHistory transactions={transactions} currency={game.currency} />
-          </div>
+      {/* Barre d'action : les deux gestes du jeu sous le pouce */}
+      <div className="wood fixed inset-x-0 bottom-0 z-40 border-t-2 border-brass-deep px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-6px_16px_rgba(0,0,0,0.55)]">
+        <div className="mx-auto flex max-w-xl gap-3">
+          <EnamelButton
+            tone="green"
+            className="min-h-[52px] flex-1 whitespace-nowrap px-3 text-sm"
+            onClick={() => selection && setTicketOpen(true)}
+            disabled={!selection}
+          >
+            {t.order}
+          </EnamelButton>
+          <div className="flex-[1.4]">{nextDay('bar')}</div>
         </div>
       </div>
 
+      {ticketOpen && ticket(false)}
       <MedalOverlay />
     </div>
   );

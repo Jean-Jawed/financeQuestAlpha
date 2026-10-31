@@ -203,6 +203,9 @@ export interface GetLeaderboardRequest {
 export interface LeaderboardEntry {
   rank: number;
   userName: string;
+  avatarId: string | null;
+  /** Pays (profil public seulement) */
+  country: string | null;
   /** Valeur dans la devise de la partie (le classement se fait au rendement) */
   totalValue: number;
   currency: string;

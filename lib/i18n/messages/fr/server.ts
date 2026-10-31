@@ -67,6 +67,17 @@ export const server = {
     groupJoined: 'Vous avez rejoint « {name} ». Bonne chance !',
     groupStarted: 'C’est parti : la cloche sonne pour tout le monde',
     groupWaiting: 'Prêt. En attente des autres joueurs ({ready} sur {total}).',
+    // Profil
+    nameTaken: 'Ce pseudo est déjà pris',
+    nameLength: 'Le pseudo doit faire de 3 à 24 caractères',
+    nameChars: 'Pseudo : lettres, chiffres, espace, « - », « _ » et « . » uniquement',
+    nameBanned: 'Ce pseudo n’est pas autorisé',
+    nameLocked: 'Vous pourrez changer de pseudo le {date}',
+    mottoInvalid: 'Devise trop longue ou non autorisée',
+    invalidAvatar: 'Avatar inconnu',
+    deleteConfirm: 'Le pseudo saisi ne correspond pas',
+    profileSaved: 'Profil enregistré',
+    accountDeleted: 'Compte supprimé',
     // Messages de succès
     buyDone: 'Achat exécuté : {quantity} {symbol}',
     sellDone: 'Vente exécutée : {quantity} {symbol}',

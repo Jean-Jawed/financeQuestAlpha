@@ -7,6 +7,8 @@
 
 import Image from 'next/image';
 import { PerformanceBadge } from '@/components/ui/badge';
+import { PlayerAvatar } from '@/components/profile/player-avatar';
+import { CountryTag } from '@/components/profile/profile-fields';
 import { useI18n } from '@/lib/i18n/client';
 import { cn } from '@/lib/utils/cn';
 import type { LeaderboardEntry } from '@/types/api';
@@ -48,7 +50,10 @@ function PodiumStep({ entry, place }: { entry: LeaderboardEntry; place: 0 | 1 | 
           {ROMAN[place]}
         </span>
       </div>
-      <h3 className="mt-2 font-display text-2xl font-semibold text-paper">{entry.userName}</h3>
+      <PlayerAvatar avatarId={entry.avatarId} name={entry.userName} size={first ? 72 : 56} className="-mt-4 ring-2 ring-brass/70" />
+      <h3 className="mt-2 font-display text-2xl font-semibold text-paper">
+        {entry.userName} <CountryTag code={entry.country} className="align-middle" />
+      </h3>
       <div className="mt-3">
         <PerformanceBadge value={entry.returnPercentage} />
       </div>
@@ -105,7 +110,13 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
               {rest.map((entry) => (
                 <tr key={entry.gameId} className="hover:bg-ink-3">
                   <td className="num px-5 py-3 text-paper-dim">{String(entry.rank).padStart(2, '0')}</td>
-                  <td className="px-2 py-3 font-display text-base text-paper">{entry.userName}</td>
+                  <td className="px-2 py-3 font-display text-base text-paper">
+                    <span className="flex items-center gap-2.5">
+                      <PlayerAvatar avatarId={entry.avatarId} name={entry.userName} size={28} />
+                      <span className="truncate">{entry.userName}</span>
+                      <CountryTag code={entry.country} />
+                    </span>
+                  </td>
                   <td className="px-2 py-3 text-right">
                     <PerformanceBadge value={entry.returnPercentage} />
                   </td>

@@ -7,6 +7,8 @@
 'use client';
 
 import { useState } from 'react';
+import { Frame } from '@/components/machine/frame';
+import { EnamelButton } from '@/components/machine/instruments';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -36,12 +38,14 @@ import { cn } from '@/lib/utils/cn';
 interface CreateGroupCardProps {
   minDate: string;
   maxDate: string;
+  /** Devise de jeu préférée du profil */
+  defaultCurrency?: GameCurrency;
 }
 
 const selectClass =
   'h-11 w-full rounded border border-line-strong bg-ink px-3 text-paper focus:border-brass focus:outline-none focus:ring-1 focus:ring-brass';
 
-export function CreateGroupCard({ minDate, maxDate }: CreateGroupCardProps) {
+export function CreateGroupCard({ minDate, maxDate, defaultCurrency }: CreateGroupCardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { m, locale, href } = useI18n();
@@ -54,7 +58,7 @@ export function CreateGroupCard({ minDate, maxDate }: CreateGroupCardProps) {
   const [mode, setMode] = useState<GroupMode>('sprint');
   const [tempo, setTempo] = useState<GroupTempo>('libre');
   const [scenario, setScenario] = useState<ScenarioId>(DEFAULT_SCENARIO);
-  const [currency, setCurrency] = useState<GameCurrency>(DEFAULT_GAME_CURRENCY);
+  const [currency, setCurrency] = useState<GameCurrency>(defaultCurrency ?? DEFAULT_GAME_CURRENCY);
   const [startDate, setStartDate] = useState('');
   const [crisis, setCrisis] = useState<CrisisPresetId>('covid-2020');
   const [sessions, setSessions] = useState(GROUP_DEFAULTS.sprint.sessions);
@@ -115,24 +119,20 @@ export function CreateGroupCard({ minDate, maxDate }: CreateGroupCardProps) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="group relative flex min-h-[220px] flex-col items-center justify-center overflow-hidden rounded border border-dashed border-brass/50 bg-ink/40 p-6 text-center transition-colors hover:border-brass hover:bg-ink-2"
-      >
+      <Frame variant="mirror" outerClassName="group h-full" className="flex min-h-[220px] flex-col items-center justify-center p-6 text-center">
         <Image
           src="/gravures/corbeille.webp"
           alt=""
           width={160}
           height={84}
-          className="engraving h-16 w-auto rounded-sm object-contain opacity-70 transition-opacity group-hover:opacity-100"
+          className="engraving h-16 w-auto rounded-sm object-contain opacity-75 transition-opacity group-hover:opacity-100"
         />
-        <h3 className="mt-4 font-display text-xl font-semibold text-paper">{t.cardTitle}</h3>
+        <h3 className="mt-3 font-display text-xl font-semibold text-paper">{t.cardTitle}</h3>
         <p className="mt-2 max-w-xs text-sm text-paper-dim">{t.cardText}</p>
-        <span className="mt-4 inline-flex h-10 items-center rounded border border-brass-bright/60 bg-brass px-5 font-label text-sm font-semibold uppercase tracking-[0.14em] text-ink shadow-[0_2px_0_#8E7034] transition-colors group-hover:bg-brass-bright">
+        <EnamelButton tone="brass" className="mt-4 after:absolute after:inset-0 after:content-['']" onClick={() => setOpen(true)}>
           {t.cta}
-        </span>
-      </button>
+        </EnamelButton>
+      </Frame>
 
       <Modal isOpen={open} onClose={() => !loading && setOpen(false)} title={t.title} size="lg">
         <div className="space-y-7">

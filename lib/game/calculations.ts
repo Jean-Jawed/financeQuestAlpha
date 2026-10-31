@@ -144,6 +144,7 @@ export async function calculateHoldingsValues(
         createdAt: holding.createdAt,
         updatedAt: holding.updatedAt,
         name: assetName,
+        assetType: assetData?.type?.code ?? null,
         assetCurrency: quote?.assetCurrency ?? assetData?.currency?.code ?? currency,
         assetPrice: quote?.assetPrice ?? 0,
         dayChangePercent: quote?.changePercent ?? null,

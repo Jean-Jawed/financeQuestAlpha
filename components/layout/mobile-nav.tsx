@@ -15,6 +15,8 @@ import { useI18n } from '@/lib/i18n/client';
 import { stripLocale } from '@/lib/i18n/paths';
 import { cn } from '@/lib/utils/cn';
 import { NAV_ITEMS } from './header';
+import { PlayerAvatar } from '@/components/profile/player-avatar';
+import type { User } from '@/hooks/use-auth';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -22,9 +24,11 @@ interface MobileNavProps {
   onLogout?: () => void;
   /** Visiteur non connecté : lien de connexion */
   showLogin?: boolean;
+  /** Joueur connecté : lien vers son profil */
+  user?: User | null;
 }
 
-export function MobileNav({ isOpen, onClose, onLogout, showLogin = false }: MobileNavProps) {
+export function MobileNav({ isOpen, onClose, onLogout, showLogin = false, user = null }: MobileNavProps) {
   const { m, href } = useI18n();
   const pathname = stripLocale(usePathname());
 
@@ -43,6 +47,16 @@ export function MobileNav({ isOpen, onClose, onLogout, showLogin = false }: Mobi
       </div>
 
       <nav className="flex flex-1 flex-col overflow-y-auto px-6 py-10" aria-label={m.nav.main}>
+        {user && (
+          <Link href={href('/profile')} onClick={onClose} className="mb-6 flex items-center gap-4">
+            <PlayerAvatar avatarId={user.avatarId} name={user.name} size={56} />
+            <span className="leading-tight">
+              <span className="label block text-[10px]">{m.nav.profile}</span>
+              <span className="font-display text-2xl italic text-paper">{user.name}</span>
+            </span>
+          </Link>
+        )}
+
         {NAV_ITEMS.map((item, index) => (
           <Link
             key={item.path}

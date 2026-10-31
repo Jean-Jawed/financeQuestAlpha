@@ -8,9 +8,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { EnamelButton } from '@/components/machine/instruments';
+import { cn } from '@/lib/utils/cn';
 import { SolariDate } from '@/components/brand/solari-date';
 import { showMedals } from '@/components/game/achievement-medal';
+import { showXp } from '@/components/xp/xp-feedback';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n/client';
 import { playSound } from '@/lib/sound';
@@ -37,6 +39,10 @@ interface NextDayButtonProps {
   sync?: { started: boolean; ready: boolean; readyCount: number; total: number };
   /** Tempo synchronisé : le joueur est prêt, la séance attend les autres */
   onWaiting?: () => void;
+  /** 'desk' : pupitre (date, frise, bouton) ; 'bar' : bouton seul, barre d'action mobile */
+  layout?: 'desk' | 'bar';
+  /** Instrument posé à côté du bouton (manomètre des liquidités) */
+  aside?: React.ReactNode;
 }
 
 // ==========================================
@@ -53,6 +59,8 @@ export function NextDayButton({
   onDayAdvanced,
   sync,
   onWaiting,
+  layout = 'desk',
+  aside,
 }: NextDayButtonProps) {
   const { toast } = useToast();
   const { m, f, fmt } = useI18n();
@@ -83,6 +91,7 @@ export function NextDayButton({
       if (data.data?.waiting) {
         playSound('stamp', 0.5);
         toast.info(data.message);
+        showXp(data.data?.xp);
         onWaiting?.();
         return;
       }
@@ -105,6 +114,7 @@ export function NextDayButton({
       }
 
       showMedals(data.data?.achievementsUnlocked);
+      showXp(data.data?.xp);
       onDayAdvanced(data.data?.state);
     } catch (error) {
       if (error instanceof TimeoutError) {
@@ -134,44 +144,47 @@ export function NextDayButton({
           : g.ready
       : t.close;
 
+  const button = (
+    <EnamelButton
+      tone="brass"
+      size="lg"
+      className={cn('w-full whitespace-nowrap', layout === 'bar' ? 'min-h-[52px] px-3 text-sm' : 'text-base xl:text-lg')}
+      onClick={handleNextDay}
+      disabled={loading || isFinished || syncBlocked}
+      aria-busy={loading}
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+        <path d="M6 17h12M8 17V11a4 4 0 0 1 8 0v6M12 4v3M10.5 20a1.5 1.5 0 0 0 3 0" />
+      </svg>
+      {label}
+    </EnamelButton>
+  );
+
+  if (layout === 'bar') return button;
+
   return (
-    <section className="certificate p-6" aria-label={t.section}>
-      <p className="label mb-4 text-center text-brass">{t.section}</p>
+    <section aria-label={t.section} className="space-y-4">
       <SolariDate date={currentDate} />
 
       {/* Frise de la partie */}
-      <div className="mt-6">
-        <div className="relative h-2 rounded-sm bg-ink">
+      <div>
+        <div className="relative h-2 overflow-hidden rounded-full bg-[#120C16] shadow-[inset_0_1px_2px_rgba(0,0,0,0.9)]">
           <div
-            className="absolute inset-y-0 left-0 rounded-sm bg-brass transition-[width] duration-500"
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-brass-deep to-brass-bright transition-[width] duration-500"
             style={{ width: `${progress}%` }}
           />
-          {/* Graduations trimestrielles */}
-          {[25, 50, 75].map((tick) => (
-            <span key={tick} className="absolute top-0 h-2 w-px bg-ink-2" style={{ left: `${tick}%` }} />
-          ))}
         </div>
-        <div className="num mt-2 flex justify-between text-[11px] text-paper-dim">
+        <div className="num mt-1.5 flex justify-between text-[11px] text-paper-dim">
           <span>{f.dateShort(startDate)}</span>
           <span>{fmt(t.day, { elapsed: elapsedDays, total: totalDays })}</span>
           <span>{f.dateShort(endDate)}</span>
         </div>
       </div>
 
-      <Button
-        variant="primary"
-        size="lg"
-        className="mt-6 w-full"
-        onClick={handleNextDay}
-        loading={loading}
-        disabled={isFinished || syncBlocked}
-      >
-        {label}
-        {!isFinished && !syncBlocked && !loading && <span aria-hidden="true">→</span>}
-      </Button>
-      {!isFinished && (
-        <p className="mt-2 text-center text-xs text-paper-dim">{t.hint}</p>
-      )}
+      <div className="flex items-center gap-4">
+        <div className="flex-1">{button}</div>
+        {aside}
+      </div>
     </section>
   );
 }

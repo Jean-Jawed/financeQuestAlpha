@@ -17,6 +17,8 @@ interface TransactionHistoryProps {
   transactions: Transaction[];
   /** Devise de la partie */
   currency: string;
+  /** Posé sur le bois d'un cadre (écran de jeu) : sans fond ni bordure propres */
+  framed?: boolean;
 }
 
 /** Libellés dans le dictionnaire (ui.game.history) ; couleur par sens */
@@ -31,12 +33,12 @@ const TYPE_TONES = {
 // COMPONENT
 // ==========================================
 
-export function TransactionHistory({ transactions, currency }: TransactionHistoryProps) {
+export function TransactionHistory({ transactions, currency, framed = false }: TransactionHistoryProps) {
   const { m, f, fmt } = useI18n();
   const t = m.game.history;
 
   return (
-    <section className="panel" aria-labelledby="history-title">
+    <section className={framed ? undefined : 'panel'} aria-labelledby="history-title">
       <header className="flex items-end justify-between border-b border-line px-5 py-4">
         <div>
           <p className="label text-brass">{t.label}</p>

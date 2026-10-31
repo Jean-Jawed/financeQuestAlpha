@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { TradeTicket, type TicketAsset } from '@/components/game/trade-ticket';
+import { TradeTicket, type TicketAsset, type TradeSelection } from '@/components/game/trade-ticket';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useI18n } from '@/lib/i18n/client';
@@ -51,6 +51,12 @@ interface AssetListProps {
   availableCash: number;
   /** Appelé avec l'état de la partie renvoyé par l'ordre */
   onTradeComplete: (state?: GameState) => void;
+  /** Écran de jeu : l'actif choisi s'affiche au centre (sinon : ticket en fenêtre) */
+  onSelect?: (selection: TradeSelection) => void;
+  /** Symbole affiché au centre (surligné) */
+  activeSymbol?: string;
+  /** Posé sur le bois d'un cadre (écran de jeu) : sans fond ni bordure propres */
+  framed?: boolean;
 }
 
 const SELECT_CLASS =
@@ -69,6 +75,9 @@ export function AssetList({
   feeRate,
   availableCash,
   onTradeComplete,
+  onSelect,
+  activeSymbol,
+  framed = false,
 }: AssetListProps) {
   const rules = getScenario(scenario).rules;
   const { toast } = useToast();
@@ -122,7 +131,7 @@ export function AssetList({
   }, [selectedTypeId, selectedMarketId, debouncedSearch, currentDate, currency, scenario]);
 
   return (
-    <section className="panel" aria-labelledby="cote-title">
+    <section className={framed ? undefined : 'panel'} aria-labelledby="cote-title">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line px-5 py-4">
         <div>
           <p className="label text-brass">{t.label}</p>
@@ -142,7 +151,7 @@ export function AssetList({
       )}
 
       {/* Filtres */}
-      <div className="flex flex-col gap-2 border-b border-line px-5 py-3 sm:flex-row">
+      <div className={cn('flex flex-col gap-2 border-b border-line px-5 py-3', !framed && 'sm:flex-row')}>
         <input
           type="search"
           placeholder={t.search}
@@ -204,9 +213,17 @@ export function AssetList({
                 <li key={asset.symbol}>
                   <button
                     type="button"
-                    onClick={() => setSelectedAsset({ symbol: asset.symbol, name: asset.name })}
+                    onClick={() => {
+                      const picked = { symbol: asset.symbol, name: asset.name };
+                      if (onSelect) onSelect({ asset: picked, mode: 'open' });
+                      else setSelectedAsset(picked);
+                    }}
+                    aria-current={activeSymbol === asset.symbol ? 'true' : undefined}
                     disabled={asset.price === null}
-                    className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-3 text-left transition-colors hover:bg-ink-3 disabled:cursor-not-allowed disabled:opacity-50 sm:grid-cols-[minmax(0,1fr)_auto_auto]"
+                    className={cn(
+                      'grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                      framed ? 'hover:bg-black/20 aria-[current=true]:bg-brass/15' : 'hover:bg-ink-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]'
+                    )}
                   >
                     <span className="min-w-0">
                       <span className="flex items-center gap-2">
@@ -234,7 +251,7 @@ export function AssetList({
                       </span>
                     </span>
 
-                    <span className="hidden font-label text-xs font-semibold uppercase tracking-label text-brass sm:block">
+                    <span className={cn('hidden font-label text-xs font-semibold uppercase tracking-label text-brass', !framed && 'sm:block')}>
                       {t.order}
                     </span>
                   </button>

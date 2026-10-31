@@ -26,7 +26,19 @@ interface PriceChartProps {
   currency: string;
   /** Prix de revient du joueur, en devise de cotation (position détenue) */
   costPrice?: number;
+  /** Ordres du joueur sur cet actif : marques sur la courbe */
+  trades?: Array<{ date: string; type: 'buy' | 'sell' | 'short' | 'cover' }>;
+  /** Grande version (écran de jeu, cadre miroir) : plus haute, sans bordure propre */
+  framed?: boolean;
 }
+
+/** Marque d'ordre : lettre et émail (achat et rachat en vert, vente et découvert en rouge) */
+const TRADE_MARKS = {
+  buy: { letter: 'A', className: 'bg-enamel-green' },
+  cover: { letter: 'R', className: 'bg-enamel-green' },
+  sell: { letter: 'V', className: 'bg-enamel-red' },
+  short: { letter: 'D', className: 'bg-enamel-red' },
+} as const;
 
 type Period = 'm1' | 'm3' | 'm6' | 'y1';
 
@@ -50,7 +62,7 @@ const PAD_Y = 10;
 // COMPONENT
 // ==========================================
 
-export function PriceChart({ symbol, currentDate, currency, costPrice }: PriceChartProps) {
+export function PriceChart({ symbol, currentDate, currency, costPrice, trades = [], framed = false }: PriceChartProps) {
   const { m, f, fmt } = useI18n();
   const t = m.game.chart;
   const gradientId = useId();
@@ -142,6 +154,14 @@ export function PriceChart({ symbol, currentDate, currency, costPrice }: PriceCh
     setHover(Math.round(ratio * (points.length - 1)));
   }
 
+  // Marques des ordres : au point de la date d'exécution (ou la séance précédente la plus proche)
+  const marks = trades.flatMap((trade, k) => {
+    if (trade.date < points[0].date) return [];
+    let at = points.length - 1;
+    while (at > 0 && points[at].date > trade.date) at--;
+    return [{ key: `${trade.date}-${k}`, at, ...TRADE_MARKS[trade.type] }];
+  });
+
   // Quatre repères de dates, répartis sur la période
   const ticks = [0, 1, 2, 3].map((k) => Math.round((k / 3) * (points.length - 1)));
 
@@ -159,7 +179,7 @@ export function PriceChart({ symbol, currentDate, currency, costPrice }: PriceCh
     : [];
 
   return (
-    <figure className="rounded border border-line bg-ink p-3">
+    <figure className={framed ? '' : 'rounded border border-line bg-ink p-3'}>
       {/* Point lu et choix de la durée */}
       <figcaption className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div aria-live="polite">
@@ -204,7 +224,7 @@ export function PriceChart({ symbol, currentDate, currency, costPrice }: PriceCh
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           preserveAspectRatio="none"
-          className="block h-[190px] w-full"
+          className={cn('block w-full', framed ? 'h-[260px] max-sm:h-[200px]' : 'h-[190px]')}
           role="img"
           aria-label={fmt(t.aria, {
             symbol,
@@ -277,6 +297,19 @@ export function PriceChart({ symbol, currentDate, currency, costPrice }: PriceCh
           className="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink bg-brass-bright"
           style={{ left: `${xRatio(index) * 100}%`, top: `${yRatio(point.close) * 100}%` }}
         />
+        {marks.map((mark) => (
+          <span
+            key={mark.key}
+            aria-hidden="true"
+            className={cn(
+              'num pointer-events-none absolute flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-brass-bright text-[10px] font-semibold text-ivory shadow-[0_2px_3px_rgba(0,0,0,0.6)]',
+              mark.className
+            )}
+            style={{ left: `${xRatio(mark.at) * 100}%`, top: `${yRatio(points[mark.at].close) * 100}%` }}
+          >
+            {mark.letter}
+          </span>
+        ))}
         {costPrice !== undefined && (
           <span
             className="label pointer-events-none absolute right-1 -translate-y-full bg-ink/80 px-1 text-[9px] text-paper-dim"
