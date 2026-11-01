@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: LeaderboardView
+ * PASTFOLIO - COMPONENT: LeaderboardView
  * Tableau d'honneur : choix du scénario et de la période, podium et registre
  */
 

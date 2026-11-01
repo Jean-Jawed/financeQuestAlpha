@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: GROUP VIEW
+ * PASTFOLIO - API ROUTE: GROUP VIEW
  * GET /api/groups/[id]?after=<id du dernier message reçu>
  * Le groupe vu par le joueur : classement à sa date, messages, séance commune.
  * Appelée régulièrement par le panneau du groupe (rafraîchissement).

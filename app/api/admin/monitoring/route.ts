@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: Admin Monitoring
+ * PASTFOLIO - API ROUTE: Admin Monitoring
  * GET /api/admin/monitoring
  * Réservé aux comptes ayant le rôle `admin` (app_metadata)
  */

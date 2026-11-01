@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: BUY
+ * PASTFOLIO - API ROUTE: BUY
  * POST /api/trades/buy
  * Acheter un actif (position long)
  */

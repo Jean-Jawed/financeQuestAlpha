@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - SITEMAP
+ * PASTFOLIO - SITEMAP
  * /sitemap.xml : pages publiques dans les deux langues, avec leurs alternatives hreflang
  */
 

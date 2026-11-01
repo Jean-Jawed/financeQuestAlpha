@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - XP : RÈGLES
+ * PASTFOLIO - XP : RÈGLES
  * Barème, courbe de niveaux, titres et calculs purs (sans accès base)
  * Conception et calibrage : docs/reviewOct2026/phase3/01_xp.md (et xp_sim.py)
  *

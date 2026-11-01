@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: GROUP MESSAGES
+ * PASTFOLIO - API ROUTE: GROUP MESSAGES
  * POST /api/groups/[id]/messages : envoyer un message (membres, deux secondes entre deux messages)
  * DELETE /api/groups/[id]/messages?message=<id> : retirer un message (organisateur)
  */

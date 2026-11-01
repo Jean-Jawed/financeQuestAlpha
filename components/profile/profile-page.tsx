@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: ProfilePage
+ * PASTFOLIO - COMPONENT: ProfilePage
  * Page « Mon profil » : carte d'agent, préférences, confidentialité, compte,
  * zone sensible, carrière. Chaque section s'enregistre séparément.
  */

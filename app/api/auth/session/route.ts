@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: SESSION
+ * PASTFOLIO - API ROUTE: SESSION
  * GET /api/auth/session
  * Retourne l'utilisateur de la session courante
  */

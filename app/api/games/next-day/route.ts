@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: NEXT DAY
+ * PASTFOLIO - API ROUTE: NEXT DAY
  * POST /api/games/next-day
  * Partie de groupe en tempo synchronisé : le joueur se déclare prêt ; la séance
  * avance pour tout le groupe quand tous les joueurs en lice le sont

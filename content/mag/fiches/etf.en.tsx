@@ -77,7 +77,7 @@ export default function Article() {
       </P>
 
       <InlineCta href={SIGNUP} label={mag.ctaInlineLabel} button={mag.ctaInlineButton}>
-        In FinanceQuest, major indices can be bought like a stock: the equivalent of an ETF, with no management
+        In PastFolio, major indices can be bought like a stock: the equivalent of an ETF, with no management
         fees.
       </InlineCta>
     </>

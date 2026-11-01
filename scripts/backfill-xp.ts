@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - REPRISE DE L'XP
+ * PASTFOLIO - REPRISE DE L'XP
  * Rejoue l'historique de chaque joueur avec les règles de l'XP (lib/xp) :
  * parties ouvertes, ordres (clôtures gagnantes ou perdantes), découvertes,
  * séances et jalons, succès, fins de partie, groupes.

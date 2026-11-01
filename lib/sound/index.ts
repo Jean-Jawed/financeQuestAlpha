@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - SONS
+ * PASTFOLIO - SONS
  * Lecteur Web Audio : sons décodés une fois, joués sans délai, superposables
  * Fichiers générés par scripts/generate-sounds.py dans public/sons/
  */

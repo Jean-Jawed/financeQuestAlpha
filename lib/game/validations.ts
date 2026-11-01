@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - GAME VALIDATIONS
+ * PASTFOLIO - GAME VALIDATIONS
  * Validation des ordres de trading (buy/sell/short/cover)
  */
 

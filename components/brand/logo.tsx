@@ -1,6 +1,6 @@
 /**
- * FINANCEQUEST - BRAND: Logo
- * Sceau guilloché + monogramme « FQ », et mot-symbole FINANCEQUEST
+ * PASTFOLIO - BRAND: Logo
+ * Sceau guilloché + monogramme « PF », et mot-symbole PASTFOLIO
  * Vectoriel : net de 16 px (icône) à l'affiche
  */
 
@@ -61,7 +61,7 @@ export function Seal({ size = 40, className, compact = size < 40 }: SealProps) {
         fontSize="32"
         letterSpacing="-1.5"
       >
-        FQ
+        PF
       </text>
     </svg>
   );
@@ -90,7 +90,7 @@ export function Logo({ className, size = 'md' }: LogoProps) {
       <Seal size={s.seal} />
       <span className="flex flex-col leading-none">
         <span className={cn('font-label font-bold uppercase tracking-[0.18em] text-paper', s.text)}>
-          Finance<span className="text-brass">Quest</span>
+          Past<span className="text-brass">Folio</span>
         </span>
         <span className={cn('mt-1 font-label uppercase tracking-[0.32em] text-paper-dim', s.sub)}>
           {m.nav.logoTagline}

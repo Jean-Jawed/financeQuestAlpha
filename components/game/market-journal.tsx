@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: MarketJournal
+ * PASTFOLIO - COMPONENT: MarketJournal
  * Le journal de la séance : grands indices, humeur du marché, plus fortes hausses
  * et baisses de la séance ou de la semaine (valeurs du scénario). Un clic sur une
  * valeur ouvre son ticket d'ordre.

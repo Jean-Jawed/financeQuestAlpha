@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: Welcome
+ * PASTFOLIO - PAGE: Welcome
  * /[locale]/welcome?redirect=… : accueil après inscription (« Votre carte d'agent »)
  * Vu une seule fois : ensuite, renvoie directement vers la page demandée
  */

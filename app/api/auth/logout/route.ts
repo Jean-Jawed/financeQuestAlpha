@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: LOGOUT
+ * PASTFOLIO - API ROUTE: LOGOUT
  * POST /api/auth/logout
  */
 

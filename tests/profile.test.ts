@@ -29,7 +29,7 @@ describe('pseudo', () => {
 
   it('refuse les noms réservés et les insultes, même déguisés', () => {
     expect(nameIssue('Admin du jeu')).toBe('banned');
-    expect(nameIssue('FinanceQuest Team')).toBe('banned');
+    expect(nameIssue('PastFolio Team')).toBe('banned');
     expect(nameIssue('c0nnard')).toBe('banned');
     expect(nameIssue('gros pd')).toBe('banned');
   });

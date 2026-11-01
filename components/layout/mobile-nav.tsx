@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: MobileNav
+ * PASTFOLIO - COMPONENT: MobileNav
  * Menu plein écran sur mobile
  */
 

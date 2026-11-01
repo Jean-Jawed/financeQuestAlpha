@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: END GAME
+ * PASTFOLIO - API ROUTE: END GAME
  * POST /api/games/end
  * Prendre sa retraite (à partir de MIN_SESSIONS_TO_RETIRE séances) ou abandonner :
  * positions soldées au cours de clôture, partie terminée, bilan renvoyé

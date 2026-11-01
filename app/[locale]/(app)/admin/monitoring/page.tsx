@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: Admin Monitoring
+ * PASTFOLIO - PAGE: Admin Monitoring
  * /admin/monitoring
  * Réservé aux comptes ayant le rôle `admin` (vérifié côté serveur)
  */

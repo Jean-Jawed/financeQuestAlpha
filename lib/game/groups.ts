@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PARTIES DE GROUPE : RÈGLES
+ * PASTFOLIO - PARTIES DE GROUPE : RÈGLES
  * Modes, tempos, valeurs par défaut, fin de partie et classement
  * (fonctions pures, utilisables côté client)
  *

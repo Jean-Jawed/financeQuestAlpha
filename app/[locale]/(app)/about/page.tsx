@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: Le jeu
+ * PASTFOLIO - PAGE: Le jeu
  * Règles, catalogue (lu en base) et devises, dans la direction « La Corbeille »
  */
 

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: GET PRICE HISTORY
+ * PASTFOLIO - API ROUTE: GET PRICE HISTORY
  * GET /api/market/history?symbol=AAPL&from=2023-01-01&to=2023-12-31
  */
 

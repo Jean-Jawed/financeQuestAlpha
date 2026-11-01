@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: SIGNUP
+ * PASTFOLIO - PAGE: SIGNUP
  * /[locale]/signup
  */
 

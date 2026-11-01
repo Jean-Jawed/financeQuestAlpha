@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: PROFILE
+ * PASTFOLIO - API ROUTE: PROFILE
  * GET    /api/profile : profil du joueur connecté
  * PATCH  /api/profile : modifier des champs du profil (seuls les champs présents)
  * DELETE /api/profile : supprimer le compte (confirmation par le pseudo)

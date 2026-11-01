@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - GAME STATE
+ * PASTFOLIO - GAME STATE
  * État complet d'une partie pour la page de jeu (portfolio, positions,
  * dernières transactions, succès, fin des données)
  */

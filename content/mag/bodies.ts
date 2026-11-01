@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LA GAZETTE : CORPS DES ARTICLES
+ * PASTFOLIO - LA GAZETTE : CORPS DES ARTICLES
  * Séparé du registre (index.ts), que le jeu importe aussi côté client pour ses liens
  */
 

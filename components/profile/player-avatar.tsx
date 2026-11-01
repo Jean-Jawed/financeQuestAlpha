@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: PlayerAvatar
+ * PASTFOLIO - COMPONENT: PlayerAvatar
  * Médaillon du joueur : avatar par défaut (Supabase Storage), sinon initiales
  * sur fond laiton (identifiant inconnu, image en erreur, pas d'avatar)
  */

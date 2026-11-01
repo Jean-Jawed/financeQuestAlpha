@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: GameSummary
+ * PASTFOLIO - COMPONENT: GameSummary
  * Le bilan d'une partie terminée : gravure selon la fin, valeur et rendement
  * finaux, comparaison avec l'indice du scénario, rang, partage
  */

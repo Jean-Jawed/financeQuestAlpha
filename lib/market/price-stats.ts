@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - CHIFFRES CLÉS D'UN ACTIF
+ * PASTFOLIO - CHIFFRES CLÉS D'UN ACTIF
  * Calculés côté client sur l'historique d'un an (fonctions pures)
  */
 

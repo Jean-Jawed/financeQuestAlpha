@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: START GROUP
+ * PASTFOLIO - API ROUTE: START GROUP
  * POST /api/groups/[id]/start
  * Tempo synchronisé : l'organisateur lance la partie (fin de la salle d'attente)
  */

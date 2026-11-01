@@ -224,7 +224,7 @@ export default function Article() {
         <li>Un journal des ordres, relu à froid pour comprendre ce qui a marché, ou non.</li>
       </List>
       <P>
-        C’est exactement l’usage d’un simulateur sur cours historiques. Dans FinanceQuest, vous appliquez vos règles
+        C’est exactement l’usage d’un simulateur sur cours historiques. Dans PastFolio, vous appliquez vos règles
         séance par séance, sans connaître le lendemain, et vous voyez ce qu’elles donnent sur le marché réel de
         l’époque, frais compris.
       </P>

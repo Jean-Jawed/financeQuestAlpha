@@ -1,6 +1,6 @@
 /**
- * FINANCEQUEST - DRIZZLE SCHEMA
- * Définitions TypeScript des tables Supabase PostgreSQL (projet FinanceQuest)
+ * PASTFOLIO - DRIZZLE SCHEMA
+ * Définitions TypeScript des tables Supabase PostgreSQL (projet PastFolio)
  *
  * Doit refléter la base réelle : les statuts / types sont des colonnes `text`
  * avec contrainte CHECK (pas des enums Postgres), et `users.id` référence

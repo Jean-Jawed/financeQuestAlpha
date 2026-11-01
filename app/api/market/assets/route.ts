@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: GET ASSETS
+ * PASTFOLIO - API ROUTE: GET ASSETS
  * GET /api/market/assets?type=stock&market=nyse&search=apple
  *   &date=2023-06-15&currency=EUR : ajoute le cours converti et la variation du jour
  */

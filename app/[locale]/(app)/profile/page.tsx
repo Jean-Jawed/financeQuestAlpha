@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: Profile
+ * PASTFOLIO - PAGE: Profile
  * /[locale]/profile : carte d'agent, préférences, compte, carrière
  */
 

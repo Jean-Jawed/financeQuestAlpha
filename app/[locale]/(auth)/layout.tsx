@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LAYOUT: AUTH
+ * PASTFOLIO - LAYOUT: AUTH
  * Connexion et inscription : la façade du palais Brongniart, puis le formulaire
  */
 

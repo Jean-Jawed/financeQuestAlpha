@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API TYPES
+ * PASTFOLIO - API TYPES
  * Types pour les requêtes et réponses des API routes
  */
 

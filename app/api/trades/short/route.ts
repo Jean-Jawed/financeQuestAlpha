@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: SHORT
+ * PASTFOLIO - API ROUTE: SHORT
  * POST /api/trades/short
  * Shorter un actif (ouvrir position short - vente à découvert)
  */

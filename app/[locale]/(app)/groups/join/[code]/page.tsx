@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: invitation à une partie de groupe
+ * PASTFOLIO - PAGE: invitation à une partie de groupe
  * /[locale]/groups/join/[code] : règles du groupe, puis « Rejoindre »
  * (connexion d'abord pour un visiteur ; engagement à suivre le rythme en tempo synchronisé)
  */

@@ -64,7 +64,7 @@ export default function Article() {
         .
       </P>
 
-      <H2 id="jeu">Dans FinanceQuest</H2>
+      <H2 id="jeu">Dans PastFolio</H2>
       <P>
         Le jeu applique une règle de marge simple : votre valeur nette doit couvrir au moins la moitié de vos
         positions à découvert. Le scénario <Em>L’ours</Em> n’autorise même que les paris à la baisse : un bon

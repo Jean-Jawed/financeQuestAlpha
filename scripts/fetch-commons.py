@@ -1,5 +1,5 @@
 """
-FINANCEQUEST - IMAGES LIBRES DE DROITS (Wikimedia Commons)
+PASTFOLIO - IMAGES LIBRES DE DROITS (Wikimedia Commons)
 Télécharge les images listées dans scripts/commons-images.json (titre Commons → nom local)
 dans assets-src/libres/, et écrit leurs crédits (auteur, licence, source) dans
 content/mag/credits.json. Seules les licences du domaine public ou CC0 sont acceptées.
@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 LIST = ROOT / 'scripts' / 'commons-images.json'
 OUT = ROOT / 'assets-src' / 'libres'
 CREDITS = ROOT / 'content' / 'mag' / 'credits.json'
-UA = {'User-Agent': 'FinanceQuest/1.0 (https://virgule-studio.fr) image credits script'}
+UA = {'User-Agent': 'PastFolio/1.0 (https://virgule-studio.fr) image credits script'}
 ACCEPTED = ('public domain', 'cc0', 'no restrictions', 'pd')
 THUMB_WIDTH = 1600
 

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - SUPABASE CLIENT (BROWSER)
+ * PASTFOLIO - SUPABASE CLIENT (BROWSER)
  * Client Supabase pour usage côté client (auth UI, session)
  */
 

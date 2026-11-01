@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LA GAZETTE : REGISTRE DES ARTICLES
+ * PASTFOLIO - LA GAZETTE : REGISTRE DES ARTICLES
  * Métadonnées par langue ; le corps de chaque article est un composant React
  * (content/mag/<id>/<locale>.tsx), chargé à la demande
  */

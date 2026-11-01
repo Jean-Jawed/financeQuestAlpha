@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COURBE DE LA PAGE D'ACCUEIL
+ * PASTFOLIO - COURBE DE LA PAGE D'ACCUEIL
  * Clôtures réelles du S&P 500 du 3 février au 31 août 2020 (krach du Covid et rebond),
  * vers content/landing/sp500-2020.json. Période hors de la base prix du jeu : elles
  * viennent de l'historique public de Yahoo Finance, comme les imports de la base.

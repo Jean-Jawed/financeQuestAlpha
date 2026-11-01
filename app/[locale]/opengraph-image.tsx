@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - IMAGE DE PARTAGE DU SITE
+ * PASTFOLIO - IMAGE DE PARTAGE DU SITE
  * Une par langue ; les articles du magazine ont la leur
  */
 
@@ -9,7 +9,7 @@ import { OG_SIZE, renderOgImage } from '@/lib/og';
 
 export const size = OG_SIZE;
 export const contentType = 'image/png';
-export const alt = 'FinanceQuest';
+export const alt = 'PastFolio';
 
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));

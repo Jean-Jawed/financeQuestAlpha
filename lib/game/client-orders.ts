@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - ORDRES REJOUABLES
+ * PASTFOLIO - ORDRES REJOUABLES
  * Chaque ordre porte un identifiant généré par le ticket (transactions.client_order_id).
  * Si la réponse se perd et que le navigateur renvoie l'ordre, il n'est pas exécuté
  * une seconde fois : on renvoie la transaction déjà enregistrée et l'état de la partie.

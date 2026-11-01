@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: JoinGroupCard
+ * PASTFOLIO - COMPONENT: JoinGroupCard
  * Saisir le code reçu de l'organisateur : mène à la page d'invitation du groupe
  */
 

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COULEURS DES CATÉGORIES D'ACTIFS
+ * PASTFOLIO - COULEURS DES CATÉGORIES D'ACTIFS
  * Émaux mats, lisibles sur le noyer comme sur l'ivoire (codes asset_types.code)
  */
 

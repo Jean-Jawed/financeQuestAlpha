@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - BRAND: TickerTape
+ * PASTFOLIO - BRAND: TickerTape
  * Bande de téléscripteur qui défile (dupliquée pour une boucle sans couture)
  */
 

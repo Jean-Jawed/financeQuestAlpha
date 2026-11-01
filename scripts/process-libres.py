@@ -1,5 +1,5 @@
 """
-FINANCEQUEST - IMAGES LIBRES DE DROITS : TRAITEMENT
+PASTFOLIO - IMAGES LIBRES DE DROITS : TRAITEMENT
 Gravures, dessins et photographies d'archives (assets-src/libres/, voir
 fetch-commons.py) passés en bichromie encre et papier ivoire, pour s'accorder aux
 gravures du site, puis recadrés et enregistrés en WebP dans public/mag/.

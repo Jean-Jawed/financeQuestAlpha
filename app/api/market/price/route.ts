@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: GET PRICE
+ * PASTFOLIO - API ROUTE: GET PRICE
  * GET /api/market/price?symbol=AAPL&date=2023-06-15&currency=EUR
  * currency : devise de la partie (optionnelle, défaut : devise de l'actif)
  */

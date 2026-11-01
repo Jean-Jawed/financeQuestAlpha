@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - NEXT DAY LOGIC
+ * PASTFOLIO - NEXT DAY LOGIC
  * Logique d'avancement du jour avec mise à jour du portfolio
  */
 

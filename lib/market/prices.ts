@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PRICES SERVICE (OPTIMIZED)
+ * PASTFOLIO - PRICES SERVICE (OPTIMIZED)
  * Gestion des prix historiques via Supabase Prices DB
  * Version optimisée utilisant pleinement les index existants
  */

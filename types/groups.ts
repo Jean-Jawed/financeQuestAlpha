@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - TYPES: parties de groupe (réponses de l'API, panneau du groupe)
+ * PASTFOLIO - TYPES: parties de groupe (réponses de l'API, panneau du groupe)
  */
 
 import type { GroupMode, GroupStatus, GroupTempo } from '@/lib/game/groups';

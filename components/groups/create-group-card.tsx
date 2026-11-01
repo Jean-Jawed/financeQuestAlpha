@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: CreateGroupCard
+ * PASTFOLIO - COMPONENT: CreateGroupCard
  * Organiser une partie de groupe : mode, tempo (bien en vue : il change tout),
  * scénario, devise et départ communs, durée et paramètres du mode
  */

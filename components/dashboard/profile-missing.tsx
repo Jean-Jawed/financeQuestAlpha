@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: ProfileMissing
+ * PASTFOLIO - COMPONENT: ProfileMissing
  * Affiché quand le compte Supabase Auth existe mais pas le profil (public.users)
  * Remplace l'ancienne redirection vers /login, qui bouclait avec le middleware
  */

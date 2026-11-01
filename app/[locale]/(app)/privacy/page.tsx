@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: Privacy
+ * PASTFOLIO - PAGE: Privacy
  * /[locale]/privacy : politique de confidentialité
  */
 

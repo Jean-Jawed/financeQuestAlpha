@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: mot de passe oublié et nouveau mot de passe
+ * PASTFOLIO - COMPONENT: mot de passe oublié et nouveau mot de passe
  * 1. ForgotPasswordForm : Supabase envoie un lien vers /reset-password
  * 2. ResetPasswordForm : le lien ouvre une session de récupération (échange
  *    du code par le client Supabase), puis le joueur choisit son mot de passe

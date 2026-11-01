@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: PriceChart
+ * PASTFOLIO - COMPONENT: PriceChart
  * Courbe des cours de clôture jusqu'au jour simulé (jamais au-delà), tracée à la
  * plume : filet laiton, aplat d'encre, volumes en pied, axe des dates.
  * Lecture des cours : réticule qui suit la souris ; au doigt, on appuie et on glisse

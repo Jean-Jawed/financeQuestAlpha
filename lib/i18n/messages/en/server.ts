@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: SERVER (ENGLISH)
+ * PASTFOLIO - I18N: SERVER (ENGLISH)
  * Même forme que le dictionnaire français (vérifié au typage)
  */
 

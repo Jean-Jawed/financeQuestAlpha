@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PROFIL : SERVEUR
+ * PASTFOLIO - PROFIL : SERVEUR
  * Lecture et mise à jour du profil, disponibilité du pseudo, carrière,
  * suppression du compte (voir docs/reviewOct2026/phase3/02_profil.md)
  */

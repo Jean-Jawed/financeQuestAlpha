@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - UI COMPONENT: Button
+ * PASTFOLIO - UI COMPONENT: Button
  * Bouton « plaque » : capitales condensées, laiton pour l'action principale
  */
 

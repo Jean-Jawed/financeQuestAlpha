@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - FETCH AVEC DÉLAI D'ABANDON
+ * PASTFOLIO - FETCH AVEC DÉLAI D'ABANDON
  * Une requête sans réponse au-delà du délai est abandonnée (TimeoutError),
  * au lieu de laisser un bouton tourner indéfiniment
  */

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - FORMATTING UTILITIES
+ * PASTFOLIO - FORMATTING UTILITIES
  * Helpers pour formater les nombres, prix, pourcentages
  */
 

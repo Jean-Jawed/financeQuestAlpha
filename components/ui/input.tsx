@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - UI COMPONENT: Input
+ * PASTFOLIO - UI COMPONENT: Input
  * Composant Input avec validation et messages d'erreur
  */
 

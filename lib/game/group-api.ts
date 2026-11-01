@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PARTIES DE GROUPE : RÉPONSES D'ERREUR DES ROUTES
+ * PASTFOLIO - PARTIES DE GROUPE : RÉPONSES D'ERREUR DES ROUTES
  */
 
 import { NextResponse } from 'next/server';

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PARTIES DE GROUPE : SERVEUR
+ * PASTFOLIO - PARTIES DE GROUPE : SERVEUR
  * Création, adhésion, vue du groupe à la date du joueur, tempo synchronisé
  * (séance commune, délai de secours, élimination) et messagerie
  */

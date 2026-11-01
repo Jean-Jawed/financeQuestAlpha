@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: TradeTicket
+ * PASTFOLIO - COMPONENT: TradeTicket
  * Ticket d'ordre unique pour acheter, vendre, vendre à découvert, racheter
  * Cours du jour (d'origine et converti), courbe, frais, tampon à l'exécution
  */

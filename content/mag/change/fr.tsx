@@ -16,7 +16,7 @@ export const toc: TocEntry[] = [
   { id: 'deux-paris', title: 'Deux paris en un' },
   { id: 'exemples', title: '2017 et 2022 : deux exemples réels' },
   { id: 'proteger', title: 'Peut-on s’en protéger ?' },
-  { id: 'jeu', title: 'Le change dans FinanceQuest' },
+  { id: 'jeu', title: 'Le change dans PastFolio' },
 ];
 
 export default function Article() {
@@ -99,7 +99,7 @@ export default function Article() {
         .
       </P>
 
-      <H2 id="jeu">Le change dans FinanceQuest</H2>
+      <H2 id="jeu">Le change dans PastFolio</H2>
       <P>
         Chaque partie a sa devise de jeu, choisie au départ. Les actifs restent cotés dans leur monnaie
         d’origine : dollar pour Wall Street, yen pour Tokyo, livre pour Londres. Votre solde, vos coûts moyens et

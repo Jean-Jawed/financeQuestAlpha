@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: FORGOT PASSWORD
+ * PASTFOLIO - PAGE: FORGOT PASSWORD
  * /[locale]/forgot-password : demande d'un lien de réinitialisation
  */
 

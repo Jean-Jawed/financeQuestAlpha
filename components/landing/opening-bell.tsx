@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LANDING: OpeningBell
+ * PASTFOLIO - LANDING: OpeningBell
  * L'ouverture de la page : un rideau d'encre se lève, la cloche sonne, le tableau
  * d'affichage fait défiler quelques séances célèbres, puis le titre apparaît.
  * La cloche est un bouton : elle sonne (avec le son du jeu) et relance le tableau.

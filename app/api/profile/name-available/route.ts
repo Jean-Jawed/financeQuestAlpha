@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: NAME AVAILABLE
+ * PASTFOLIO - API ROUTE: NAME AVAILABLE
  * GET /api/profile/name-available?name=… : le pseudo est-il valide et libre ?
  * Publique (formulaire d'inscription) ; un joueur connecté peut garder le sien
  */

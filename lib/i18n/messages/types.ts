@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: TYPES DES DICTIONNAIRES
+ * PASTFOLIO - I18N: TYPES DES DICTIONNAIRES
  * La forme de référence est celle du français
  */
 

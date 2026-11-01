@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: LeaderboardTable
+ * PASTFOLIO - COMPONENT: LeaderboardTable
  * Podium couronné de laurier, puis registre des agents de change
  */
 

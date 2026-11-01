@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENTS: mise en page des articles de La Gazette
+ * PASTFOLIO - COMPONENTS: mise en page des articles de La Gazette
  * Intertitres ancrés, encadrés, définitions, chiffres clés, appels à jouer
  */
 

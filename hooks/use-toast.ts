@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - HOOK: useToast
+ * PASTFOLIO - HOOK: useToast
  * Hook pour afficher des notifications toast
  */
 

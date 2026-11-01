@@ -1,5 +1,5 @@
 """
-FINANCEQUEST - SONS DU JEU
+PASTFOLIO - SONS DU JEU
 Synthèse des sons (numpy + scipy), encodage MP3 mono 96 kbit/s (ffmpeg) dans public/sons/.
 Direction : la corbeille vers 1900. Cloche en laiton, tampon encreur, caisse
 enregistreuse, volets de tableau d'affichage. Pas de bip numérique.

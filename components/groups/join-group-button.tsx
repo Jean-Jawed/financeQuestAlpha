@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: JoinGroupButton
+ * PASTFOLIO - COMPONENT: JoinGroupButton
  * Rejoindre le groupe depuis la page d'invitation ; en tempo synchronisé,
  * le joueur coche d'abord son engagement à suivre le rythme du groupe
  */

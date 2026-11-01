@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - ERROR HANDLING
+ * PASTFOLIO - ERROR HANDLING
  * Système de gestion d'erreurs standardisé
  */
 

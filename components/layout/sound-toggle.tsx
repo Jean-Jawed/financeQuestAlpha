@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: SoundToggle
+ * PASTFOLIO - COMPONENT: SoundToggle
  * Couper ou rétablir les sons du jeu (choix mémorisé dans le navigateur)
  */
 

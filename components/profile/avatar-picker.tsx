@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: AvatarPicker
+ * PASTFOLIO - COMPONENT: AvatarPicker
  * Galerie des avatars par défaut : filtres par style et par catégorie,
  * aperçu de l'avatar sélectionné, puis validation
  */

@@ -83,7 +83,7 @@ export default function Article() {
         l’achat, ou minimum à la vente : il protège du mauvais prix, mais peut ne jamais s’exécuter.
       </P>
       <P>
-        Dans FinanceQuest, les ordres passent au <Em>cours de clôture</Em> de la séance, le dernier prix de la
+        Dans PastFolio, les ordres passent au <Em>cours de clôture</Em> de la séance, le dernier prix de la
         journée. C’est le prix de référence que retiennent les journaux, les indices et les fonds.
       </P>
 
@@ -180,7 +180,7 @@ export default function Article() {
       </P>
       <P>
         C’est pourquoi le produit d’une vente à découvert reste bloqué en garantie, et qu’une marge minimale est
-        exigée. FinanceQuest applique cette logique : votre valeur nette doit couvrir la moitié de vos positions à
+        exigée. PastFolio applique cette logique : votre valeur nette doit couvrir la moitié de vos positions à
         découvert.
       </P>
 
@@ -246,7 +246,7 @@ export default function Article() {
         découvert peut déraper, et mesurer ses décisions au rendement.
       </P>
       <P>
-        FinanceQuest repose sur une règle qui rend l’exercice honnête : vous rejouez le passé avec les cours réels,
+        PastFolio repose sur une règle qui rend l’exercice honnête : vous rejouez le passé avec les cours réels,
         mais <Em>sans jamais voir le lendemain</Em>. Impossible d’utiliser ce que l’on sait aujourd’hui ; on décide
         avec l’information du moment, comme un investisseur de l’époque. Une bonne façon de tester ses règles
         avant de les appliquer pour de vrai, et de découvrir son propre tempérament face aux hausses et aux

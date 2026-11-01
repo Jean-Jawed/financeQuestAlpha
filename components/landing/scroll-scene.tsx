@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LANDING: ScrollScene
+ * PASTFOLIO - LANDING: ScrollScene
  * Scène « épinglée » : une section haute de plusieurs écrans dont le contenu reste à
  * l'écran pendant que l'on fait défiler. L'avancement (0 → 1) est exposé :
  * - en variable CSS --p sur la section, pour les effets purement visuels ;

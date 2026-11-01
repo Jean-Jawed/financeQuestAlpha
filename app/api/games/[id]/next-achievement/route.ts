@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: NEXT ACHIEVEMENT
+ * PASTFOLIO - API ROUTE: NEXT ACHIEVEMENT
  * GET /api/games/[id]/next-achievement : le succès le plus proche d'être débloqué
  * (progression mesurable), sinon les derniers succès obtenus
  * Lu par l'écran de jeu après chaque ordre ou séance, sans retarder l'action

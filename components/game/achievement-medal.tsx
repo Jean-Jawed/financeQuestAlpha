@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: AchievementMedal
+ * PASTFOLIO - COMPONENT: AchievementMedal
  * Médaille frappée à l'écran quand un succès est débloqué
  * showMedals() depuis n'importe quel composant ; <MedalOverlay /> une fois par page
  */

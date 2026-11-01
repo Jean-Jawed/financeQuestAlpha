@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - MACHINE: instruments
+ * PASTFOLIO - MACHINE: instruments
  * <Medallion> : avatar dans sa couronne de laiton, ruban de niveau
  * <XpTube> : l'expérience dans un tube de verre cerclé de laiton
  * <Odometer> : compteur à tambours qui roule à chaque changement

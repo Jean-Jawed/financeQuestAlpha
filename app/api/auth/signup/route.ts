@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: SIGNUP
+ * PASTFOLIO - API ROUTE: SIGNUP
  * POST /api/auth/signup
  */
 

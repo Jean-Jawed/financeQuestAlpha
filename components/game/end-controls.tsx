@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: EndControls
+ * PASTFOLIO - COMPONENT: EndControls
  * Prendre sa retraite (à partir de MIN_SESSIONS_TO_RETIRE séances) ou abandonner,
  * avec confirmation : les positions sont soldées au cours de clôture
  */

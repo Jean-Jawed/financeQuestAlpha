@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: COVER
+ * PASTFOLIO - API ROUTE: COVER
  * POST /api/trades/cover
  * Couvrir une position short (fermer vente à découvert)
  */

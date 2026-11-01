@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - BRAND: Guilloche
+ * PASTFOLIO - BRAND: Guilloche
  * Guillochis (motifs de billets de banque) affichés en masque CSS : le tracé est un
  * fichier SVG mis en cache (/motifs/…, voir lib/brand/guilloche-svg.ts), la couleur
  * est celle du texte (currentColor : text-brass, text-paper…)

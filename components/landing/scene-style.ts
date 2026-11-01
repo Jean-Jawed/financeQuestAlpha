@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LANDING: styles liés à l'avancement d'une ScrollScene (variable --p)
+ * PASTFOLIO - LANDING: styles liés à l'avancement d'une ScrollScene (variable --p)
  * Fonctions simples, utilisables dans les composants serveur comme client
  */
 

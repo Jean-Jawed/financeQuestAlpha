@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - SCÉNARIOS
+ * PASTFOLIO - SCÉNARIOS
  * Fiches de règles des scénarios (fonctions pures, utilisables côté client)
  *
  * La base ne stocke que l'identifiant (games.scenario) : ajouter un scénario

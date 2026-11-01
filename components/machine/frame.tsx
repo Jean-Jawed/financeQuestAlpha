@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - MACHINE: cadres et plaques
+ * PASTFOLIO - MACHINE: cadres et plaques
  * <Frame variant="tool"> : moulure de laiton et panneau de noyer (outils : guichet, carnet…)
  * <Frame variant="mirror"> : moulure, fine bande de noyer, filet, glace (courbes, compteur)
  * <Plate> : plaque gravée vissée (titres de panneau, onglet actif)

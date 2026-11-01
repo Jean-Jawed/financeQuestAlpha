@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: PUBLIC PAGES (ENGLISH)
+ * PASTFOLIO - I18N: PUBLIC PAGES (ENGLISH)
  * Même forme que le dictionnaire français (vérifié au typage)
  */
 
@@ -7,8 +7,8 @@ import type { SiteMessages } from '../types';
 
 export const site: SiteMessages = {
   seo: {
-    siteName: 'FinanceQuest',
-    defaultTitle: 'FinanceQuest: a free stock market game on real historical prices',
+    siteName: 'PastFolio',
+    defaultTitle: 'PastFolio: a free stock market game on real historical prices',
     defaultDescription:
       'Free stock market simulator: replay the markets one session at a time with real closing prices, no real money involved. Alone, with friends or in class, with a leaderboard.',
     keywords:
@@ -16,21 +16,21 @@ export const site: SiteMessages = {
     homeTitle: 'Free stock market game: replay the markets with real prices',
     aboutTitle: 'How the game works',
     aboutDescription:
-      'How FinanceQuest is played: orders at the closing price, short selling, game currencies, group games with friends, the list of securities.',
+      'How PastFolio is played: orders at the closing price, short selling, game currencies, group games with friends, the list of securities.',
     faqTitle: 'Frequently asked questions',
     faqDescription:
-      'Everything about FinanceQuest: is it free, where prices come from, how a game works, short selling, currencies, group games, the leaderboard.',
+      'Everything about PastFolio: is it free, where prices come from, how a game works, short selling, currencies, group games, the leaderboard.',
     leaderboardTitle: 'Player leaderboard',
-    leaderboardDescription: 'The FinanceQuest roll of honour: the best finished games, scenario by scenario.',
+    leaderboardDescription: 'The PastFolio roll of honour: the best finished games, scenario by scenario.',
     loginTitle: 'Log in',
     signupTitle: 'Create an account',
-    signupDescription: 'Create your free FinanceQuest account and receive your virtual starting capital.',
+    signupDescription: 'Create your free PastFolio account and receive your virtual starting capital.',
     dashboardTitle: 'Dashboard',
     gameTitle: 'Game in progress',
     magTitle: 'The Gazette: learn the stock market and trading',
     magDescription:
-      'Articles from the FinanceQuest Gazette: understand the stock market, trading concepts and strategies, then practise without risk.',
-    ogAlt: 'FinanceQuest: replay the stock market with real prices',
+      'Articles from the PastFolio Gazette: understand the stock market, trading concepts and strategies, then practise without risk.',
+    ogAlt: 'PastFolio: replay the stock market with real prices',
     gameGenre: 'Stock market simulation',
     profileTitle: 'My profile',
     welcomeTitle: 'Your broker card',
@@ -38,7 +38,7 @@ export const site: SiteMessages = {
     resetTitle: 'New password',
     privacyTitle: 'Privacy policy',
     privacyDescription:
-      'What data FinanceQuest collects, why, where it is stored, for how long, and how to delete your account.',
+      'What data PastFolio collects, why, where it is stored, for how long, and how to delete your account.',
   },
 
   home: {
@@ -75,7 +75,7 @@ export const site: SiteMessages = {
     introEyebrow: 'The simulator',
     introTitle: 'A stock market simulator that does not cheat with time',
     introParagraphs: [
-      'FinanceQuest is a free stock market game. You start from a date in the past with virtual capital, then manage a real portfolio, in the sense that every price you see is the actual closing price of that day.',
+      'PastFolio is a free stock market game. You start from a date in the past with virtual capital, then manage a real portfolio, in the sense that every price you see is the actual closing price of that day.',
       'The golden rule: you never see tomorrow. Each session closes with a click and reveals the next prices. No cheating with what we know today: like a real investor, you decide with the information of the moment.',
       'A risk-free way to practise: understand the effect of fees, diversification, exchange rates or short selling, and measure your decisions by their return, against other players.',
     ],
@@ -121,7 +121,7 @@ export const site: SiteMessages = {
           record: 'New record',
         },
         conclusion:
-          'In FinanceQuest, you never see tomorrow. You decide with the information of the day, like those who lived through these sessions.',
+          'In PastFolio, you never see tomorrow. You decide with the information of the day, like those who lived through these sessions.',
         cta: 'Hold on, or not',
       },
       certificateEyebrow: 'Certificate of admission',
@@ -188,7 +188,7 @@ export const site: SiteMessages = {
     title: 'Your data, plainly',
     updated: 'Last updated: 31 October 2026',
     intro:
-      'FinanceQuest is a free game with no advertising. We only collect what the game needs, we sell nothing and share nothing for commercial purposes.',
+      'PastFolio is a free game with no advertising. We only collect what the game needs, we sell nothing and share nothing for commercial purposes.',
     sections: [
       {
         title: 'What we collect',
@@ -248,7 +248,7 @@ export const site: SiteMessages = {
     intro: 'Short answers first, details after.',
     items: [
       {
-        q: 'What is FinanceQuest?',
+        q: 'What is PastFolio?',
         a: 'A free stock market game in your browser. You start from a date in the past with virtual capital and manage a portfolio on real closing prices, one session at a time, never knowing what comes next.',
       },
       {
@@ -297,7 +297,7 @@ export const site: SiteMessages = {
       },
       {
         q: 'Can I play on mobile?',
-        a: 'Yes. FinanceQuest runs in the browser, on computers, tablets and phones, with no app to install.',
+        a: 'Yes. PastFolio runs in the browser, on computers, tablets and phones, with no app to install.',
       },
       {
         q: 'Can I play in French?',
@@ -310,14 +310,14 @@ export const site: SiteMessages = {
 
   mag: {
     name: 'The Gazette',
-    eyebrow: 'The FinanceQuest Gazette',
+    eyebrow: 'The PastFolio Gazette',
     title: 'Understand the market before you take the plunge',
     intro:
       'Articles for curious beginners: the concepts that matter, explained simply, then put to the test in the game.',
     readingTime: '{minutes} min read',
     publishedOn: 'Published on {date}',
     updatedOn: 'Updated on {date}',
-    by: 'By the FinanceQuest editors',
+    by: 'By the PastFolio editors',
     read: 'Read the article',
     readFiche: 'Read the explainer',
     summary: 'Key points',

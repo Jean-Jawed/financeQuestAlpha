@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - ROBOTS
+ * PASTFOLIO - ROBOTS
  * /robots.txt : pages publiques ouvertes, API et pages privées fermées
  */
 

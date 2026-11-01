@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - ACHIEVEMENTS LOGIC
+ * PASTFOLIO - ACHIEVEMENTS LOGIC
  * Vérification et débloquage automatique des achievements
  *
  * Le contexte (partie, transactions, positions, portfolio, types d'actifs) est

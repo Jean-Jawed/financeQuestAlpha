@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: INTERFACE (FRANÇAIS)
+ * PASTFOLIO - I18N: INTERFACE (FRANÇAIS)
  * Textes des composants client et serveur partagés. Dictionnaire de référence :
  * la version anglaise doit avoir exactement la même forme (vérifié au typage).
  * Variables entre accolades : {name}, {count}…
@@ -15,7 +15,7 @@ export const ui = {
     readingQuote: 'Lecture de la cote…',
     tickerAria: 'Variations des cours',
     closeNotification: 'Fermer la notification',
-    brand: 'FinanceQuest',
+    brand: 'PastFolio',
   },
 
   nav: {
@@ -25,7 +25,7 @@ export const ui = {
     mag: 'La Gazette',
     faq: 'FAQ',
     main: 'Navigation principale',
-    homeLabel: 'FinanceQuest, tableau de bord',
+    homeLabel: 'PastFolio, tableau de bord',
     backHome: 'Retour à l’accueil',
     openMenu: 'Ouvrir le menu',
     closeMenu: 'Fermer le menu',
@@ -46,7 +46,7 @@ export const ui = {
   },
 
   footer: {
-    tagline: 'FinanceQuest · Bourse historique',
+    tagline: 'PastFolio · Bourse historique',
     createdBy: 'Créé par',
     realPrices: 'Cours historiques réels.',
     privacy: 'Confidentialité',
@@ -483,7 +483,7 @@ export const ui = {
     unranked: 'Hors classement',
     share: 'Partager',
     copied: 'Lien copié',
-    shareText: 'J’ai terminé le scénario « {scenario} » de FinanceQuest à {result}. À vous de jouer :',
+    shareText: 'J’ai terminé le scénario « {scenario} » de PastFolio à {result}. À vous de jouer :',
     newGame: 'Nouvelle partie',
     dashboard: 'Tableau de bord',
     leaderboard: 'Voir le classement',

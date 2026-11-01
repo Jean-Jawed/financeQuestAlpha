@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: DICTIONNAIRES
+ * PASTFOLIO - I18N: DICTIONNAIRES
  */
 
 import type { Locale } from '../config';

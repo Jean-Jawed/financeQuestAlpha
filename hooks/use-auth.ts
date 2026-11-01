@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - HOOK: useAuth
+ * PASTFOLIO - HOOK: useAuth
  * Hook React pour gérer l'authentification côté client
  */
 

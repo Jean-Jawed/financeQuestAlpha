@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - SEO
+ * PASTFOLIO - SEO
  * Adresse du site, alternatives de langue (hreflang) et métadonnées de page
  */
 
@@ -53,7 +53,7 @@ interface PageMetadataOptions {
   description?: string;
   /** Pages privées et formulaires : hors index */
   noindex?: boolean;
-  /** Titre complet, sans le suffixe « · FinanceQuest » */
+  /** Titre complet, sans le suffixe « · PastFolio » */
   absoluteTitle?: boolean;
   type?: 'website' | 'article';
   /** Article : dates de publication et de mise à jour (YYYY-MM-DD) */

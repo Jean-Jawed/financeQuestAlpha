@@ -16,7 +16,7 @@ export const toc: TocEntry[] = [
   { id: 'two-bets', title: 'Two bets in one' },
   { id: 'examples', title: '2017 and 2022: two real examples' },
   { id: 'protection', title: 'Can you protect yourself?' },
-  { id: 'game', title: 'Currency in FinanceQuest' },
+  { id: 'game', title: 'Currency in PastFolio' },
 ];
 
 export default function Article() {
@@ -95,7 +95,7 @@ export default function Article() {
         .
       </P>
 
-      <H2 id="game">Currency in FinanceQuest</H2>
+      <H2 id="game">Currency in PastFolio</H2>
       <P>
         Each game has its own game currency, chosen at the start. Assets stay priced in their home currency: dollars
         for Wall Street, yen for Tokyo, pounds for London. Your balance, average costs and performance are converted

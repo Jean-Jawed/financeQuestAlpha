@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: CÔTÉ CLIENT
+ * PASTFOLIO - I18N: CÔTÉ CLIENT
  * Fournisseur de traductions (posé par le layout de langue) et hook useI18n
  */
 

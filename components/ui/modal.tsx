@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - UI COMPONENT: Modal
+ * PASTFOLIO - UI COMPONENT: Modal
  * Composant Modal avec backdrop et animations
  */
 

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: JsonLd
+ * PASTFOLIO - COMPONENT: JsonLd
  * Données structurées schema.org, insérées dans la page
  */
 

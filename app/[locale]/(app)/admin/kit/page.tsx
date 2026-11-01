@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: Admin Kit
+ * PASTFOLIO - PAGE: Admin Kit
  * /[locale]/admin/kit : recette de la boîte à outils « salle des machines »
  * (cadres, plaques, médaillons, instruments), en largeur bureau et téléphone
  * Réservé aux comptes ayant le rôle `admin`

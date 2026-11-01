@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - GUILLOCHIS : GÉNÉRATION DES FICHIERS SVG
+ * PASTFOLIO - GUILLOCHIS : GÉNÉRATION DES FICHIERS SVG
  * Les motifs sont servis comme fichiers mis en cache (/motifs/…), et non plus
  * dessinés dans chaque page : ils pesaient environ 300 Ko par page, recopiés une
  * seconde fois pour React. Les composants les affichent en masque CSS, dans la

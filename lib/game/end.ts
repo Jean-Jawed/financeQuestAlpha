@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - FIN DE PARTIE
+ * PASTFOLIO - FIN DE PARTIE
  * Liquidation des positions au cours de clôture (frais compris), puis
  * clôture de la partie : valeur et rendement finaux, raison de fin
  */

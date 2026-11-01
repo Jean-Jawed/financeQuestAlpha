@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - GAME CALCULATIONS
+ * PASTFOLIO - GAME CALCULATIONS
  * Calculs financiers pour le jeu (portfolio value, P&L, rendement, score)
  * Les formules pures sont dans ./portfolio-math (testables sans base)
  */

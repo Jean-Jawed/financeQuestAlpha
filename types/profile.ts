@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - TYPES: profil du joueur (page profil, accueil après inscription)
+ * PASTFOLIO - TYPES: profil du joueur (page profil, accueil après inscription)
  */
 
 import type { GameCurrency } from '@/lib/game/currency';

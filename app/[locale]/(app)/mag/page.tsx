@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: La Gazette
+ * PASTFOLIO - PAGE: La Gazette
  * /[locale]/mag : la une du magazine
  */
 

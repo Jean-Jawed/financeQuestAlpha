@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - AVATARS PAR DÉFAUT
+ * PASTFOLIO - AVATARS PAR DÉFAUT
  * Liste des avatars déposés dans Supabase Storage (bucket « avatars », dossier
  * defaults/, WebP 256 px). Source : assets-src/avatars (planches Gemini,
  * decoupe.py, scripts/upload-avatars.mjs).

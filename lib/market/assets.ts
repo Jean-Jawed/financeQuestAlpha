@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - ASSETS SERVICE
+ * PASTFOLIO - ASSETS SERVICE
  * Service pour la gestion des assets via Supabase Prices DB
  */
 

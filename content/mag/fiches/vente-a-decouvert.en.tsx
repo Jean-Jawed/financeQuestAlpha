@@ -63,7 +63,7 @@ export default function Article() {
         .
       </P>
 
-      <H2 id="game">In FinanceQuest</H2>
+      <H2 id="game">In PastFolio</H2>
       <P>
         The game applies a simple margin rule: your net worth must cover at least half of your short positions.
         The scenario called <Em>The bear</Em> only allows bets on a fall: good practice to feel what this risk is like.

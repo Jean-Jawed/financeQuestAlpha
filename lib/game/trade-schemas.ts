@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - TRADE VALIDATION SCHEMAS
+ * PASTFOLIO - TRADE VALIDATION SCHEMAS
  * Schemas Zod pour validation des ordres de trading
  */
 

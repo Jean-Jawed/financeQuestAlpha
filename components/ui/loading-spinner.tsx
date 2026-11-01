@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - UI COMPONENT: LoadingSpinner
+ * PASTFOLIO - UI COMPONENT: LoadingSpinner
  * Rosace guillochée qui tourne ; page de chargement avec le téléscripteur
  */
 

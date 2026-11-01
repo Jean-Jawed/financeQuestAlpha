@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: PortfolioSummary
+ * PASTFOLIO - COMPONENT: PortfolioSummary
  * Valeur liquidative et décomposition : liquidités + titres + découverts = total
  */
 

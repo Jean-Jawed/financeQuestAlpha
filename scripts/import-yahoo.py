@@ -1,5 +1,5 @@
 """
-FINANCEQUEST - IMPORT DES COURS DEPUIS YAHOO FINANCE
+PASTFOLIO - IMPORT DES COURS DEPUIS YAHOO FINANCE
 Ajoute à la base prix (SUPABASE_PRICES_URL) une clôture par actif actif et par jour,
 sur une période donnée.
 

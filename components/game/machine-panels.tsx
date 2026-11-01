@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: panneaux de l'écran de jeu (« salle des machines »)
+ * PASTFOLIO - COMPONENT: panneaux de l'écran de jeu (« salle des machines »)
  * PlayerPlate : fiche du joueur (médaillon orné, plaque, titre, tube d'XP)
  * ValueCounter : valeur du portefeuille sur compteur à tambours, cadre miroir
  * NextAchievement : le succès le plus proche, ou les derniers obtenus

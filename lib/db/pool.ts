@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - POOLS DE CONNEXIONS POSTGRES
+ * PASTFOLIO - POOLS DE CONNEXIONS POSTGRES
  * Commun aux deux bases (jeu et prix)
  *
  * Sur Vercel (Fluid compute), une instance est mise en pause entre deux requêtes.

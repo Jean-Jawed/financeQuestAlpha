@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - TICKER
+ * PASTFOLIO - TICKER
  * Bande de cotations de l'accueil : variation réelle de quelques valeurs
  * connues sur toute la période couverte par la base prix
  */

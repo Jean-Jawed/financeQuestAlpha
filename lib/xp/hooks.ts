@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - XP : MOMENTS DU JEU
+ * PASTFOLIO - XP : MOMENTS DU JEU
  * Ce que rapporte chaque moment (ordre, séance, fin de partie, succès, groupes),
  * traduit en lignes du journal pour awardXp. Barème : ./rules.ts
  */

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: GameView
+ * PASTFOLIO - COMPONENT: GameView
  * La partie, « salle des machines » (docs/reviewOct2026/phase3/03_refonte_da.md)
  *
  * Bureau (1024 px et plus) : fiche du joueur, compteur de valeur et pupitre de

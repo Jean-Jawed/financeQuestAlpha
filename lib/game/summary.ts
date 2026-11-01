@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - BILAN DE FIN DE PARTIE
+ * PASTFOLIO - BILAN DE FIN DE PARTIE
  * Ordres, frais, comparaison avec l'indice du scénario et rang au classement
  */
 

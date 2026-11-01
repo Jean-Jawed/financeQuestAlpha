@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - AUTH PROVIDER
+ * PASTFOLIO - AUTH PROVIDER
  * Provider React pour l'authentification globale
  */
 

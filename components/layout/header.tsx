@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: Header
+ * PASTFOLIO - COMPONENT: Header
  * En-tête : sceau, navigation en capitales condensées, langue, son, joueur
  */
 

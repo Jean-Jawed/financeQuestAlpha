@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - BRAND: SolariDate
+ * PASTFOLIO - BRAND: SolariDate
  * Date en volets de tableau d'affichage, qui basculent quand elle change
  */
 

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: article de La Gazette
+ * PASTFOLIO - PAGE: article de La Gazette
  * /[locale]/mag/[slug] : adresses traduites (/fr/mag/avant-de-commencer-a-trader,
  * /en/mag/before-you-start-trading)
  */
@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       modifiedTime: article.updated,
     }),
     keywords: article.keywords,
-    authors: [{ name: 'FinanceQuest' }],
+    authors: [{ name: 'PastFolio' }],
   };
 }
 
@@ -87,7 +87,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
             inLanguage: locale,
             mainEntityOfPage: url,
             keywords: article.keywords.join(', '),
-            author: { '@type': 'Organization', name: 'FinanceQuest', url: absoluteUrl(href('/')) },
+            author: { '@type': 'Organization', name: 'PastFolio', url: absoluteUrl(href('/')) },
             publisher: { '@id': `${getSiteUrl()}/#studio` },
             // Fiche : le terme qu'elle définit
             ...(article.term && {

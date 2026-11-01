@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: Dashboard
+ * PASTFOLIO - PAGE: Dashboard
  * /[locale]/dashboard
  */
 

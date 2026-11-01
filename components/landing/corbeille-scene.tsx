@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LANDING: CorbeilleScene
+ * PASTFOLIO - LANDING: CorbeilleScene
  * La gravure de la corbeille « s'imprime » au fil du défilement : d'abord le trait,
  * de haut en bas comme une épreuve tirée de la presse, puis l'image entière s'ouvre
  * depuis le centre. Trois légendes se succèdent, la bande de cotations traverse l'écran.

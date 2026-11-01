@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: WelcomeOnboarding
+ * PASTFOLIO - COMPONENT: WelcomeOnboarding
  * Accueil après inscription : « Votre carte d'agent », entièrement facultatif.
  * L'avatar tiré au hasard est déjà en place ; « Plus tard » ne garde que lui.
  */

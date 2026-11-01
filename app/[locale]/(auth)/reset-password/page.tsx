@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: RESET PASSWORD
+ * PASTFOLIO - PAGE: RESET PASSWORD
  * /[locale]/reset-password : arrivée du lien reçu par email, nouveau mot de passe
  */
 

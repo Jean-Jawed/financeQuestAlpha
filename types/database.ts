@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - DATABASE TYPES
+ * PASTFOLIO - DATABASE TYPES
  * Types TypeScript générés depuis le schema Drizzle
  */
 

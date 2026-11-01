@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: PositionsPanel
+ * PASTFOLIO - COMPONENT: PositionsPanel
  * Le portefeuille de titres : positions acheteuses puis à découvert,
  * vente ou rachat via le ticket d'ordre
  */

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: champs des formulaires de connexion et d'inscription
+ * PASTFOLIO - COMPONENT: champs des formulaires de connexion et d'inscription
  */
 
 'use client';

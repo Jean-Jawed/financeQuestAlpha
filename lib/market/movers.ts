@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - JOURNAL DE LA SÉANCE
+ * PASTFOLIO - JOURNAL DE LA SÉANCE
  * Plus fortes hausses et baisses de la séance et de la semaine, humeur du marché,
  * grands indices. Une requête (index prices(asset_id, date desc), quelques ms),
  * en cache par date et scénario : les cours passés ne changent jamais.

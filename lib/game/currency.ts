@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - GAME CURRENCY
+ * PASTFOLIO - GAME CURRENCY
  * Devises de jeu et conversion (fonctions pures, utilisables côté client)
  *
  * Les prix restent stockés dans la devise de cotation de chaque actif

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - MARKET DB CLIENT
+ * PASTFOLIO - MARKET DB CLIENT
  * Client dédié pour la base de données Assets & Prices
  */
 

@@ -1,13 +1,13 @@
 /**
- * FINANCEQUEST - I18N: PAGES PUBLIQUES (FRANÇAIS)
+ * PASTFOLIO - I18N: PAGES PUBLIQUES (FRANÇAIS)
  * Accueil, « Le jeu », FAQ, magazine et métadonnées. Rendu côté serveur
  * uniquement : ces textes ne sont pas envoyés au navigateur avec l'interface.
  */
 
 export const site = {
   seo: {
-    siteName: 'FinanceQuest',
-    defaultTitle: 'FinanceQuest : jeu de bourse gratuit sur les cours historiques réels',
+    siteName: 'PastFolio',
+    defaultTitle: 'PastFolio : jeu de bourse gratuit sur les cours historiques réels',
     defaultDescription:
       'Simulateur de bourse gratuit : rejouez les marchés séance par séance avec les vrais cours de clôture, sans argent réel. Seul, entre amis ou en classe, avec un classement.',
     keywords:
@@ -15,21 +15,21 @@ export const site = {
     homeTitle: 'Jeu de bourse gratuit : rejouez les marchés avec les cours réels',
     aboutTitle: 'Les règles du jeu',
     aboutDescription:
-      'Comment se joue FinanceQuest : ordres au cours de clôture, vente à découvert, devises de jeu, parties de groupe entre amis, catalogue de valeurs.',
+      'Comment se joue PastFolio : ordres au cours de clôture, vente à découvert, devises de jeu, parties de groupe entre amis, catalogue de valeurs.',
     faqTitle: 'Questions fréquentes',
     faqDescription:
-      'Tout savoir sur FinanceQuest : gratuité, origine des cours, déroulement d’une partie, vente à découvert, devises, parties de groupe, classement.',
+      'Tout savoir sur PastFolio : gratuité, origine des cours, déroulement d’une partie, vente à découvert, devises, parties de groupe, classement.',
     leaderboardTitle: 'Classement des joueurs',
-    leaderboardDescription: 'Le tableau d’honneur de FinanceQuest : les meilleures parties terminées, scénario par scénario.',
+    leaderboardDescription: 'Le tableau d’honneur de PastFolio : les meilleures parties terminées, scénario par scénario.',
     loginTitle: 'Connexion',
     signupTitle: 'Créer un compte',
-    signupDescription: 'Créez votre compte FinanceQuest gratuitement et recevez votre capital de départ fictif.',
+    signupDescription: 'Créez votre compte PastFolio gratuitement et recevez votre capital de départ fictif.',
     dashboardTitle: 'Tableau de bord',
     gameTitle: 'Partie en cours',
     magTitle: 'La Gazette : apprendre la bourse et le trading',
     magDescription:
-      'Les articles de La Gazette de FinanceQuest : comprendre la bourse, les notions de trading et les stratégies, avant de s’entraîner sans risque.',
-    ogAlt: 'FinanceQuest : rejouez la Bourse avec les cours réels',
+      'Les articles de La Gazette de PastFolio : comprendre la bourse, les notions de trading et les stratégies, avant de s’entraîner sans risque.',
+    ogAlt: 'PastFolio : rejouez la Bourse avec les cours réels',
     gameGenre: 'Simulation boursière',
     profileTitle: 'Mon profil',
     welcomeTitle: 'Votre carte d’agent',
@@ -37,7 +37,7 @@ export const site = {
     resetTitle: 'Nouveau mot de passe',
     privacyTitle: 'Politique de confidentialité',
     privacyDescription:
-      'Les données que FinanceQuest collecte, pourquoi, où elles sont stockées, combien de temps, et comment supprimer votre compte.',
+      'Les données que PastFolio collecte, pourquoi, où elles sont stockées, combien de temps, et comment supprimer votre compte.',
   },
 
   home: {
@@ -74,7 +74,7 @@ export const site = {
     introEyebrow: 'Le simulateur',
     introTitle: 'Un simulateur de bourse qui ne triche pas avec le temps',
     introParagraphs: [
-      'FinanceQuest est un jeu de bourse gratuit. Vous partez d’une date du passé avec un capital fictif, puis vous gérez un portefeuille réel, au sens où chaque cours affiché est le vrai cours de clôture de ce jour-là.',
+      'PastFolio est un jeu de bourse gratuit. Vous partez d’une date du passé avec un capital fictif, puis vous gérez un portefeuille réel, au sens où chaque cours affiché est le vrai cours de clôture de ce jour-là.',
       'La règle d’or : vous ne voyez jamais le lendemain. Chaque séance se clôt d’un clic et révèle les cours suivants. Impossible de tricher avec ce que l’on sait aujourd’hui : comme un vrai investisseur, vous décidez avec l’information du moment.',
       'De quoi s’entraîner sans risque : comprendre l’effet des frais, de la diversification, du change ou de la vente à découvert, et mesurer ses décisions au rendement, face aux autres joueurs.',
     ],
@@ -120,7 +120,7 @@ export const site = {
           record: 'Nouveau record',
         },
         conclusion:
-          'Dans FinanceQuest, vous ne voyez jamais le lendemain. Vous décidez avec l’information du jour, comme ceux qui ont vécu ces séances.',
+          'Dans PastFolio, vous ne voyez jamais le lendemain. Vous décidez avec l’information du jour, comme ceux qui ont vécu ces séances.',
         cta: 'Tenir bon, ou pas',
       },
       certificateEyebrow: 'Certificat d’admission',
@@ -187,7 +187,7 @@ export const site = {
     title: 'Vos données, en clair',
     updated: 'Mise à jour : 31 octobre 2026',
     intro:
-      'FinanceQuest est un jeu gratuit, sans publicité. Nous ne collectons que ce qui sert au jeu, nous ne vendons rien et ne partageons rien à des fins commerciales.',
+      'PastFolio est un jeu gratuit, sans publicité. Nous ne collectons que ce qui sert au jeu, nous ne vendons rien et ne partageons rien à des fins commerciales.',
     sections: [
       {
         title: 'Ce que nous collectons',
@@ -247,7 +247,7 @@ export const site = {
     intro: 'Les réponses courtes d’abord, les détails ensuite.',
     items: [
       {
-        q: 'Qu’est-ce que FinanceQuest ?',
+        q: 'Qu’est-ce que PastFolio ?',
         a: 'Un jeu de bourse gratuit dans le navigateur. Vous partez d’une date du passé avec un capital fictif et vous gérez un portefeuille sur les vrais cours de clôture, séance par séance, sans jamais connaître le lendemain.',
       },
       {
@@ -296,7 +296,7 @@ export const site = {
       },
       {
         q: 'Peut-on jouer sur mobile ?',
-        a: 'Oui. FinanceQuest fonctionne dans le navigateur, sur ordinateur, tablette et téléphone, sans application à installer.',
+        a: 'Oui. PastFolio fonctionne dans le navigateur, sur ordinateur, tablette et téléphone, sans application à installer.',
       },
       {
         q: 'Peut-on jouer en anglais ?',
@@ -309,14 +309,14 @@ export const site = {
 
   mag: {
     name: 'La Gazette',
-    eyebrow: 'La Gazette de FinanceQuest',
+    eyebrow: 'La Gazette de PastFolio',
     title: 'Comprendre la bourse avant de s’y risquer',
     intro:
       'Des articles pour débutants curieux : les notions qui comptent, expliquées simplement, puis mises à l’épreuve dans le jeu.',
     readingTime: '{minutes} min de lecture',
     publishedOn: 'Publié le {date}',
     updatedOn: 'Mis à jour le {date}',
-    by: 'Par la rédaction de FinanceQuest',
+    by: 'Par la rédaction de PastFolio',
     read: 'Lire l’article',
     readFiche: 'Lire la fiche',
     summary: 'L’essentiel',

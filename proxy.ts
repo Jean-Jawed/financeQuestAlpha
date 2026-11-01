@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PROXY (ex-middleware, renommé par Next 16)
+ * PASTFOLIO - PROXY (ex-middleware, renommé par Next 16)
  * Rate limiting, langue dans l'adresse (/fr, /en) et protection des pages authentifiées
  */
 

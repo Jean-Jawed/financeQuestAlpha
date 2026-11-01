@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: champs du profil
+ * PASTFOLIO - COMPONENT: champs du profil
  * Pays, expérience, enregistrement (partagés par la page profil et l'accueil)
  */
 

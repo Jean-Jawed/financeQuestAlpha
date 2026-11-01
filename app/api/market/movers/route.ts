@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: JOURNAL DE LA SÉANCE
+ * PASTFOLIO - API ROUTE: JOURNAL DE LA SÉANCE
  * GET /api/market/movers?date=2023-06-15&scenario=libre
  * Hausses et baisses de la séance et de la semaine, humeur du marché, indices
  */

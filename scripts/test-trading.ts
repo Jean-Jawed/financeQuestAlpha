@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - TEST TRADING SYSTEM
+ * PASTFOLIO - TEST TRADING SYSTEM
  * Script pour tester le cycle complet de trading
  * 
  * ATTENTION: Ce script nécessite:

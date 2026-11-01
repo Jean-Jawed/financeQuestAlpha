@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: Game
+ * PASTFOLIO - PAGE: Game
  * /[locale]/game/[id]
  */
 

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: XP
+ * PASTFOLIO - COMPONENT: XP
  * showXp() après une action (ordre, séance, fin de partie…) : « +12 XP » qui
  * s'envole, écran de montée de niveau, en-tête mis à jour sans rechargement.
  * <XpOverlay /> une fois par page (layout de l'application).

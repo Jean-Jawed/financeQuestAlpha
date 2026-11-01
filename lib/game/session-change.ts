@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - VARIATION DE SÉANCE
+ * PASTFOLIO - VARIATION DE SÉANCE
  * Ce que le marché a fait au portefeuille depuis la séance précédente.
  * Formules pures (serveur et client), sans base.
  */

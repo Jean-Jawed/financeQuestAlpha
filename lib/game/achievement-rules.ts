@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - ACHIEVEMENT RULES
+ * PASTFOLIO - ACHIEVEMENT RULES
  * Évaluation pure (sans accès base) des critères d'achievements
  *
  * Le contexte est chargé une seule fois (voir achievements.ts), puis chaque

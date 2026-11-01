@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: LoginForm
+ * PASTFOLIO - COMPONENT: LoginForm
  * Formulaire de connexion
  */
 

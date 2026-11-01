@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - BRAND: ornements de laiton
+ * PASTFOLIO - BRAND: ornements de laiton
  * Filigranes de coin, fleuron à pierre, fleuron de bas de cadre, filet orné,
  * engrenage, couronne du médaillon. SVG en ligne, sans requête.
  * Dosage : docs/reviewOct2026/phase3/03_refonte_da.md (§ 1, règles d'ornement)

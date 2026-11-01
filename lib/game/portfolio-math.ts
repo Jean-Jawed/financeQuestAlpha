@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PORTFOLIO MATH
+ * PASTFOLIO - PORTFOLIO MATH
  * Calculs financiers purs (sans accès base) : valorisation, frais, marge
  *
  * Convention de comptabilité des ventes à découvert (short) :

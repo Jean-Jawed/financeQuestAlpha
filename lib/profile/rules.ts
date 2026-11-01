@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PROFIL : RÈGLES
+ * PASTFOLIO - PROFIL : RÈGLES
  * Validation du pseudo, de la devise personnelle et des préférences
  * (fonctions pures, utilisables côté client et serveur)
  * Contraintes en base : docs/reviewOct2026/sql/08_projet_A_profil.sql
@@ -43,7 +43,7 @@ export function isCountryCode(value: unknown): value is string {
 // ==========================================
 
 /** Noms réservés : jamais dans un pseudo */
-const RESERVED = ['admin', 'administrateur', 'moderateur', 'moderator', 'financequest', 'support', 'staff', 'systeme', 'system'];
+const RESERVED = ['admin', 'administrateur', 'moderateur', 'moderator', 'pastfolio', 'financequest', 'support', 'staff', 'systeme', 'system'];
 
 /**
  * Insultes et termes haineux courants (FR, EN), comparés sans accents ni casse,
@@ -86,7 +86,7 @@ export function containsBannedWord(text: string, { reserved = false } = {}): boo
   return (
     reserved &&
     (tokens.some((token) => RESERVED.includes(token)) ||
-      ['admin', 'moderat', 'financequest'].some((word) => squeezed.includes(word)))
+      ['admin', 'moderat', 'pastfolio', 'financequest'].some((word) => squeezed.includes(word)))
   );
 }
 

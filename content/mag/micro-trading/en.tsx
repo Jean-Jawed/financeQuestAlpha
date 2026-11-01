@@ -214,7 +214,7 @@ export default function Article() {
         <li>An order journal, reread with a cool head to understand what worked, and what did not.</li>
       </List>
       <P>
-        This is exactly what a simulator on historical prices is for. In FinanceQuest, you apply your rules one
+        This is exactly what a simulator on historical prices is for. In PastFolio, you apply your rules one
         session at a time, without knowing what comes next, and see what they produce on the real market of the
         time, fees included.
       </P>

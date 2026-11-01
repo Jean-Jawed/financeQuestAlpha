@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: FAQ
+ * PASTFOLIO - PAGE: FAQ
  * /[locale]/faq : réponses courtes d'abord, balisage FAQPage
  */
 

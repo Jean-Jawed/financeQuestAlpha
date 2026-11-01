@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - TEST DB CONNECTION
+ * PASTFOLIO - TEST DB CONNECTION
  * Script pour tester la connexion à la base de données
  */
 

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - IMAGE DE PARTAGE D'UN ARTICLE
+ * PASTFOLIO - IMAGE DE PARTAGE D'UN ARTICLE
  */
 
 import { getArticleBySlug, listArticles } from '@/content/mag';
@@ -9,7 +9,7 @@ import { OG_SIZE, renderOgImage } from '@/lib/og';
 
 export const size = OG_SIZE;
 export const contentType = 'image/png';
-export const alt = 'FinanceQuest · La Gazette';
+export const alt = 'PastFolio · La Gazette';
 
 export function generateStaticParams() {
   return LOCALES.flatMap((locale) =>

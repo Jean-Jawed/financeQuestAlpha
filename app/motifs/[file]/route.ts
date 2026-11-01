@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - MOTIFS GUILLOCHÉS
+ * PASTFOLIO - MOTIFS GUILLOCHÉS
  * GET /motifs/rosette-22-35.svg · /motifs/band-8-24.svg · /motifs/seal-14.svg
  * Fichiers SVG calculés une fois, mis en cache sans limite (le contenu ne dépend que du nom)
  */

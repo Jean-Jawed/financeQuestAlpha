@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: Accueil
+ * PASTFOLIO - PAGE: Accueil
  * Direction artistique « La Corbeille » (docs/reviewOct2026/10_direction_artistique.md)
  * « La cloche d'ouverture » : la cloche et le tableau d'affichage, la gravure qui
  * s'imprime au défilement, le krach de 2020 rejoué séance par séance, les chiffres en

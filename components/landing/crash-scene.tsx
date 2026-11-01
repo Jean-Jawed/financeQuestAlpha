@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LANDING: CrashScene
+ * PASTFOLIO - LANDING: CrashScene
  * Le krach du Covid, rejoué au fil du défilement : la courbe réelle du S&P 500
  * (clôtures du 3 février au 31 août 2020) se trace séance après séance, un tableau
  * affiche la date, le niveau et la baisse depuis le sommet, et la question tombe au creux.

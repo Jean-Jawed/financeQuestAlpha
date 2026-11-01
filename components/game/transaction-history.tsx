@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: TransactionHistory
+ * PASTFOLIO - COMPONENT: TransactionHistory
  * Le livre d'ordres : dernières opérations, présentées comme un registre
  */
 

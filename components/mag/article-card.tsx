@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: ArticleCard
+ * PASTFOLIO - COMPONENT: ArticleCard
  * Carte d'article ou de fiche de La Gazette : image, titre, chapô, temps de lecture
  */
 

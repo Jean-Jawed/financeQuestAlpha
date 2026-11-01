@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENTS: schémas pédagogiques de La Gazette
+ * PASTFOLIO - COMPONENTS: schémas pédagogiques de La Gazette
  * Dessinés en SVG (nets à toutes les tailles), dans la palette du site, en français
  * et en anglais. Les courbes « illustratives » sont tirées d'un générateur à graine
  * fixe : elles sont identiques à chaque rendu.

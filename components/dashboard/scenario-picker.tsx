@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: ScenarioPicker
+ * PASTFOLIO - COMPONENT: ScenarioPicker
  * Choix du scénario à la création d'une partie : vignette gravée, nom, règle
  */
 

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: INTERFACE (ENGLISH)
+ * PASTFOLIO - I18N: INTERFACE (ENGLISH)
  * Même forme que le dictionnaire français (vérifié au typage)
  */
 
@@ -15,7 +15,7 @@ export const ui: UiMessages = {
     readingQuote: 'Reading the tape…',
     tickerAria: 'Price changes',
     closeNotification: 'Close notification',
-    brand: 'FinanceQuest',
+    brand: 'PastFolio',
   },
 
   nav: {
@@ -25,7 +25,7 @@ export const ui: UiMessages = {
     mag: 'The Gazette',
     faq: 'FAQ',
     main: 'Main navigation',
-    homeLabel: 'FinanceQuest, dashboard',
+    homeLabel: 'PastFolio, dashboard',
     backHome: 'Back to home',
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
@@ -46,7 +46,7 @@ export const ui: UiMessages = {
   },
 
   footer: {
-    tagline: 'FinanceQuest · Historical stock market',
+    tagline: 'PastFolio · Historical stock market',
     createdBy: 'Created by',
     realPrices: 'Real historical prices.',
     privacy: 'Privacy',
@@ -482,7 +482,7 @@ export const ui: UiMessages = {
     unranked: 'Not ranked',
     share: 'Share',
     copied: 'Link copied',
-    shareText: 'I finished the “{scenario}” scenario of FinanceQuest at {result}. Your turn:',
+    shareText: 'I finished the “{scenario}” scenario of PastFolio at {result}. Your turn:',
     newGame: 'New game',
     dashboard: 'Dashboard',
     leaderboard: 'See the leaderboard',

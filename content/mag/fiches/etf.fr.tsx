@@ -78,7 +78,7 @@ export default function Article() {
       </P>
 
       <InlineCta href={SIGNUP} label={mag.ctaInlineLabel} button={mag.ctaInlineButton}>
-        Dans FinanceQuest, les grands indices s’achètent comme une action : l’équivalent d’un ETF, sans frais de
+        Dans PastFolio, les grands indices s’achètent comme une action : l’équivalent d’un ETF, sans frais de
         gestion.
       </InlineCta>
     </>

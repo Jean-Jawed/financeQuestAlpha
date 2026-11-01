@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - IMAGES DE PARTAGE (Open Graph)
+ * PASTFOLIO - IMAGES DE PARTAGE (Open Graph)
  * Gabarit 1200 × 630 : titre en Bodoni sur l'encre, gravure sur papier, double filet laiton
  * Les gravures sont lues en JPEG dans public/og/ (format accepté par le moteur de rendu)
  */
@@ -51,7 +51,7 @@ interface OgImageOptions {
 }
 
 export async function renderOgImage({ eyebrow, title, subtitle, engraving }: OgImageOptions) {
-  const text = `${eyebrow}${title}${subtitle ?? ''}FinanceQuest`;
+  const text = `${eyebrow}${title}${subtitle ?? ''}PastFolio`;
   const [display, label, image] = await Promise.all([
     loadGoogleFont('Bodoni Moda', 600, text),
     loadGoogleFont('Barlow Condensed', 600, text.toUpperCase()),
@@ -130,7 +130,7 @@ export async function renderOgImage({ eyebrow, title, subtitle, engraving }: OgI
                   textTransform: 'uppercase',
                 }}
               >
-                FinanceQuest
+                PastFolio
               </div>
             </div>
             {image && (

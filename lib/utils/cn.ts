@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - UTILITY: cn (classNames merge)
+ * PASTFOLIO - UTILITY: cn (classNames merge)
  * Utilitaire pour merger des classes Tailwind avec clsx + tailwind-merge
  */
 

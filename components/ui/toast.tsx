@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - UI COMPONENT: ToastContainer
+ * PASTFOLIO - UI COMPONENT: ToastContainer
  * Container pour afficher les notifications toast
  */
 

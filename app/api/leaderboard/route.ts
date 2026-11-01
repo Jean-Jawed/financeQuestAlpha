@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: Leaderboard
+ * PASTFOLIO - API ROUTE: Leaderboard
  * GET /api/leaderboard?scenario=libre&period=all_time&limit=50
  *
  * La meilleure partie terminée de chaque joueur dans le scénario, au rendement.

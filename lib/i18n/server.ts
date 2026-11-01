@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: CÔTÉ SERVEUR
+ * PASTFOLIO - I18N: CÔTÉ SERVEUR
  * Langue d'une page (segment [locale]) ou d'un appel d'API (cookie NEXT_LOCALE)
  */
 

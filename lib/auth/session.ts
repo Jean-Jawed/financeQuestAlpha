@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - AUTH SESSION SERVICE
+ * PASTFOLIO - AUTH SESSION SERVICE
  * Gestion des sessions utilisateur avec Supabase Auth
  */
 

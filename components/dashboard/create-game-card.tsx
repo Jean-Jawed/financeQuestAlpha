@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: CreateGameCard
+ * PASTFOLIO - COMPONENT: CreateGameCard
  * Card pour créer une nouvelle partie avec modal
  */
 

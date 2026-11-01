@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: AssetList
+ * PASTFOLIO - COMPONENT: AssetList
  * La cote : valeurs négociables avec cours du jour et variation, filtres,
  * ouverture du ticket d'ordre
  */

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: ProfileReminder
+ * PASTFOLIO - COMPONENT: ProfileReminder
  * « Complétez votre carte d'agent » : pour qui a passé l'accueil (ou les comptes
  * antérieurs au profil). Masquable ; le choix est mémorisé dans ce navigateur.
  */

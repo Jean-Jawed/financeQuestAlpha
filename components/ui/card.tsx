@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - UI COMPONENT: Card
+ * PASTFOLIO - UI COMPONENT: Card
  * Panneau « plaque gravée » ; variante certificate = cadre de titre au porteur
  */
 

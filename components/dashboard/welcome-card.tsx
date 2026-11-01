@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: WelcomeCard
+ * PASTFOLIO - COMPONENT: WelcomeCard
  * Fiche de personnage du tableau de bord : médaillon orné, pseudo sur plaque,
  * devise, titre et tube d'XP, puis les chiffres de carrière (parties, succès,
  * meilleur rendement). Seul fleuron à pierre de la page.

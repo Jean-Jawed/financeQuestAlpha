@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: Admin Moderate
+ * PASTFOLIO - API ROUTE: Admin Moderate
  * POST /api/admin/moderate : réinitialiser le pseudo, la devise ou l'avatar d'un joueur
  * Réservé aux comptes ayant le rôle `admin` (app_metadata)
  *

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: GameCard
+ * PASTFOLIO - COMPONENT: GameCard
  * Une partie présentée comme un titre encadré : moulure de laiton, noyer,
  * valeur sous verre, rendement sur carte ivoire, bouton émaillé
  */

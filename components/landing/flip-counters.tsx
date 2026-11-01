@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LANDING: FlipCounters
+ * PASTFOLIO - LANDING: FlipCounters
  * Les chiffres du jeu en volets de tableau d'affichage : à leur arrivée à l'écran,
  * chaque chiffre défile de 0 jusqu'à sa valeur, en décalé
  */

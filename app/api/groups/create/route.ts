@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: CREATE GROUP
+ * PASTFOLIO - API ROUTE: CREATE GROUP
  * POST /api/groups/create
  * Crée la partie de groupe (réglages communs, code d'invitation) et la partie de son organisateur
  */

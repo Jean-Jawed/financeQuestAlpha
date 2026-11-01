@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: Footer
+ * PASTFOLIO - COMPONENT: Footer
  * Pied de page : bande guillochée, liens, mentions
  */
 

@@ -1,5 +1,5 @@
 """
-FINANCEQUEST - Traitement des gravures (direction artistique « La Corbeille »)
+PASTFOLIO - Traitement des gravures (direction artistique « La Corbeille »)
 
 Les sources (assets-src/gravures/, générées sur Gemini, non versionnées) sont des gravures noir
 sur blanc. Ce script les uniformise comme le ferait une impression :

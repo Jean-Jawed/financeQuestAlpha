@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: LanguageSwitcher
+ * PASTFOLIO - COMPONENT: LanguageSwitcher
  * « FR · EN » : même page dans l'autre langue (chemin et paramètres conservés)
  */
 

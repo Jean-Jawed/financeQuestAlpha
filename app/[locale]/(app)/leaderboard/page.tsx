@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - PAGE: Leaderboard
+ * PASTFOLIO - PAGE: Leaderboard
  * /[locale]/leaderboard
  */
 

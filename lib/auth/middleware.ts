@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - AUTH MIDDLEWARE HELPERS
+ * PASTFOLIO - AUTH MIDDLEWARE HELPERS
  * Helpers pour vérifier l'authentification dans les API routes
  */
 

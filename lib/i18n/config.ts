@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: CONFIGURATION
+ * PASTFOLIO - I18N: CONFIGURATION
  * Langues du site et correspondances (Intl, Open Graph)
  */
 

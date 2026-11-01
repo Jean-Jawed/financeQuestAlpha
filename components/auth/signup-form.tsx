@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: SignupForm
+ * PASTFOLIO - COMPONENT: SignupForm
  * Formulaire d'inscription
  */
 

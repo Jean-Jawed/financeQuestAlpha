@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - GAME TYPES
+ * PASTFOLIO - GAME TYPES
  * Types TypeScript pour la logique de jeu
  */
 

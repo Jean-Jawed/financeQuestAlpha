@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - SUPABASE SERVER CLIENT
+ * PASTFOLIO - SUPABASE SERVER CLIENT
  * Client Supabase pour Server Components et API Routes
  */
 

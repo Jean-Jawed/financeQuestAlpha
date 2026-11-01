@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LANDING: StampedCertificate
+ * PASTFOLIO - LANDING: StampedCertificate
  * L'appel final : un certificat guilloché, frappé d'un tampon « admis » quand il
  * arrive à l'écran
  */

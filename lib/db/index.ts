@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - DRIZZLE CLIENT
+ * PASTFOLIO - DRIZZLE CLIENT
  * Client PostgreSQL configuré pour Supabase
  */
 

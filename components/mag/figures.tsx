@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENTS: illustrations des articles de La Gazette
+ * PASTFOLIO - COMPONENTS: illustrations des articles de La Gazette
  * - ArchiveFigure : image d'archive libre de droits (public/mag/), avec auteur,
  *   date, licence et lien vers la source (content/mag/credits.json)
  * - EngravingFigure : gravure du site (public/gravures/)

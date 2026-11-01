@@ -82,7 +82,7 @@ export default function Article() {
         selling: it protects you from a bad price, but may never be filled.
       </P>
       <P>
-        In FinanceQuest, orders fill at the session’s <Em>closing price</Em>, the last price of the day. It is the
+        In PastFolio, orders fill at the session’s <Em>closing price</Em>, the last price of the day. It is the
         reference price used by newspapers, indices and funds.
       </P>
 
@@ -174,7 +174,7 @@ export default function Article() {
       </P>
       <P>
         This is why the proceeds of a short sale stay locked as collateral, and a minimum margin is required.
-        FinanceQuest applies the same logic: your net value must cover half of your short positions.
+        PastFolio applies the same logic: your net value must cover half of your short positions.
       </P>
 
       <ShortPayoffDiagram locale="en" />
@@ -235,7 +235,7 @@ export default function Article() {
         your decisions by their return.
       </P>
       <P>
-        FinanceQuest is built on a rule that keeps the exercise honest: you replay the past with real prices, but{' '}
+        PastFolio is built on a rule that keeps the exercise honest: you replay the past with real prices, but{' '}
         <Em>you never see tomorrow</Em>. You cannot use what we know today; you decide with the information of the
         moment, like an investor at the time. A good way to test your rules before applying them for real, and to
         discover your own temperament when markets rise and fall.

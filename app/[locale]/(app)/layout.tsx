@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LAYOUT: App
+ * PASTFOLIO - LAYOUT: App
  * En-tête, pied de page et notifications : pages du jeu, « Le jeu », FAQ et magazine
  */
 

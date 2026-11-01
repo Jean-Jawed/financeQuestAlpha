@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: CHEMINS
+ * PASTFOLIO - I18N: CHEMINS
  * Préfixe de langue dans les adresses (/fr/…, /en/…)
  */
 

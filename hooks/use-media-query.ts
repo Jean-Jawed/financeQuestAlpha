@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - HOOK: useMediaQuery
+ * PASTFOLIO - HOOK: useMediaQuery
  * Vrai si la requête média correspond (faux côté serveur et au premier rendu)
  */
 

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - CRON: Cleanup Inactive Games
+ * PASTFOLIO - CRON: Cleanup Inactive Games
  * DELETE /api/cron/cleanup-games
  * 
  * Supprime les games inactives depuis plus de 90 jours

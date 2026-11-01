@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LAYOUT RACINE PAR LANGUE
+ * PASTFOLIO - LAYOUT RACINE PAR LANGUE
  * /fr/… et /en/… : polices, langue du document, traductions, identité du site
  */
 

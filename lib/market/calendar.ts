@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - MARKET CALENDAR
+ * PASTFOLIO - MARKET CALENDAR
  * Calendrier de jeu piloté par les données de la base prix
  *
  * Un « jour de bourse » est une date où au moins 25 % des actifs hors crypto

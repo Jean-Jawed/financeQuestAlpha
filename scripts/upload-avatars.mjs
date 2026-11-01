@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - UPLOAD DES AVATARS PAR DÉFAUT
+ * PASTFOLIO - UPLOAD DES AVATARS PAR DÉFAUT
  * Dépose assets-src/avatars/decoupes/*.webp (256 px, déjà convertis par
  * assets-src/avatars/decoupe.py) dans le bucket « avatars », sous defaults/.
  *

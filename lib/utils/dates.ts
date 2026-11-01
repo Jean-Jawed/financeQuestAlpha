@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - DATE UTILITIES
+ * PASTFOLIO - DATE UTILITIES
  * Helpers pour manipulation des dates (skip week-ends, jours ouvrables, etc.)
  */
 

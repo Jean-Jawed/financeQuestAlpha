@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - INSTANTANÉS DE SÉANCE
+ * PASTFOLIO - INSTANTANÉS DE SÉANCE
  * Pour les parties de groupe : à chaque ordre et chaque séance, la valeur du
  * portefeuille, le nombre d'ordres et de positions ouvertes à la date de jeu.
  * C'est tout ce que voient les concurrents, au plus tard à leur propre date.

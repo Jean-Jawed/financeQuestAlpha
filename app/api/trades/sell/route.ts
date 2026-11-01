@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: SELL
+ * PASTFOLIO - API ROUTE: SELL
  * POST /api/trades/sell
  * Vendre un actif (fermer position long)
  */

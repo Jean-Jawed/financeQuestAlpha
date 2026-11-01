@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - FX RATES
+ * PASTFOLIO - FX RATES
  * Taux de change historiques lus dans la base prix (actifs de type CURRENCY)
  *
  * Toutes les devises sont ramenées au dollar : EURUSD, GBPUSD, AUDUSD sont

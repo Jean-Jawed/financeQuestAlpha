@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - UI COMPONENT: Badge
+ * PASTFOLIO - UI COMPONENT: Badge
  * Composant Badge pour afficher statuts, performances, etc.
  */
 

@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: SERVEUR (FRANÇAIS)
+ * PASTFOLIO - I18N: SERVEUR (FRANÇAIS)
  * Messages de l'API et libellés des données lues en base
  * (succès, types d'actifs), dans la langue du joueur (cookie NEXT_LOCALE)
  */

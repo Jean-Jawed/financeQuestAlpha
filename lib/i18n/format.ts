@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - I18N: FORMATS
+ * PASTFOLIO - I18N: FORMATS
  * Variables dans les textes, et formats de nombres, devises et dates selon la langue
  */
 

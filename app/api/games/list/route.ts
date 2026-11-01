@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: LIST GAMES
+ * PASTFOLIO - API ROUTE: LIST GAMES
  * GET /api/games/list
  */
 

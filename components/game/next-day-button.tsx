@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: NextDayButton
+ * PASTFOLIO - COMPONENT: NextDayButton
  * La cloche : date en volets, frise de la partie, clôture de la séance
  * Partie de groupe en tempo synchronisé : le joueur se déclare prêt, la séance
  * avance quand tout le groupe l'est

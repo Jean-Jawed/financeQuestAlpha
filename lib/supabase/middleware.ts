@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - SUPABASE MIDDLEWARE CLIENT
+ * PASTFOLIO - SUPABASE MIDDLEWARE CLIENT
  * Helper pour gérer l'auth Supabase dans le Middleware Next.js
  */
 

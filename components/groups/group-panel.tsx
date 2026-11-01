@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: GroupPanel
+ * PASTFOLIO - COMPONENT: GroupPanel
  * Le panneau « Groupe » d'une partie de groupe : règles et progression, code
  * d'invitation, salle d'attente (tempo synchronisé), classement à la date du joueur
  * et messagerie. Rafraîchi toutes les 15 secondes tant que l'onglet est visible.

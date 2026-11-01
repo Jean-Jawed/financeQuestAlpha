@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - LANDING: GroupShowcase
+ * PASTFOLIO - LANDING: GroupShowcase
  * Section « En groupe » de l'accueil et de la page Le jeu : le principe, ce qu'on
  * voit des autres, les deux tempos et les cinq modes (textes du jeu lui-même)
  */

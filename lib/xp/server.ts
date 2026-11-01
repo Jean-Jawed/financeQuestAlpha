@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - XP : ATTRIBUTION
+ * PASTFOLIO - XP : ATTRIBUTION
  * Une seule porte d'entrée, awardXp : journal idempotent (user, kind, ref),
  * jour réel (ouverture, série, retour), XP de repos, collections et paliers,
  * puis compteurs du joueur. Règles : ./rules.ts

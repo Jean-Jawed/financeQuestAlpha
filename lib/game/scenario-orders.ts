@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - RÈGLES DE SCÉNARIO APPLIQUÉES AUX ORDRES
+ * PASTFOLIO - RÈGLES DE SCÉNARIO APPLIQUÉES AUX ORDRES
  * Ordre et actif autorisés par le scénario de la partie (côté serveur)
  */
 

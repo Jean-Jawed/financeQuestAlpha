@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - API ROUTE: JOIN GROUP
+ * PASTFOLIO - API ROUTE: JOIN GROUP
  * POST /api/groups/join
  * Rejoindre un groupe par son code : crée la partie du joueur aux réglages du groupe
  */

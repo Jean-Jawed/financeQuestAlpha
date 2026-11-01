@@ -1,5 +1,5 @@
 /**
- * FINANCEQUEST - COMPONENT: KitView
+ * PASTFOLIO - COMPONENT: KitView
  * Recette de la boîte à outils : chaque pièce dans ses états, en largeur
  * bureau puis dans un cadre de 390 px (téléphone). Page /admin/kit.
  */
