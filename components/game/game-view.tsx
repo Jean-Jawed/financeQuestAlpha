@@ -255,7 +255,7 @@ export function GameView({ gameId }: { gameId: string }) {
       onDayAdvanced={handleActionDone}
       sync={sync}
       onWaiting={() => groupView && setGroupView({ ...groupView, viewer: { ...groupView.viewer, ready: true } })}
-      aside={layout === 'desk' ? <Gauge value={cashShare} label={t.cashShare} size={84} /> : undefined}
+      aside={layout === 'desk' ? <Gauge value={cashShare} label={t.cashShare} size={64} /> : undefined}
     />
   );
 
@@ -404,10 +404,10 @@ export function GameView({ gameId }: { gameId: string }) {
         <div className="container mx-auto space-y-8 px-4 py-8">
           {meta}
 
-          <section className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_minmax(0,1fr)] items-stretch gap-6">
+          <section className="grid grid-cols-[minmax(0,23fr)_minmax(0,21fr)_minmax(0,24fr)] items-stretch gap-5">
             <PlayerPlate achievements={game.achievementsUnlocked} sessions={game.sessionsPlayed} groupRank={groupRank} />
             <ValueCounter portfolio={portfolio} currency={game.currency} rollKey={game.currentDate} />
-            <Frame className="p-5">{nextDay('desk')}</Frame>
+            <Frame className="h-full px-4 py-2.5">{nextDay('desk')}</Frame>
           </section>
 
           <section className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1.1fr)]">

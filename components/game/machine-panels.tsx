@@ -9,7 +9,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Gear, OrnateDivider } from '@/components/brand/ornaments';
+import { Gear } from '@/components/brand/ornaments';
 import { Frame, Plate } from '@/components/machine/frame';
 import { Medallion, Odometer, XpTube } from '@/components/machine/instruments';
 import { useAuth } from '@/hooks/use-auth';
@@ -51,15 +51,13 @@ export function PlayerPlate({ achievements, sessions, groupRank, compact = false
   }
 
   return (
-    <Frame fleuron outerClassName={className} className="flex items-center gap-5 overflow-hidden p-5 pl-9">
-      <Gear className="absolute -left-14 -top-12 h-44 w-44 opacity-25" />
-      <Medallion avatarId={user.avatarId} name={user.name} xpTotal={user.xpTotal} size={128} ornate />
+    <Frame outerClassName={className} className="flex h-full items-center gap-4 overflow-hidden px-4 py-2.5 pl-7">
+      <Gear className="absolute -left-12 -top-12 h-32 w-32 opacity-20" />
+      <Medallion avatarId={user.avatarId} name={user.name} xpTotal={user.xpTotal} size={72} ornate />
       <div className="relative min-w-0 flex-1">
-        <Plate className="max-w-full whitespace-normal font-display text-base normal-case leading-tight tracking-normal">
-          {user.name}
-        </Plate>
-        <XpTube xpTotal={user.xpTotal} className="mt-4" />
-        <div className="mt-4 flex flex-wrap gap-2">
+        <Plate className="max-w-full truncate px-3 py-1 font-display text-sm normal-case leading-tight tracking-normal">{user.name}</Plate>
+        <XpTube xpTotal={user.xpTotal} className="mt-2" />
+        <div className="mt-2 flex flex-wrap gap-1.5">
           {groupRank && (
             <span className="ivory label px-2 py-0.5 text-[10px] text-ivory-ink">
               {fmt(t.groupRank, { rank: groupRank.rank, total: groupRank.total })}
@@ -97,38 +95,53 @@ export function ValueCounter({ portfolio, currency, rollKey, compact = false, cl
     ...(portfolio.shortPositionsPnl !== 0 || portfolio.shortLiability > 0 ? [{ label: t.shorts, value: portfolio.shortPositionsPnl }] : []),
   ];
 
-  return (
-    <Frame
-      variant="mirror"
-      crest={compact ? undefined : up ? 'emerald' : 'ruby'}
-      outerClassName={className}
-      className={cn('flex flex-col items-center justify-center text-center', compact ? 'gap-2 px-3 py-4' : 'gap-3 px-6 pb-5 pt-9')}
-    >
-      <p className="font-display text-xs uppercase tracking-[0.22em] text-brass-bright">{t.netValue}</p>
-      {!compact && <OrnateDivider />}
-      <div className="glass max-w-full overflow-hidden px-3 py-2.5">
-        <Odometer text={f.currency(portfolio.totalValue, currency)} rollKey={rollKey} className={compact ? 'text-2xl' : 'text-3xl xl:text-4xl'} />
-      </div>
-      <div className="flex flex-wrap justify-center gap-2">
-        <span className={cn('ivory num px-3 py-1 text-sm font-semibold', up ? 'text-enamel-green' : 'text-enamel-red')}>
-          {up ? '▲ ' : '▼ '}
-          {f.percent(portfolio.returnPercentage, 2)}
-        </span>
-        <span className={cn('ivory num px-3 py-1 text-sm font-semibold', up ? 'text-enamel-green' : 'text-enamel-red')}>
-          {up ? '+' : ''}
-          {f.currency(portfolio.profitLoss, currency)}
-        </span>
-      </div>
-      {!compact && (
-        <dl className="mt-1 flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs">
+  const chips = (
+    <>
+      <span className={cn('ivory num whitespace-nowrap font-semibold', compact ? 'px-3 py-1 text-sm' : 'px-2 py-0.5 text-xs', up ? 'text-enamel-green' : 'text-enamel-red')}>
+        {up ? '▲ ' : '▼ '}
+        {f.percent(portfolio.returnPercentage, 2)}
+      </span>
+      <span className={cn('ivory num whitespace-nowrap font-semibold', compact ? 'px-3 py-1 text-sm' : 'px-2 py-0.5 text-xs', up ? 'text-enamel-green' : 'text-enamel-red')}>
+        {up ? '+' : ''}
+        {f.currency(portfolio.profitLoss, currency)}
+      </span>
+    </>
+  );
+
+  // Bandeau de tête (bureau) : compteur à gauche, rendement et détail à droite
+  if (!compact) {
+    return (
+      <Frame variant="mirror" outerClassName={className} className="flex h-full flex-col justify-center gap-1.5 px-4 py-2">
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 truncate font-display text-[10px] uppercase tracking-[0.16em] text-brass-bright">{t.netValue}</p>
+          <div className="flex shrink-0 gap-1.5">{chips}</div>
+        </div>
+        <div className="glass max-w-full self-start overflow-hidden px-2.5 py-1">
+          <Odometer text={f.currency(portfolio.totalValue, currency)} rollKey={rollKey} className="text-xl xl:text-2xl" />
+        </div>
+        <dl className="flex flex-wrap gap-x-3 whitespace-nowrap text-[10px]">
           {lines.map((line) => (
-            <div key={line.label} className="flex gap-1.5">
+            <div key={line.label} className="flex gap-1">
               <dt className="text-paper-dim">{line.label}</dt>
               <dd className="num text-paper">{f.currency(line.value, currency)}</dd>
             </div>
           ))}
         </dl>
-      )}
+      </Frame>
+    );
+  }
+
+  return (
+    <Frame
+      variant="mirror"
+      outerClassName={className}
+      className="flex flex-col items-center justify-center gap-2 px-3 py-4 text-center"
+    >
+      <p className="font-display text-xs uppercase tracking-[0.22em] text-brass-bright">{t.netValue}</p>
+      <div className="glass max-w-full overflow-hidden px-3 py-2.5">
+        <Odometer text={f.currency(portfolio.totalValue, currency)} rollKey={rollKey} className="text-2xl" />
+      </div>
+      <div className="flex flex-wrap justify-center gap-2">{chips}</div>
     </Frame>
   );
 }

@@ -147,8 +147,8 @@ export function NextDayButton({
   const button = (
     <EnamelButton
       tone="brass"
-      size="lg"
-      className={cn('w-full whitespace-nowrap', layout === 'bar' ? 'min-h-[52px] px-3 text-sm' : 'text-base xl:text-lg')}
+      size={layout === 'bar' ? 'lg' : 'md'}
+      className={cn('w-full whitespace-nowrap', layout === 'bar' && 'min-h-[52px] px-3 text-sm')}
       onClick={handleNextDay}
       disabled={loading || isFinished || syncBlocked}
       aria-busy={loading}
@@ -163,28 +163,27 @@ export function NextDayButton({
   if (layout === 'bar') return button;
 
   return (
-    <section aria-label={t.section} className="space-y-4">
-      <SolariDate date={currentDate} />
+    <section aria-label={t.section} className="flex h-full items-center gap-4">
+      <SolariDate date={currentDate} small className="shrink-0" />
 
-      {/* Frise de la partie */}
-      <div>
-        <div className="relative h-2 overflow-hidden rounded-full bg-[#120C16] shadow-[inset_0_1px_2px_rgba(0,0,0,0.9)]">
-          <div
-            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-brass-deep to-brass-bright transition-[width] duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <div className="num mt-1.5 flex justify-between text-[11px] text-paper-dim">
-          <span>{f.dateShort(startDate)}</span>
-          <span>{fmt(t.day, { elapsed: elapsedDays, total: totalDays })}</span>
-          <span>{f.dateShort(endDate)}</span>
+      <div className="min-w-0 flex-1 space-y-2">
+        {button}
+        {/* Frise de la partie */}
+        <div>
+          <div className="relative h-1.5 overflow-hidden rounded-full bg-[#120C16] shadow-[inset_0_1px_2px_rgba(0,0,0,0.9)]">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-brass-deep to-brass-bright transition-[width] duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="num mt-1 flex justify-between gap-2 whitespace-nowrap text-[10px] text-paper-dim" title={`${f.dateShort(startDate)} → ${f.dateShort(endDate)}`}>
+            <span>{fmt(t.day, { elapsed: elapsedDays, total: totalDays })}</span>
+            <span className="max-xl:hidden">→ {f.dateShort(endDate)}</span>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex-1">{button}</div>
-        {aside}
-      </div>
+      {aside && <div className="shrink-0 max-xl:hidden">{aside}</div>}
     </section>
   );
 }

@@ -27,33 +27,36 @@ function Flap({ value, className }: { value: string; className?: string }) {
 interface SolariDateProps {
   /** YYYY-MM-DD */
   date: string;
+  /** Volets réduits (bandeau de tête de l'écran de jeu) */
+  small?: boolean;
   className?: string;
 }
 
-export function SolariDate({ date, className }: SolariDateProps) {
+export function SolariDate({ date, small = false, className }: SolariDateProps) {
   const { m, locale } = useI18n();
   const d = new Date(`${date}T00:00:00Z`);
   const day = String(d.getUTCDate()).padStart(2, '0');
   const month = m.game.solari.months[d.getUTCMonth()];
   const year = String(d.getUTCFullYear());
+  const pad = small && 'px-1.5 py-0.5';
 
   return (
-    <div className={cn('flex flex-col items-center gap-2', className)}>
+    <div className={cn('flex flex-col items-center', small ? 'gap-1' : 'gap-2', className)}>
       <span className="label text-[10px]">{m.game.solari.weekdays[d.getUTCDay()]}</span>
-      <time dateTime={date} className="flex items-stretch gap-1.5 text-3xl [perspective:400px]">
+      <time dateTime={date} className={cn('flex items-stretch [perspective:400px]', small ? 'gap-1 text-lg' : 'gap-1.5 text-3xl')}>
         {/* Ordre des volets selon l'usage : 15 JUIN 2023 · JUN 15 2023 */}
         {locale === 'en' ? (
           <>
-            <Flap value={month} className="min-w-[4.2ch]" />
-            <Flap value={day} className="w-[2.4ch] tabular-nums" />
+            <Flap value={month} className={cn('min-w-[4.2ch]', pad)} />
+            <Flap value={day} className={cn('min-w-[2.4ch] tabular-nums', pad)} />
           </>
         ) : (
           <>
-            <Flap value={day} className="w-[2.4ch] tabular-nums" />
-            <Flap value={month} className="min-w-[4.2ch]" />
+            <Flap value={day} className={cn('min-w-[2.4ch] tabular-nums', pad)} />
+            <Flap value={month} className={cn('min-w-[4.2ch]', pad)} />
           </>
         )}
-        <Flap value={year} className="tabular-nums" />
+        <Flap value={year} className={cn('tabular-nums', pad)} />
       </time>
     </div>
   );

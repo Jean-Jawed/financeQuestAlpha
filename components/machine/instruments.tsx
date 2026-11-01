@@ -95,9 +95,9 @@ export function XpTube({ xpTotal, compact = false, className }: { xpTotal: numbe
   return (
     <div className={className}>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="label text-[10px] text-paper">{m.xp.titles[titleFor(info.level)]}</span>
+        <span className="label min-w-0 truncate text-[10px] text-paper">{m.xp.titles[titleFor(info.level)]}</span>
         {!compact && (
-          <span className="num text-xs text-paper-dim">
+          <span className="num shrink-0 whitespace-nowrap text-xs text-paper-dim">
             {f.number(info.intoLevel, 0)} / {f.number(info.levelSize, 0)} XP
           </span>
         )}
