@@ -11,6 +11,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { ArticleCard } from '@/components/mag/article-card';
 import { FinalCta } from '@/components/mag/prose';
 import { JsonLd } from '@/components/seo/json-ld';
+import { wikidataThings, wikidataUrl } from '@/lib/wikidata';
 import { getArticleBySlug, listArticles, listRelated } from '@/content/mag';
 import { loadArticleBody } from '@/content/mag/bodies';
 import { LOCALES, type Locale } from '@/lib/i18n/config';
@@ -89,16 +90,21 @@ export default async function ArticlePage({ params }: { params: Params }) {
             keywords: article.keywords.join(', '),
             author: { '@type': 'Organization', name: 'PastFolio', url: absoluteUrl(href('/')) },
             publisher: { '@id': `${getSiteUrl()}/#studio` },
-            // Fiche : le terme qu'elle définit
-            ...(article.term && {
-              about: {
-                '@type': 'DefinedTerm',
-                name: article.term,
-                description: article.description,
-                url,
-                inDefinedTermSet: { '@type': 'DefinedTermSet', name: t.fichesTitle, url: absoluteUrl(href('/mag')) },
-              },
-            }),
+            isPartOf: { '@id': `${absoluteUrl(href('/'))}#website` },
+            // Notions traitées, reliées à Wikidata ; une fiche définit la première
+            about: article.term
+              ? [
+                  {
+                    '@type': 'DefinedTerm',
+                    name: article.term,
+                    description: article.description,
+                    url,
+                    ...(article.wikidata[0] && { sameAs: wikidataUrl(article.wikidata[0]) }),
+                    inDefinedTermSet: { '@type': 'DefinedTermSet', name: t.fichesTitle, url: absoluteUrl(href('/mag')) },
+                  },
+                  ...wikidataThings(article.wikidata.slice(1), locale),
+                ]
+              : wikidataThings(article.wikidata, locale),
           },
           {
             '@context': 'https://schema.org',
@@ -158,7 +164,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
             height={article.imageHeight}
             priority
             sizes="(min-width: 1024px) 1000px, 100vw"
-            className="engraving h-auto max-h-[560px] w-full object-cover"
+            className={cn('engraving h-auto max-h-[560px] w-full object-cover', article.imagePosition === 'top' && 'object-top')}
           />
         </div>
       </figure>

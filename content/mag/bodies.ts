@@ -19,6 +19,15 @@ export async function loadArticleBody(id: string, locale: Locale): Promise<Artic
     },
     krachs: { fr: () => import('./krachs/fr'), en: () => import('./krachs/en') },
     change: { fr: () => import('./change/fr'), en: () => import('./change/en') },
+    'combien-pour-commencer': {
+      fr: () => import('./combien-pour-commencer/fr'),
+      en: () => import('./combien-pour-commencer/en'),
+    },
+    'pourquoi-traders-perdent': {
+      fr: () => import('./pourquoi-traders-perdent/fr'),
+      en: () => import('./pourquoi-traders-perdent/en'),
+    },
+    'quand-vendre': { fr: () => import('./quand-vendre/fr'), en: () => import('./quand-vendre/en') },
     action: { fr: () => import('./fiches/action.fr'), en: () => import('./fiches/action.en') },
     etf: { fr: () => import('./fiches/etf.fr'), en: () => import('./fiches/etf.en') },
     indice: { fr: () => import('./fiches/indice.fr'), en: () => import('./fiches/indice.en') },

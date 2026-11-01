@@ -20,6 +20,7 @@ import { StampedCertificate } from '@/components/landing/stamped-certificate';
 import { Footer } from '@/components/layout/footer';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { JsonLd } from '@/components/seo/json-ld';
+import { wikidataThings, wikidataUrl } from '@/lib/wikidata';
 import { ArticleCard } from '@/components/mag/article-card';
 import { GAME_CURRENCIES } from '@/lib/game/currency';
 import { getTickerData, type TickerData } from '@/lib/market/ticker';
@@ -82,10 +83,14 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         data={{
           '@context': 'https://schema.org',
           '@type': 'VideoGame',
+          '@id': `${absoluteUrl(href('/'))}#game`,
           name: site.seo.siteName,
           url: absoluteUrl(href('/')),
           description: site.seo.defaultDescription,
-          genre: site.seo.gameGenre,
+          // Genre en clair, puis les genres Wikidata correspondants
+          genre: [site.seo.gameGenre, ...(['Q7617907', 'Q1610017', 'Q848991', 'Q1140363'] as const).map(wikidataUrl)],
+          about: wikidataThings(['Q475000', 'Q3997173', 'Q4290', 'Q1416374'], locale),
+          isPartOf: { '@id': `${absoluteUrl(href('/'))}#website` },
           gamePlatform: 'Web browser',
           applicationCategory: 'GameApplication',
           operatingSystem: 'Any',

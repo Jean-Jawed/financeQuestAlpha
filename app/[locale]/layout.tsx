@@ -10,6 +10,7 @@ import { LOCALES, type Locale } from '@/lib/i18n/config';
 import { getI18n, resolveLocale } from '@/lib/i18n/server';
 import { localizePath } from '@/lib/i18n/paths';
 import { JsonLd } from '@/components/seo/json-ld';
+import { wikidataThings } from '@/lib/wikidata';
 import { absoluteUrl, getSiteUrl, pageMetadata } from '@/lib/seo';
 import '../globals.css';
 
@@ -104,6 +105,7 @@ export default async function LocaleLayout({
               url: home,
               inLanguage: locale,
               description: site.seo.defaultDescription,
+              about: wikidataThings(['Q7617907', 'Q475000', 'Q3997173', 'Q1416374'], locale),
               publisher: { '@id': `${getSiteUrl()}/#studio` },
             },
           ]}

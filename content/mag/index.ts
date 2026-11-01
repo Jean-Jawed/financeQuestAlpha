@@ -6,6 +6,7 @@
 
 import type { ComponentType } from 'react';
 import type { Locale } from '@/lib/i18n/config';
+import type { WikidataId } from '@/lib/wikidata';
 
 // ==========================================
 // TYPES
@@ -41,8 +42,12 @@ export interface Article {
   image: string;
   imageWidth: number;
   imageHeight: number;
+  /** Cadrage de l'image d'en-tête, recadrée en bandeau : « top » pour une image en hauteur (défaut : centre) */
+  imagePosition?: 'top';
   /** Lectures conseillées en bas de page, par identifiant */
   related: string[];
+  /** Notions traitées, reliées à Wikidata (données structurées) ; une fiche commence par son terme */
+  wikidata: WikidataId[];
   locales: Record<Locale, ArticleLocaleMeta>;
 }
 
@@ -61,11 +66,13 @@ export interface LocalizedArticle extends ArticleLocaleMeta {
   id: string;
   kind: ArticleKind;
   related: string[];
+  wikidata: WikidataId[];
   published: string;
   updated: string;
   image: string;
   imageWidth: number;
   imageHeight: number;
+  imagePosition?: 'top';
   /** Adresse sans langue dans chaque langue : /mag/<slug> */
   paths: Record<Locale, string>;
 }
@@ -78,7 +85,8 @@ const ARTICLES: Article[] = [
   {
     id: 'avant-de-trader',
     kind: 'article',
-    related: ['krachs', 'vente-a-decouvert', 'etf'],
+    related: ['combien-pour-commencer', 'pourquoi-traders-perdent', 'quand-vendre'],
+    wikidata: ['Q3997173', 'Q731453', 'Q106526', 'Q2032513', 'Q2874240'],
     published: '2026-10-22',
     updated: '2026-10-22',
     image: '/gravures/apprenti.webp',
@@ -129,6 +137,7 @@ const ARTICLES: Article[] = [
     id: 'micro-trading',
     kind: 'article',
     related: ['avant-de-trader', 'volatilite', 'indice'],
+    wikidata: ['Q139445', 'Q138372'],
     published: '2026-10-22',
     updated: '2026-10-22',
     image: '/gravures/automate.webp',
@@ -180,6 +189,7 @@ const ARTICLES: Article[] = [
     id: 'krachs',
     kind: 'article',
     related: ['volatilite', 'avant-de-trader', 'vente-a-decouvert'],
+    wikidata: ['Q1020018', 'Q201684'],
     published: '2026-10-23',
     updated: '2026-10-23',
     image: '/mag/bulle-mers-du-sud-1721.webp',
@@ -230,6 +240,7 @@ const ARTICLES: Article[] = [
     id: 'change',
     kind: 'article',
     related: ['indice', 'etf', 'avant-de-trader'],
+    wikidata: ['Q66100', 'Q1542397'],
     published: '2026-10-23',
     updated: '2026-10-23',
     image: '/mag/preteur-metsys-1514.webp',
@@ -261,11 +272,165 @@ const ARTICLES: Article[] = [
     },
   },
 
+  {
+    id: 'combien-pour-commencer',
+    kind: 'article',
+    related: ['avant-de-trader', 'etf', 'indice'],
+    wikidata: ['Q4290', 'Q85759142', 'Q1267212', 'Q731453', 'Q959606'],
+    published: '2026-11-01',
+    updated: '2026-11-01',
+    image: '/mag/obligation-1887.webp',
+    imageWidth: 599,
+    imageHeight: 820,
+    imagePosition: 'top',
+    locales: {
+      fr: {
+        slug: 'combien-d-argent-pour-commencer-en-bourse',
+        title: 'Combien d’argent faut-il pour commencer en bourse ?',
+        shortTitle: 'Combien pour commencer en bourse',
+        description:
+          'Montant minimum, épargne de précaution, poids des frais, ETF, investissement programmé, PEA : combien d’argent il faut vraiment pour commencer à investir en bourse.',
+        lead: 'On peut ouvrir un compte avec presque rien. Mais le bon montant dépend moins d’un chiffre que de quelques règles : l’argent disponible, les frais, et la façon de ne pas tout miser sur une seule valeur.',
+        readingMinutes: 7,
+        keywords: [
+          'combien pour commencer en bourse',
+          'investir avec peu d’argent',
+          'montant minimum bourse',
+          'épargne de précaution',
+          'investissement programmé',
+          'PEA',
+          'débuter en bourse',
+        ],
+        imageAlt: 'Titre d’obligation imprimé de 1887, orné de gravures de trains, de ponts et d’armoiries',
+      },
+      en: {
+        slug: 'how-much-money-to-start-investing',
+        title: 'How much money do you need to start investing in stocks?',
+        shortTitle: 'How much to start investing',
+        description:
+          'Minimum amount, emergency fund, the weight of fees, ETFs, investing monthly, tax-advantaged accounts: how much money you really need to start investing in the stock market.',
+        lead: 'You can open an account with almost nothing. But the right amount depends less on a figure than on a few rules: money you can spare, fees, and how to avoid betting everything on one stock.',
+        readingMinutes: 7,
+        keywords: [
+          'how much to start investing',
+          'investing with little money',
+          'minimum to invest in stocks',
+          'emergency fund',
+          'dollar cost averaging',
+          'stock market for beginners',
+        ],
+        imageAlt: 'Printed bond certificate from 1887, decorated with engravings of trains, bridges and coats of arms',
+      },
+    },
+  },
+  {
+    id: 'pourquoi-traders-perdent',
+    kind: 'article',
+    related: ['quand-vendre', 'micro-trading', 'avant-de-trader'],
+    wikidata: ['Q1064131', 'Q1129769', 'Q2032513', 'Q11698132', 'Q16503490'],
+    published: '2026-11-01',
+    updated: '2026-11-01',
+    image: '/mag/triomphe-ours-1903.webp',
+    imageWidth: 1360,
+    imageHeight: 1271,
+    locales: {
+      fr: {
+        slug: 'pourquoi-la-plupart-des-traders-perdent-de-l-argent',
+        title: 'Pourquoi la plupart des traders particuliers perdent de l’argent',
+        shortTitle: 'Pourquoi les traders perdent',
+        description:
+          'AMF, ESMA, études sur le day trading : jusqu’à 9 traders particuliers sur 10 perdent de l’argent. Frais, levier, biais, adversaires professionnels : les causes, et comment les éviter.',
+        lead: 'Les publicités montrent des gagnants ; les études montrent une large majorité de perdants. Les causes sont connues, mesurées, et pour la plupart évitables.',
+        readingMinutes: 8,
+        keywords: [
+          'pourquoi les traders perdent',
+          'pourcentage de traders perdants',
+          'day trading',
+          'CFD',
+          'frais de courtage',
+          'effet de levier',
+          'finance comportementale',
+        ],
+        imageAlt: 'Caricature de 1903 : un ours brandit une épée au-dessus d’un taureau terrassé, devant la foule de Wall Street',
+      },
+      en: {
+        slug: 'why-most-traders-lose-money',
+        title: 'Why most retail traders lose money',
+        shortTitle: 'Why traders lose money',
+        description:
+          'AMF, ESMA, day trading studies: up to 9 retail traders in 10 lose money. Fees, leverage, biases, professional opponents: the causes, and how to avoid them.',
+        lead: 'The ads show winners; the research shows a large majority of losers. The causes are known, measured, and mostly avoidable.',
+        readingMinutes: 8,
+        keywords: [
+          'why traders lose money',
+          'percentage of traders who lose',
+          'day trading',
+          'CFD',
+          'trading fees',
+          'leverage',
+          'behavioral finance',
+        ],
+        imageAlt: 'Cartoon from 1903: a bear brandishes a sword over a fallen bull, before the Wall Street crowd',
+      },
+    },
+  },
+  {
+    id: 'quand-vendre',
+    kind: 'article',
+    related: ['pourquoi-traders-perdent', 'volatilite', 'avant-de-trader'],
+    wikidata: ['Q2609843', 'Q1229229', 'Q2874240', 'Q1574928'],
+    published: '2026-11-01',
+    updated: '2026-11-01',
+    image: '/mag/courtier-telescripteur-1894.webp',
+    imageWidth: 647,
+    imageHeight: 813,
+    imagePosition: 'top',
+    locales: {
+      fr: {
+        slug: 'quand-vendre-une-action',
+        title: 'Quand vendre une action ? Les bonnes et les mauvaises raisons',
+        shortTitle: 'Quand vendre une action',
+        description:
+          'Vendre une action en perte ou en gain ? Effet de disposition, stop loss fixe ou suiveur, rééquilibrage : quand vendre, et les erreurs qui coûtent le plus cher aux débutants.',
+        lead: 'Acheter est facile ; vendre oblige à trancher. Les études montrent que les particuliers vendent trop tôt leurs gagnants et gardent trop longtemps leurs perdants. Voici comment décider à froid.',
+        readingMinutes: 7,
+        keywords: [
+          'quand vendre une action',
+          'vendre une action en perte',
+          'stop loss',
+          'stop suiveur',
+          'effet de disposition',
+          'prendre ses bénéfices',
+        ],
+        imageAlt: 'Un courtier en haut-de-forme lit le ruban d’un téléscripteur boursier, en 1894',
+      },
+      en: {
+        slug: 'when-to-sell-a-stock',
+        title: 'When should you sell a stock? The good and bad reasons',
+        shortTitle: 'When to sell a stock',
+        description:
+          'Sell a stock at a loss or a gain? The disposition effect, fixed and trailing stop losses, rebalancing: when to sell, and the mistakes that cost beginners the most.',
+        lead: 'Buying is easy; selling forces a decision. Studies show that individuals sell their winners too early and hold their losers too long. Here is how to decide with a cool head.',
+        readingMinutes: 7,
+        keywords: [
+          'when to sell a stock',
+          'selling a stock at a loss',
+          'stop loss',
+          'trailing stop',
+          'disposition effect',
+          'taking profits',
+        ],
+        imageAlt: 'A broker in a top hat reads a stock ticker tape, in 1894',
+      },
+    },
+  },
+
   // ---------- Fiches ----------
   {
     id: 'action',
     kind: 'fiche',
     related: ['dividende', 'indice', 'avant-de-trader'],
+    wikidata: ['Q11692', 'Q475000'],
     published: '2026-10-23',
     updated: '2026-10-23',
     image: '/mag/bourse-paris-xixe.webp',
@@ -302,6 +467,7 @@ const ARTICLES: Article[] = [
     id: 'etf',
     kind: 'fiche',
     related: ['indice', 'action', 'change'],
+    wikidata: ['Q845477', 'Q223371'],
     published: '2026-10-23',
     updated: '2026-10-23',
     image: '/gravures/panier.webp',
@@ -338,6 +504,7 @@ const ARTICLES: Article[] = [
     id: 'indice',
     kind: 'fiche',
     related: ['etf', 'action', 'krachs'],
+    wikidata: ['Q223371', 'Q475000'],
     published: '2026-10-23',
     updated: '2026-10-23',
     image: '/mag/activite-wall-street-1908.webp',
@@ -374,6 +541,7 @@ const ARTICLES: Article[] = [
     id: 'vente-a-decouvert',
     kind: 'fiche',
     related: ['avant-de-trader', 'volatilite', 'krachs'],
+    wikidata: ['Q106526'],
     published: '2026-10-23',
     updated: '2026-10-23',
     image: '/mag/ours-wall-street-1907.webp',
@@ -410,6 +578,7 @@ const ARTICLES: Article[] = [
     id: 'volatilite',
     kind: 'fiche',
     related: ['krachs', 'avant-de-trader', 'indice'],
+    wikidata: ['Q756115'],
     published: '2026-10-23',
     updated: '2026-10-23',
     image: '/gravures/tempete.webp',
@@ -446,6 +615,7 @@ const ARTICLES: Article[] = [
     id: 'dividende',
     kind: 'fiche',
     related: ['action', 'etf', 'indice'],
+    wikidata: ['Q181201', 'Q11692'],
     published: '2026-10-23',
     updated: '2026-10-23',
     image: '/gravures/frappe.webp',
@@ -496,11 +666,13 @@ function localize(article: Article, locale: Locale): LocalizedArticle {
     id: article.id,
     kind: article.kind,
     related: article.related,
+    wikidata: article.wikidata,
     published: article.published,
     updated: article.updated,
     image: article.image,
     imageWidth: article.imageWidth,
     imageHeight: article.imageHeight,
+    imagePosition: article.imagePosition,
     paths: {
       fr: `/mag/${article.locales.fr.slug}`,
       en: `/mag/${article.locales.en.slug}`,

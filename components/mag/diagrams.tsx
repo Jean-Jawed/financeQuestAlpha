@@ -520,3 +520,90 @@ export function CrashesDiagram({ locale }: { locale: Locale }) {
     </Frame>
   );
 }
+
+// ==========================================
+// FRAIS ET FRÉQUENCE DES ORDRES
+// ==========================================
+
+export function TradingFrequencyDiagram({ locale }: { locale: Locale }) {
+  const t = {
+    fr: {
+      title: '10 000 € après un an de frais seuls (0,1 % par ordre)',
+      rows: ['1 aller-retour par mois', '1 aller-retour par semaine', '1 aller-retour par séance', '5 allers-retours par séance'],
+      caption: 'Sans aucune perte de marché, seulement avec les frais : plus on multiplie les ordres, plus la pente à remonter est raide. Sur 250 séances, cinq allers-retours par jour laissent moins d’un dixième du capital.',
+    },
+    en: {
+      title: '10,000 after one year of fees alone (0.1% per order)',
+      rows: ['1 round trip a month', '1 round trip a week', '1 round trip a session', '5 round trips a session'],
+      caption: 'No market losses at all, only fees: the more orders you place, the steeper the slope to climb. Over 250 sessions, five round trips a day leave less than a tenth of the capital.',
+    },
+  }[locale];
+  const orders = [24, 104, 500, 2500];
+  const left = orders.map((n) => 10000 * 0.999 ** n);
+
+  return (
+    <Frame title={t.title} caption={t.caption} height={250}>
+      {left.map((value, i) => {
+        const y = 24 + i * 54;
+        const width = (value / 10000) * 380;
+        return (
+          <g key={t.rows[i]}>
+            <Text x={20} y={y + 22} size={12} color={PAPER}>{t.rows[i]}</Text>
+            <rect x={230} y={y + 6} width={380} height={24} rx={2} fill={LINE} />
+            <rect x={230} y={y + 6} width={width} height={24} rx={2} fill={i < 2 ? BRASS : LOSS} opacity={0.85} />
+            <Text x={width > 90 ? 230 + width - 8 : 230 + width + 8} y={y + 23} size={12} mono anchor={width > 90 ? 'end' : 'start'} color={width > 90 ? '#0F1D19' : PAPER}>
+              {Math.round(value).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')}
+            </Text>
+          </g>
+        );
+      })}
+    </Frame>
+  );
+}
+
+// ==========================================
+// STOP FIXE ET STOP SUIVEUR
+// ==========================================
+
+export function StopLossDiagram({ locale }: { locale: Locale }) {
+  const t = {
+    fr: { title: 'Stop fixe et stop suiveur', price: 'cours', fixed: 'stop fixe à −10 %', trailing: 'stop suiveur à 10 % sous le plus haut', exit: 'sortie', caption: 'Achat à 100. Le stop fixe reste à 90 ; le stop suiveur monte avec le cours et ne redescend jamais. Quand le titre se retourne, il fait sortir avec un gain, là où le stop fixe aurait laissé repartir toute la hausse.' },
+    en: { title: 'Fixed stop and trailing stop', price: 'price', fixed: 'fixed stop at −10%', trailing: 'trailing stop 10% below the high', exit: 'exit', caption: 'Bought at 100. The fixed stop stays at 90; the trailing stop rises with the price and never moves down. When the stock turns, it takes you out with a gain, where the fixed stop would have given back the whole rise.' },
+  }[locale];
+  const n = 120;
+  const up = walk(11, 70, 100, 131, 3.2);
+  const down = walk(12, n - 69, 131, 88, 3.2).slice(1);
+  const price = [...up, ...down];
+  const trailing: number[] = [];
+  let high = price[0];
+  let exitIndex = -1;
+  price.forEach((value, i) => {
+    high = Math.max(high, value);
+    trailing.push(high * 0.9);
+    if (exitIndex < 0 && i > 0 && value <= high * 0.9) exitIndex = i;
+  });
+  const min = 80;
+  const max = 140;
+  const x = (i: number) => 30 + (i / (n - 1)) * 580;
+  const y = (v: number) => 240 - ((v - min) / (max - min)) * 210;
+
+  return (
+    <Frame title={t.title} caption={t.caption}>
+      <path d={polyline(price, 30, 610, 30, 240, min, max)} fill="none" stroke={PAPER} strokeWidth={1.6} />
+      <line x1={30} x2={610} y1={y(90)} y2={y(90)} stroke={DIM} strokeWidth={1.4} strokeDasharray="6 4" />
+      <path d={polyline(trailing, 30, 610, 30, 240, min, max)} fill="none" stroke={BRASS} strokeWidth={2} />
+      {exitIndex > 0 && (
+        <g>
+          <circle cx={x(exitIndex)} cy={y(price[exitIndex])} r={6} fill={GAIN} stroke="#0F1D19" strokeWidth={2} />
+          <Text x={x(exitIndex)} y={y(price[exitIndex]) + 24} size={11} color={GAIN} anchor="middle">{t.exit}</Text>
+        </g>
+      )}
+      <line x1={30} x2={54} y1={278} y2={278} stroke={PAPER} strokeWidth={1.6} />
+      <Text x={60} y={282} size={11}>{t.price}</Text>
+      <line x1={130} x2={154} y1={278} y2={278} stroke={DIM} strokeWidth={1.4} strokeDasharray="6 4" />
+      <Text x={160} y={282} size={11}>{t.fixed}</Text>
+      <line x1={330} x2={354} y1={278} y2={278} stroke={BRASS} strokeWidth={2} />
+      <Text x={360} y={282} size={11}>{t.trailing}</Text>
+    </Frame>
+  );
+}
