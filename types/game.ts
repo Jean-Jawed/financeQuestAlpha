@@ -55,6 +55,12 @@ export interface HoldingWithValue extends Holding {
   assetPrice: number;
   /** Variation du cours depuis la séance précédente, en % (null : inconnue) */
   dayChangePercent: number | null;
+  /** Gain ou perte de la séance sur la quantité détenue avant elle, devise de la partie (null : inconnu) */
+  dayChange: number | null;
+  /** Variation de la séance en %, dans la devise de la partie et du point de vue de la position (null : inconnue) */
+  sessionPercent: number | null;
+  /** Position entièrement ouverte à la séance en cours : pas de variation de séance à montrer */
+  openedToday: boolean;
   /** Cours et valeurs ci-dessous : dans la devise de la partie */
   currentPrice: number;
   currentValue: number;

@@ -18,6 +18,7 @@ import { useI18n } from '@/lib/i18n/client';
 import { playSound } from '@/lib/sound';
 import { TimeoutError, fetchWithTimeout } from '@/lib/utils/fetch-timeout';
 import { daysBetween } from '@/lib/game/achievement-rules';
+import { portfolioSessionChange, sessionExtremes } from '@/lib/game/session-change';
 import type { GameState } from '@/types/game';
 
 // ==========================================
@@ -105,12 +106,22 @@ export function NextDayButton({
         window.setTimeout(() => playSound('flaps', 0.7), 450);
       }
 
-      // Bilan de la séance : variation de la valeur du portefeuille
-      const newValue: number | undefined = data.data?.state?.portfolio.totalValue;
-      if (typeof newValue === 'number') {
-        const delta = newValue - totalValue;
-        const sign = delta > 0 ? '▲ +' : delta < 0 ? '▼ ' : '';
-        toast.info(fmt(t.closed, { change: `${sign}${f.currency(delta, currency)}` }));
+      // Bilan de la séance : gain du jour, puis la meilleure et la pire position
+      const state: GameState | undefined = data.data?.state;
+      if (state) {
+        const signed = (value: number) => `${value > 0 ? '▲ +' : value < 0 ? '▼ ' : ''}${f.currency(value, currency)}`;
+        const session = portfolioSessionChange(state.holdings, state.portfolio.totalValue);
+        const { best, worst } = sessionExtremes(state.holdings);
+        const parts = [
+          fmt(t.closed, {
+            change: session
+              ? `${signed(session.change)} (${f.percent(session.percent, 2)})`
+              : signed(state.portfolio.totalValue - totalValue),
+          }),
+          ...(best ? [fmt(t.best, { symbol: best.symbol, change: signed(best.dayChange ?? 0) })] : []),
+          ...(worst ? [fmt(t.worst, { symbol: worst.symbol, change: signed(worst.dayChange ?? 0) })] : []),
+        ];
+        toast.info(parts.join(' · '), 6500);
       }
 
       showMedals(data.data?.achievementsUnlocked);

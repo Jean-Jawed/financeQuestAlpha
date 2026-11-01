@@ -233,6 +233,8 @@ export const ui: UiMessages = {
       failed: 'The session could not be closed',
       noAnswer: 'No answer from the server. The game has been reloaded.',
       closed: 'Session closed: {change} on the day',
+      best: 'top: {symbol} {change}',
+      worst: 'bottom: {symbol} {change}',
     },
     summary: {
       netValue: 'Net asset value',
@@ -240,6 +242,8 @@ export const ui: UiMessages = {
       securities: 'Securities held',
       shorts: 'Short positions P&L',
       initial: 'Starting capital',
+      session: 'Session',
+      sinceStart: 'Since opening',
     },
     positions: {
       label: 'Securities portfolio',
@@ -251,6 +255,8 @@ export const ui: UiMessages = {
       sell: 'Sell',
       cover: 'Buy back',
       quoted: 'quoted {price}',
+      sinceBuy: 'since purchase',
+      newToday: 'New',
       locked: 'Selling locked until retirement',
       shortWarning:
         'A short position loses money when the price rises, without limit. The sale proceeds stay locked as collateral.',

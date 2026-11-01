@@ -5,11 +5,13 @@
  */
 
 import { db, type DbExecutor } from '@/lib/db';
-import { games, holdings } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { games, holdings, transactions } from '@/lib/db/schema';
+import { and, eq } from 'drizzle-orm';
 import { getQuotes } from '@/lib/market/prices';
 import { getAssetsMap } from '@/lib/market/assets';
 import { valuePortfolio } from './portfolio-math';
+import { positionSessionChange } from './session-change';
+import { previousBusinessDay } from '@/lib/utils/dates';
 import type { PortfolioCalculation, HoldingWithValue } from '@/types/game';
 
 export { calculateTransactionPreview } from './portfolio-math';
@@ -94,10 +96,25 @@ export async function calculateHoldingsValues(
 
     // 2. Récupérer les prix actuels (BATCH DB Query)
     const symbols = [...new Set(allHoldings.map((h) => h.symbol))];
-    const [quotes, assetsMap] = await Promise.all([
+    // Séance précédente : les sessions avancent de jour ouvré en jour ouvré
+    const [quotes, previousQuotes, assetsMap, todayTrades] = await Promise.all([
       getQuotes(symbols, currentDate, currency),
+      getQuotes(symbols, previousBusinessDay(currentDate), currency),
       getAssetsMap(symbols),
+      db
+        .select({ symbol: transactions.symbol, type: transactions.type, quantity: transactions.quantity })
+        .from(transactions)
+        .where(and(eq(transactions.gameId, gameId), eq(transactions.transactionDate, currentDate))),
     ]);
+
+    // Quantité ouverte à la séance en cours, par symbole et par sens
+    const openedToday = new Map<string, number>();
+    for (const trade of todayTrades) {
+      const short = trade.type === 'short' || trade.type === 'cover';
+      const sign = trade.type === 'buy' || trade.type === 'short' ? 1 : -1;
+      const key = `${trade.symbol}:${short}`;
+      openedToday.set(key, (openedToday.get(key) ?? 0) + sign * parseFloat(trade.quantity));
+    }
 
     // 3. Calculer pour chaque holding
     const holdingsWithValues: HoldingWithValue[] = [];
@@ -134,6 +151,10 @@ export async function calculateHoldingsValues(
       const profitLossPercentage =
         averageCost > 0 ? (profitLoss / (averageCost * quantity)) * 100 : 0;
 
+      const netTodayQuantity = openedToday.get(`${holding.symbol}:${holding.isShort}`) ?? 0;
+      const previousPrice = previousQuotes.get(holding.symbol)?.price ?? null;
+      const dayChangePercent = quote?.changePercent ?? null;
+
       holdingsWithValues.push({
         id: holding.id,
         gameId: holding.gameId,
@@ -147,7 +168,19 @@ export async function calculateHoldingsValues(
         assetType: assetData?.type?.code ?? null,
         assetCurrency: quote?.assetCurrency ?? assetData?.currency?.code ?? currency,
         assetPrice: quote?.assetPrice ?? 0,
-        dayChangePercent: quote?.changePercent ?? null,
+        dayChangePercent,
+        dayChange: positionSessionChange({
+          quantity,
+          isShort: holding.isShort,
+          price: currentPrice,
+          previousPrice,
+          netTodayQuantity,
+        }),
+        openedToday: netTodayQuantity >= quantity - 1e-9,
+        sessionPercent:
+          previousPrice && currentPrice > 0
+            ? (holding.isShort ? -1 : 1) * (currentPrice / previousPrice - 1) * 100
+            : null,
         currentPrice,
         currentValue,
         profitLoss,

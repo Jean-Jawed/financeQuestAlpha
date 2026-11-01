@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { TradeTicket, type TradeSelection } from '@/components/game/trade-ticket';
 import { useI18n } from '@/lib/i18n/client';
@@ -47,9 +47,12 @@ function PositionRow({
   lockedLabel,
   onAction,
   compact = false,
+  flash = false,
 }: {
   /** Colonne étroite : sans le cours d'origine */
   compact?: boolean;
+  /** Nouvelle séance : la ligne s'allume selon son mouvement du jour */
+  flash?: boolean;
   holding: HoldingWithValue;
   currency: string;
   actionLabel: string;
@@ -60,9 +63,18 @@ function PositionRow({
   const { m, f, fmt } = useI18n();
   const quantity = parseFloat(holding.quantity);
   const up = holding.profitLoss >= 0;
+  const day = holding.openedToday ? null : (holding.dayChange ?? null);
+  const dayUp = (day ?? 0) >= 0;
+  const dayPercent = holding.sessionPercent ?? null;
 
   return (
-    <li className={cn('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3', compact ? 'px-2' : 'px-5')}>
+    <li
+      className={cn(
+        'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3',
+        compact ? 'px-2' : 'px-5',
+        flash && day !== null && day !== 0 && (dayUp ? 'motion-safe:animate-flash-gain' : 'motion-safe:animate-flash-loss')
+      )}
+    >
       <div className="min-w-0">
         <p className="flex items-baseline gap-2">
           <span className="num font-semibold text-paper">{holding.symbol}</span>
@@ -83,9 +95,27 @@ function PositionRow({
         <p className="num text-paper">
           {holding.isShort ? f.currency(holding.currentPrice * quantity, currency) : f.currency(holding.currentValue, currency)}
         </p>
-        <p className={cn('num text-xs', up ? 'text-gain' : 'text-loss')}>
-          {up ? '▲ +' : '▼ '}
-          {f.currency(holding.profitLoss, currency)} ({f.percent(holding.profitLossPercentage, 1)})
+        {/* La séance d'abord, en pastille ; la plus-value depuis l'achat en dessous, discrète */}
+        {holding.openedToday ? (
+          <span className="label mt-0.5 inline-block rounded-sm border border-brass/50 px-1.5 py-px text-[10px] text-brass">{m.game.positions.newToday}</span>
+        ) : day !== null && dayPercent !== null ? (
+          <span
+            className={cn(
+              'ivory num mt-0.5 inline-block whitespace-nowrap px-1.5 py-px text-xs font-semibold',
+              dayUp ? 'text-enamel-green' : 'text-enamel-red'
+            )}
+            title={m.game.summary.session}
+          >
+            {dayUp ? '▲ +' : '▼ '}
+            {f.currency(day, currency)} · {f.percent(dayPercent, 1)}
+          </span>
+        ) : null}
+        <p className="num mt-0.5 whitespace-nowrap text-[11px] text-paper-dim">
+          {m.game.positions.sinceBuy}{' '}
+          <span className={up ? 'text-gain' : 'text-loss'}>
+            {f.percent(holding.profitLossPercentage, 1)}
+            {!compact && <> ({up ? '+' : ''}{f.currency(holding.profitLoss, currency)})</>}
+          </span>
         </p>
       </div>
 
@@ -125,6 +155,9 @@ export function PositionsPanel({
   const { m, fmt } = useI18n();
   const t = m.game.positions;
   const [selected, setSelected] = useState<HoldingWithValue | null>(null);
+  // Les lignes ne s'allument qu'après une séance jouée sous les yeux du joueur
+  const openedOn = useRef(currentDate);
+  const flash = currentDate !== openedOn.current;
 
   function pick(holding: HoldingWithValue) {
     if (!onSelect) return setSelected(holding);
@@ -164,7 +197,8 @@ export function PositionsPanel({
               <ul className="divide-y divide-line">
                 {longs.map((holding) => (
                   <PositionRow
-                    key={holding.id}
+                    key={`${holding.id}-${currentDate}`}
+                    flash={flash}
                     holding={holding}
                     currency={currency}
                     actionLabel={t.sell}
@@ -185,7 +219,8 @@ export function PositionsPanel({
               <ul className="divide-y divide-line">
                 {shorts.map((holding) => (
                   <PositionRow
-                    key={holding.id}
+                    key={`${holding.id}-${currentDate}`}
+                    flash={flash}
                     holding={holding}
                     currency={currency}
                     actionLabel={t.cover}

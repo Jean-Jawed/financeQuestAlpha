@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useI18n } from '@/lib/i18n/client';
 import { categoryColor } from '@/lib/market/category-colors';
 import { cn } from '@/lib/utils/cn';
+import type { SessionChange } from '@/lib/game/session-change';
 import type { HoldingWithValue, PortfolioSummary } from '@/types/game';
 
 // ==========================================
@@ -78,32 +79,39 @@ export function PlayerPlate({ achievements, sessions, groupRank, compact = false
 interface ValueCounterProps {
   portfolio: PortfolioSummary;
   currency: string;
+  /** Variation de la séance (null : aucune position cotée) */
+  session: SessionChange | null;
   /** Change à chaque séance : les tambours roulent */
   rollKey: string;
   compact?: boolean;
   className?: string;
 }
 
-export function ValueCounter({ portfolio, currency, rollKey, compact = false, className }: ValueCounterProps) {
+export function ValueCounter({ portfolio, currency, session, rollKey, compact = false, className }: ValueCounterProps) {
   const { m, f } = useI18n();
   const t = m.game.summary;
-  const up = portfolio.profitLoss >= 0;
+  const day = session ?? { change: 0, percent: 0 };
+  const up = day.change >= 0;
+  const sinceStart = `${portfolio.profitLoss >= 0 ? '+' : ''}${f.currency(portfolio.profitLoss, currency)}`;
 
   const lines = [
-    { label: t.cash, value: portfolio.availableCash },
-    { label: t.securities, value: portfolio.portfolioValueLong },
-    ...(portfolio.shortPositionsPnl !== 0 || portfolio.shortLiability > 0 ? [{ label: t.shorts, value: portfolio.shortPositionsPnl }] : []),
+    { label: t.sinceStart, value: sinceStart },
+    { label: t.cash, value: f.currency(portfolio.availableCash, currency) },
+    ...(portfolio.shortPositionsPnl !== 0 || portfolio.shortLiability > 0
+      ? [{ label: t.shorts, value: f.currency(portfolio.shortPositionsPnl, currency) }]
+      : []),
   ];
 
+  // La séance d'abord : c'est ce que le joueur regarde après la cloche
   const chips = (
     <>
+      <span className={cn('label whitespace-nowrap text-brass-bright', compact ? 'text-[11px]' : 'text-[10px]')}>{t.session}</span>
       <span className={cn('ivory num whitespace-nowrap font-semibold', compact ? 'px-3 py-1 text-sm' : 'px-2 py-0.5 text-xs', up ? 'text-enamel-green' : 'text-enamel-red')}>
-        {up ? '▲ ' : '▼ '}
-        {f.percent(portfolio.returnPercentage, 2)}
+        {up ? '▲ +' : '▼ '}
+        {f.currency(day.change, currency)}
       </span>
       <span className={cn('ivory num whitespace-nowrap font-semibold', compact ? 'px-3 py-1 text-sm' : 'px-2 py-0.5 text-xs', up ? 'text-enamel-green' : 'text-enamel-red')}>
-        {up ? '+' : ''}
-        {f.currency(portfolio.profitLoss, currency)}
+        {f.percent(day.percent, 2)}
       </span>
     </>
   );
@@ -112,18 +120,18 @@ export function ValueCounter({ portfolio, currency, rollKey, compact = false, cl
   if (!compact) {
     return (
       <Frame variant="mirror" outerClassName={className} className="flex h-full flex-col justify-center gap-1.5 px-4 py-2">
-        <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 truncate font-display text-[10px] uppercase tracking-[0.16em] text-brass-bright">{t.netValue}</p>
-          <div className="flex shrink-0 gap-1.5">{chips}</div>
-        </div>
-        <div className="glass max-w-full self-start overflow-hidden px-2.5 py-1">
-          <Odometer text={f.currency(portfolio.totalValue, currency)} rollKey={rollKey} className="text-xl xl:text-2xl" />
+        <p className="truncate font-display text-[10px] uppercase tracking-[0.16em] text-brass-bright">{t.netValue}</p>
+        <div className="flex items-center gap-3">
+          <div className="glass min-w-0 overflow-hidden px-2.5 py-1">
+            <Odometer text={f.currency(portfolio.totalValue, currency)} rollKey={rollKey} className="text-lg 2xl:text-2xl" />
+          </div>
+          <div className="ml-auto flex shrink-0 flex-col items-end gap-1">{chips}</div>
         </div>
         <dl className="flex flex-wrap gap-x-3 whitespace-nowrap text-[10px]">
           {lines.map((line) => (
             <div key={line.label} className="flex gap-1">
               <dt className="text-paper-dim">{line.label}</dt>
-              <dd className="num text-paper">{f.currency(line.value, currency)}</dd>
+              <dd className="num text-paper">{line.value}</dd>
             </div>
           ))}
         </dl>
@@ -141,7 +149,10 @@ export function ValueCounter({ portfolio, currency, rollKey, compact = false, cl
       <div className="glass max-w-full overflow-hidden px-3 py-2.5">
         <Odometer text={f.currency(portfolio.totalValue, currency)} rollKey={rollKey} className="text-2xl" />
       </div>
-      <div className="flex flex-wrap justify-center gap-2">{chips}</div>
+      <div className="flex flex-wrap items-center justify-center gap-2">{chips}</div>
+      <p className="num text-xs text-paper-dim">
+        {t.sinceStart} <span className="text-paper">{sinceStart}</span>
+      </p>
     </Frame>
   );
 }

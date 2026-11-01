@@ -92,6 +92,15 @@ const config: Config = {
         lift: '0 18px 40px -18px rgb(0 0 0 / 0.75)',
       },
       keyframes: {
+        // Bilan de séance : la ligne s'allume en vert ou en rouge puis s'éteint
+        'flash-gain': {
+          '0%, 30%': { backgroundColor: 'rgb(74 160 110 / 0.32)' },
+          '100%': { backgroundColor: 'transparent' },
+        },
+        'flash-loss': {
+          '0%, 30%': { backgroundColor: 'rgb(200 80 70 / 0.32)' },
+          '100%': { backgroundColor: 'transparent' },
+        },
         'ticker-scroll': {
           from: { transform: 'translateX(0)' },
           to: { transform: 'translateX(-50%)' },
@@ -160,6 +169,8 @@ const config: Config = {
         'spin-slow': 'spin 160s linear infinite',
         'xp-float': 'xp-float 2.4s ease-out both',
         odometer: 'odometer 0.55s cubic-bezier(.2,.9,.3,1.1) both',
+        'flash-gain': 'flash-gain 1.8s ease-out both',
+        'flash-loss': 'flash-loss 1.8s ease-out both',
       },
     },
   },

@@ -233,6 +233,8 @@ export const ui = {
       failed: 'La séance n’a pas pu être clôturée',
       noAnswer: 'Pas de réponse du serveur. La partie a été relue.',
       closed: 'Séance close : {change} sur la journée',
+      best: 'en tête : {symbol} {change}',
+      worst: 'en queue : {symbol} {change}',
     },
     summary: {
       netValue: 'Valeur liquidative',
@@ -240,6 +242,8 @@ export const ui = {
       securities: 'Titres en portefeuille',
       shorts: 'Résultat des découverts',
       initial: 'Capital de départ',
+      session: 'Séance',
+      sinceStart: 'Depuis l’ouverture',
     },
     positions: {
       label: 'Portefeuille de titres',
@@ -251,6 +255,8 @@ export const ui = {
       sell: 'Vendre',
       cover: 'Racheter',
       quoted: 'cote {price}',
+      sinceBuy: 'depuis l’achat',
+      newToday: 'Nouvelle',
       locked: 'Vente bloquée jusqu’à la retraite',
       shortWarning:
         'Une position à découvert perd quand le cours monte, sans limite. Le produit de la vente reste bloqué en garantie.',

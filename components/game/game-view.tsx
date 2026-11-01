@@ -27,6 +27,7 @@ import { TransactionHistory } from '@/components/game/transaction-history';
 import { PriceChart } from '@/components/game/price-chart';
 import { TradeTicket, type TradeSelection } from '@/components/game/trade-ticket';
 import { AllocationBar, NextAchievement, PlayerPlate, ValueCounter } from '@/components/game/machine-panels';
+import { portfolioSessionChange } from '@/lib/game/session-change';
 import { EndControls } from '@/components/game/end-controls';
 import { GameSummary } from '@/components/game/game-summary';
 import { GroupPanel } from '@/components/groups/group-panel';
@@ -234,6 +235,7 @@ export function GameView({ gameId }: { gameId: string }) {
     .filter((h) => h.dayChangePercent !== null)
     .map((h) => ({ symbol: h.symbol, name: h.name, changePercent: h.dayChangePercent as number }));
 
+  const session = portfolioSessionChange(holdings, portfolio.totalValue);
   const cashShare = portfolio.totalValue > 0 ? (Math.max(portfolio.availableCash, 0) / portfolio.totalValue) * 100 : 100;
   const selectedTrades = selection
     ? transactions
@@ -404,9 +406,9 @@ export function GameView({ gameId }: { gameId: string }) {
         <div className="container mx-auto space-y-8 px-4 py-8">
           {meta}
 
-          <section className="grid grid-cols-[minmax(0,23fr)_minmax(0,21fr)_minmax(0,24fr)] items-stretch gap-5">
+          <section className="grid grid-cols-[minmax(0,42fr)_minmax(0,46fr)_minmax(0,48fr)] items-stretch gap-5">
             <PlayerPlate achievements={game.achievementsUnlocked} sessions={game.sessionsPlayed} groupRank={groupRank} />
-            <ValueCounter portfolio={portfolio} currency={game.currency} rollKey={game.currentDate} />
+            <ValueCounter portfolio={portfolio} session={session} currency={game.currency} rollKey={game.currentDate} />
             <Frame className="h-full px-4 py-2.5">{nextDay('desk')}</Frame>
           </section>
 
@@ -449,7 +451,7 @@ export function GameView({ gameId }: { gameId: string }) {
     { id: 'market', label: t.tabs.market },
     ...(game.groupId ? [{ id: 'group' as const, label: t.tabs.group }] : []),
   ];
-  const up = portfolio.profitLoss >= 0;
+  const up = (session?.change ?? 0) >= 0;
 
   return (
     <div className="pb-28">
@@ -459,9 +461,9 @@ export function GameView({ gameId }: { gameId: string }) {
           <PlayerPlate compact achievements={game.achievementsUnlocked} sessions={game.sessionsPlayed} className="flex-1" />
           <div className="shrink-0 text-right">
             <p className="num text-lg font-semibold text-paper">{f.currency(portfolio.totalValue, game.currency)}</p>
-            <p className={cn('num text-xs', up ? 'text-gain' : 'text-loss')}>
-              {up ? '▲ ' : '▼ '}
-              {f.percent(portfolio.returnPercentage, 2)}
+            <p className={cn('num text-xs', up ? 'text-gain' : 'text-loss')} title={m.game.summary.session}>
+              {up ? '▲ +' : '▼ '}
+              {f.currency(session?.change ?? 0, game.currency)} · {f.percent(session?.percent ?? 0, 2)}
             </p>
           </div>
         </div>
@@ -497,7 +499,7 @@ export function GameView({ gameId }: { gameId: string }) {
         )}
         {tab === 'positions' && (
           <>
-            <ValueCounter compact portfolio={portfolio} currency={game.currency} rollKey={game.currentDate} />
+            <ValueCounter compact portfolio={portfolio} session={session} currency={game.currency} rollKey={game.currentDate} />
             <Frame className="flex items-center justify-between gap-4 p-4">
               <div>
                 <p className="label text-[10px]">{m.game.summary.cash}</p>
