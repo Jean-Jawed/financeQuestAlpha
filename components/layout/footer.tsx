@@ -7,6 +7,7 @@
 
 import Link from 'next/link';
 import { GuillocheBand } from '@/components/brand/guilloche';
+import { InstallFooterLine } from '@/components/pwa/install';
 import { useI18n } from '@/lib/i18n/client';
 
 const FOOTER_LINKS = [
@@ -23,6 +24,7 @@ export function Footer() {
     <footer className="mt-auto">
       <GuillocheBand className="text-brass/25" height={22} />
       <div className="border-t border-line bg-ink">
+        <InstallFooterLine />
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-6 text-sm text-paper-dim md:flex-row">
           <p className="label">{m.footer.tagline}</p>
 

@@ -10,6 +10,7 @@ import { LOCALES, type Locale } from '@/lib/i18n/config';
 import { getI18n, resolveLocale } from '@/lib/i18n/server';
 import { localizePath } from '@/lib/i18n/paths';
 import { JsonLd } from '@/components/seo/json-ld';
+import { PwaStarter } from '@/components/pwa/install';
 import { wikidataThings } from '@/lib/wikidata';
 import { absoluteUrl, getSiteUrl, pageMetadata } from '@/lib/seo';
 import '../globals.css';
@@ -62,6 +63,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
     keywords: site.seo.keywords,
     applicationName: site.seo.siteName,
+    // Application installée : icône et barre d'état sur iPhone et iPad
+    appleWebApp: { capable: true, title: site.seo.siteName, statusBarStyle: 'black' },
+    icons: {
+      icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+      apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+    },
     creator: 'Virgule Studio',
     publisher: 'Virgule Studio',
     formatDetection: { telephone: false },
@@ -111,6 +118,7 @@ export default async function LocaleLayout({
           ]}
         />
         <I18nProvider locale={locale} messages={ui}>
+          <PwaStarter />
           {children}
         </I18nProvider>
       </body>

@@ -22,6 +22,7 @@ import { getRemainingDays } from '@/lib/game/next-day';
 import { getPriceCoverage } from '@/lib/market/calendar';
 import { ProfileMissing } from '@/components/dashboard/profile-missing';
 import { ProfileReminder } from '@/components/dashboard/profile-reminder';
+import { InstallCard } from '@/components/pwa/install';
 import { loadProfile } from '@/lib/profile/server';
 import { getI18n, resolveLocale } from '@/lib/i18n/server';
 import { pageMetadata } from '@/lib/seo';
@@ -135,6 +136,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
         />
 
         {!user.onboardingDone && <ProfileReminder name={user.name} avatarId={user.avatarId} />}
+
+        <InstallCard />
 
         <section aria-labelledby="games-title">
           <div className="mb-7 flex flex-wrap items-center justify-between gap-4">

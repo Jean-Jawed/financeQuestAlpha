@@ -52,6 +52,41 @@ export const ui = {
     privacy: 'Confidentialité',
   },
 
+  pwa: {
+    telegram: {
+      label: 'Télégramme',
+      text: 'PastFolio s’installe sur votre téléphone et votre ordinateur, sans passer par un store',
+      stop: 'Stop.',
+      cta: 'Installer',
+      close: 'Fermer le télégramme',
+    },
+    card: {
+      eyebrow: 'Le guichet de poche',
+      title: 'Une séance par jour, à portée de pouce',
+      text: 'Installez PastFolio : vos parties s’ouvrent d’un geste, en plein écran, depuis l’écran d’accueil ou le dock. Gratuit, léger, sans store.',
+      cta: 'Installer le guichet',
+      later: 'Plus tard',
+    },
+    footer: {
+      text: 'La corbeille tient dans la poche.',
+      cta: 'Installer l’appli',
+    },
+    guide: {
+      title: 'Installer PastFolio',
+      iosIntro: 'Sur iPhone et iPad, l’installation se fait en deux gestes :',
+      iosSteps: [
+        'Touchez le bouton Partager (le carré surmonté d’une flèche), en bas de l’écran dans Safari.',
+        'Choisissez « Sur l’écran d’accueil », puis « Ajouter ».',
+      ],
+      iosNote: 'Chrome et Edge sur iPhone le proposent aussi, dans leur menu Partager.',
+      macIntro: 'Sur Mac, Safari range PastFolio dans le Dock :',
+      macSteps: ['Ouvrez le menu Fichier de Safari, ou le bouton Partager.', 'Choisissez « Ajouter au Dock », puis « Ajouter ».'],
+      done: 'L’icône PastFolio apparaît ensuite avec vos autres applications.',
+      close: 'Compris',
+    },
+    installed: 'PastFolio est installé. Bonne séance !',
+  },
+
   auth: {
     register: 'Registre des agents',
     email: 'Email',

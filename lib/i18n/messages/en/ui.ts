@@ -51,6 +51,41 @@ export const ui: UiMessages = {
     realPrices: 'Real historical prices.',
     privacy: 'Privacy',
   },
+  pwa: {
+    telegram: {
+      label: 'Telegram',
+      text: 'PastFolio installs on your phone and your computer, no app store needed',
+      stop: 'Stop.',
+      cta: 'Install',
+      close: 'Close the telegram',
+    },
+    card: {
+      eyebrow: 'The pocket trading desk',
+      title: 'One session a day, right under your thumb',
+      text: 'Install PastFolio: your games open in one tap, full screen, from your home screen or dock. Free, light, no app store.',
+      cta: 'Install the desk',
+      later: 'Later',
+    },
+    footer: {
+      text: 'The trading floor fits in your pocket.',
+      cta: 'Install the app',
+    },
+    guide: {
+      title: 'Install PastFolio',
+      iosIntro: 'On iPhone and iPad, it takes two taps:',
+      iosSteps: [
+        'Tap the Share button (the square with an arrow), at the bottom of the screen in Safari.',
+        'Choose “Add to Home Screen”, then “Add”.',
+      ],
+      iosNote: 'Chrome and Edge on iPhone offer it too, in their Share menu.',
+      macIntro: 'On a Mac, Safari puts PastFolio in your Dock:',
+      macSteps: ['Open Safari’s File menu, or the Share button.', 'Choose “Add to Dock”, then “Add”.'],
+      done: 'The PastFolio icon then appears alongside your other apps.',
+      close: 'Got it',
+    },
+    installed: 'PastFolio is installed. Enjoy the session!',
+  },
+
 
   auth: {
     register: 'Brokers’ register',

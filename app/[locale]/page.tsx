@@ -20,6 +20,7 @@ import { StampedCertificate } from '@/components/landing/stamped-certificate';
 import { Footer } from '@/components/layout/footer';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { JsonLd } from '@/components/seo/json-ld';
+import { InstallTelegram } from '@/components/pwa/install';
 import { wikidataThings, wikidataUrl } from '@/lib/wikidata';
 import { ArticleCard } from '@/components/mag/article-card';
 import { GAME_CURRENCIES } from '@/lib/game/currency';
@@ -102,7 +103,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       />
 
       {/* Barre */}
-      <header className="container absolute inset-x-0 top-0 z-20 mx-auto flex h-20 items-center justify-between gap-4 px-4">
+      <div className="absolute inset-x-0 top-0 z-20">
+      {/* Télégramme d'installation, puis la barre */}
+      <InstallTelegram />
+      <header className="container mx-auto flex h-20 items-center justify-between gap-4 px-4">
         <Logo size="md" />
         <nav className="flex items-center gap-5 sm:gap-6">
           <Link
@@ -126,6 +130,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           </Link>
         </nav>
       </header>
+      </div>
 
       <main className="flex-1">
         <OpeningBell
