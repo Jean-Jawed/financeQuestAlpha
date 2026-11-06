@@ -16,6 +16,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useI18n } from '@/lib/i18n/client';
 import { categoryColor } from '@/lib/market/category-colors';
 import { cn } from '@/lib/utils/cn';
+import { MAINTENANCE_MARGIN_RATIO, MARGIN_WARNING_RATIO } from '@/lib/game/margin-call';
+import { SHORT_MARGIN_RATIO } from '@/lib/game/portfolio-math';
 import type { SessionChange } from '@/lib/game/session-change';
 import type { HoldingWithValue, PortfolioSummary } from '@/types/game';
 
@@ -88,18 +90,33 @@ interface ValueCounterProps {
 }
 
 export function ValueCounter({ portfolio, currency, session, rollKey, compact = false, className }: ValueCounterProps) {
-  const { m, f } = useI18n();
+  const { m, f, fmt } = useI18n();
   const t = m.game.summary;
   const day = session ?? { change: 0, percent: 0 };
   const up = day.change >= 0;
   const sinceStart = `${portfolio.profitLoss >= 0 ? '+' : ''}${f.currency(portfolio.profitLoss, currency)}`;
 
-  const lines = [
+  // Marge des découverts : valeur nette ÷ dette ; rouge à l'approche de l'appel de marge
+  const margin = portfolio.shortLiability > 0 ? portfolio.totalValue / portfolio.shortLiability : null;
+  const marginLine = margin !== null && {
+    label: t.margin,
+    value: f.percent(margin * 100, 0, false),
+    hint: fmt(t.marginHint, { threshold: f.percent(MAINTENANCE_MARGIN_RATIO * 100, 0, false) }),
+    tone: margin < MARGIN_WARNING_RATIO ? 'text-loss font-semibold' : margin < SHORT_MARGIN_RATIO ? 'text-brass-bright' : 'text-paper',
+  };
+
+  const lines: Array<{ label: string; value: string; hint?: string; tone?: string }> = [
     { label: t.sinceStart, value: sinceStart },
-    { label: t.cash, value: f.currency(portfolio.availableCash, currency) },
+    {
+      label: t.cash,
+      value: f.currency(portfolio.availableCash, currency),
+      hint: portfolio.shortLiability > 0 ? t.cashHint : undefined,
+      tone: portfolio.availableCash < -0.005 ? 'text-loss' : undefined,
+    },
     ...(portfolio.shortPositionsPnl !== 0 || portfolio.shortLiability > 0
       ? [{ label: t.shorts, value: f.currency(portfolio.shortPositionsPnl, currency) }]
       : []),
+    ...(marginLine ? [marginLine] : []),
   ];
 
   // La séance d'abord : c'est ce que le joueur regarde après la cloche
@@ -129,9 +146,9 @@ export function ValueCounter({ portfolio, currency, session, rollKey, compact = 
         </div>
         <dl className="flex flex-wrap gap-x-3 whitespace-nowrap text-[10px]">
           {lines.map((line) => (
-            <div key={line.label} className="flex gap-1">
+            <div key={line.label} className="flex gap-1" title={line.hint}>
               <dt className="text-paper-dim">{line.label}</dt>
-              <dd className="num text-paper">{line.value}</dd>
+              <dd className={cn('num', line.tone ?? 'text-paper')}>{line.value}</dd>
             </div>
           ))}
         </dl>
@@ -153,6 +170,11 @@ export function ValueCounter({ portfolio, currency, session, rollKey, compact = 
       <p className="num text-xs text-paper-dim">
         {t.sinceStart} <span className="text-paper">{sinceStart}</span>
       </p>
+      {marginLine && (
+        <p className="num text-xs text-paper-dim" title={marginLine.hint}>
+          {marginLine.label} <span className={marginLine.tone}>{marginLine.value}</span>
+        </p>
+      )}
     </Frame>
   );
 }

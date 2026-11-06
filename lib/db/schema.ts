@@ -199,6 +199,8 @@ export const transactions = pgTable('transactions', {
   total: decimal('total', { precision: 15, scale: 2 }).notNull(),
   /** Identifiant généré par le ticket : un ordre renvoyé après une réponse perdue n'est pas réexécuté */
   clientOrderId: uuid('client_order_id'),
+  /** Ordre passé d'office par le courtier (appel de marge), pas par le joueur */
+  forced: boolean('forced').default(false).notNull(),
   transactionDate: date('transaction_date').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });

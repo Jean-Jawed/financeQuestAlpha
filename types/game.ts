@@ -12,11 +12,17 @@ import type { Game, Holding, Transaction } from './database';
 export interface PortfolioCalculation {
   /** Cash brut en base (inclut le produit des shorts, bloqué en garantie) */
   currentBalance: number;
-  /** Cash utilisable pour acheter : cash − produit des shorts (au coût moyen) */
+  /** Cash utilisable : min(cash − dette des shorts, valeur nette − garantie) ; négatif : ordres bloqués */
   availableCash: number;
   portfolioValueLong: number;
-  /** Dette des shorts au prix courant : Σ quantité × prix actuel */
+  /** Dette des shorts au prix courant : Σ quantité × prix actuel (réservée au rachat) */
   shortLiability: number;
+  /** Encaissé à l'ouverture des shorts : Σ quantité × prix de vente moyen */
+  shortProceeds: number;
+  /** Garantie exigée : 50 % de la dette au cours du jour */
+  marginRequired: number;
+  /** Valeur nette − garantie (négatif : garantie insuffisante) */
+  marginExcess: number;
   shortPositionsPnl: number;
   /** cash + longs − dette des shorts */
   totalValue: number;
@@ -107,6 +113,9 @@ export interface PortfolioSummary {
   availableCash: number;
   portfolioValueLong: number;
   shortLiability: number;
+  shortProceeds: number;
+  marginRequired: number;
+  marginExcess: number;
   shortPositionsPnl: number;
   totalValue: number;
   returnPercentage: number;

@@ -7,11 +7,17 @@
  *   et une DETTE est créée : rendre `quantité` titres plus tard.
  * - La dette est valorisée au prix courant : quantité × prix actuel.
  * - Valeur totale = cash + valeur des longs − dette des shorts.
- * - Le produit des shorts reste bloqué en garantie : il n'est pas
- *   disponible pour acheter (cash disponible = cash − Σ coût moyen × quantité).
+ * - Compte sur marge (règle type Reg T, garantie de 150 % du montant vendu) :
+ *   le cash qui servira au rachat (la dette au cours du jour) est réservé,
+ *   et la garantie (50 % de la dette au cours du jour) est bloquée.
+ *   Liquidités disponibles = min(cash − dette, valeur nette − garantie).
+ *   La garantie suit le cours : une baisse du titre shorté en libère,
+ *   une hausse en exige davantage (disponible négatif : ordres bloqués).
+ *   Les titres détenus comptent dans la valeur nette, donc dans la garantie.
  *
- * Exemple : 10 000 € de cash, short de 10 titres à 100 € (frais 0,25 %)
- * → cash 10 997,50 €, dette 1 000 €, valeur totale 9 997,50 € (seuls les frais sont perdus).
+ * Exemple : 10 000 € de cash, short de 20 000 € (frais ignorés)
+ * → cash 30 000 €, dette 20 000 € (réservée au rachat), garantie 10 000 € (bloquée),
+ *   disponible 0 €, valeur nette 10 000 €.
  */
 
 import type { PortfolioCalculation } from '@/types/game';
@@ -74,21 +80,67 @@ export function valuePortfolio(
 
   const shortPositionsPnl = shortProceeds - shortLiability;
   const totalValue = cash + portfolioValueLong - shortLiability;
-  const availableCash = cash - shortProceeds;
+  const margin = marginAccount(cash, totalValue, shortLiability);
   const returnPercentage =
     initialBalance > 0 ? ((totalValue - initialBalance) / initialBalance) * 100 : 0;
   const score = Math.floor(returnPercentage * 10);
 
   return {
     currentBalance: cash,
-    availableCash,
+    availableCash: margin.available,
     portfolioValueLong,
     shortLiability,
+    shortProceeds,
+    marginRequired: margin.required,
+    marginExcess: margin.excess,
     shortPositionsPnl,
     totalValue,
     returnPercentage,
     score,
   };
+}
+
+// ==========================================
+// COMPTE SUR MARGE
+// ==========================================
+
+export interface MarginAccount {
+  /** Garantie exigée : SHORT_MARGIN_RATIO × dette au cours du jour */
+  required: number;
+  /** Valeur nette au-delà de la garantie (négatif : garantie insuffisante) */
+  excess: number;
+  /** Liquidités utilisables pour acheter ou payer des frais (négatif : ordres bloqués) */
+  available: number;
+}
+
+/**
+ * Garantie et liquidités disponibles
+ * Sans short : disponible = cash (la valeur nette, titres compris, est au moins le cash)
+ *
+ * @param cash - Cash brut (produit des shorts compris)
+ * @param equity - Valeur nette : cash + longs − dette
+ * @param liability - Dette des shorts au cours du jour
+ */
+export function marginAccount(cash: number, equity: number, liability: number): MarginAccount {
+  const required = SHORT_MARGIN_RATIO * liability;
+  const excess = equity - required;
+  return { required, excess, available: Math.min(cash - liability, excess) };
+}
+
+/**
+ * Quantité maximale d'un nouveau short (titres entiers) : la garantie de 50 %
+ * et les frais doivent tenir dans l'excédent, les frais dans le disponible
+ */
+export function maxShortQuantity(
+  portfolio: Pick<PortfolioCalculation, 'marginExcess' | 'availableCash'>,
+  price: number,
+  feeRate: number
+): number {
+  if (price <= 0) return 0;
+  const fee = feeRate / 100;
+  const byMargin = portfolio.marginExcess / (price * (SHORT_MARGIN_RATIO + fee));
+  const byFees = fee > 0 ? portfolio.availableCash / (price * fee) : Infinity;
+  return Math.max(Math.floor(Math.min(byMargin, byFees) + 1e-9), 0);
 }
 
 // ==========================================

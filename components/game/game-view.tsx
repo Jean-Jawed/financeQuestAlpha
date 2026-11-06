@@ -24,6 +24,8 @@ import { AssetList } from '@/components/game/asset-list';
 import { MarketJournal } from '@/components/game/market-journal';
 import { NextDayButton } from '@/components/game/next-day-button';
 import { TransactionHistory } from '@/components/game/transaction-history';
+import { MarginCallNotice } from '@/components/game/margin-call-notice';
+import { MarginAccount, MarginAlert } from '@/components/game/margin-account';
 import { PriceChart } from '@/components/game/price-chart';
 import { TradeTicket, type TradeSelection } from '@/components/game/trade-ticket';
 import { AllocationBar, NextAchievement, PlayerPlate, ValueCounter } from '@/components/game/machine-panels';
@@ -278,6 +280,12 @@ export function GameView({ gameId }: { gameId: string }) {
         heldQuantity={selection.heldQuantity}
         averageCost={selection.averageCost}
         availableCash={portfolio.availableCash}
+        margin={{
+          portfolio,
+          shortQuantity: holdings
+            .filter((h) => h.isShort && h.symbol === selection.asset.symbol)
+            .reduce((sum, h) => sum + parseFloat(h.quantity), 0),
+        }}
         onClose={() => {
           setTicketOpen(false);
           setSelection((current) => current && { asset: current.asset, mode: 'open' });
@@ -315,7 +323,9 @@ export function GameView({ gameId }: { gameId: string }) {
         scenario={game.scenario}
         onTradeComplete={handleActionDone}
         onSelect={select}
+        marginBook={{ equity: portfolio.totalValue, liability: portfolio.shortLiability }}
       />
+      <MarginAccount portfolio={portfolio} currency={game.currency} />
       <AllocationBar holdings={holdings} portfolio={portfolio} />
     </Frame>
   );
@@ -359,6 +369,13 @@ export function GameView({ gameId }: { gameId: string }) {
     <Frame className="overflow-hidden p-0">
       <TransactionHistory framed transactions={transactions} currency={game.currency} />
     </Frame>
+  );
+
+  const marginCall = (
+    <>
+      <MarginCallNotice transactions={transactions} currentDate={game.currentDate} currency={game.currency} />
+      <MarginAlert portfolio={portfolio} currency={game.currency} />
+    </>
   );
 
   const endControls = (
@@ -405,6 +422,7 @@ export function GameView({ gameId }: { gameId: string }) {
 
         <div className="container mx-auto space-y-8 px-4 py-8">
           {meta}
+          {marginCall}
 
           <section className="grid grid-cols-[minmax(0,42fr)_minmax(0,46fr)_minmax(0,48fr)] items-stretch gap-5">
             <PlayerPlate achievements={game.achievementsUnlocked} sessions={game.sessionsPlayed} groupRank={groupRank} />
@@ -491,6 +509,7 @@ export function GameView({ gameId }: { gameId: string }) {
       </nav>
 
       <div className="space-y-6 px-4">
+        {marginCall}
         {tab === 'chart' && (
           <>
             {chart}

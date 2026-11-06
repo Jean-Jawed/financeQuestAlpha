@@ -98,9 +98,14 @@ export function NextDayButton({
       }
 
       // La cloche sonne la clôture, puis les volets basculent sur la nouvelle date ;
-      // une faillite se solde par un choc sourd
+      // un appel de marge ou une faillite se soldent par un choc sourd
+      const forcedCount: number = data.data?.forcedOrders?.length ?? 0;
       if (data.data?.endReason === 'bankrupt') {
         playSound('refusal');
+        toast.error(t.bankrupt, 8000);
+      } else if (forcedCount > 0) {
+        playSound('refusal');
+        toast.error(fmt(t.marginCall, { count: forcedCount }), 8000);
       } else {
         playSound('bell');
         window.setTimeout(() => playSound('flaps', 0.7), 450);

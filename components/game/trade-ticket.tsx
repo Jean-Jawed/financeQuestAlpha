@@ -21,7 +21,9 @@ import { TRADE_ACTIONS, type TradeAction } from '@/lib/game/scenarios';
 import { articlePath } from '@/content/mag';
 import { cn } from '@/lib/utils/cn';
 import { TimeoutError, fetchWithTimeout } from '@/lib/utils/fetch-timeout';
-import type { GameState } from '@/types/game';
+import { SHORT_MARGIN_RATIO, marginAccount, maxShortQuantity } from '@/lib/game/portfolio-math';
+import { marginCallPrice } from '@/lib/game/margin-call';
+import type { GameState, PortfolioSummary } from '@/types/game';
 
 // ==========================================
 // TYPES
@@ -61,6 +63,15 @@ interface TradeTicketProps {
   averageCost?: number;
   /** Liquidités disponibles, pour le bouton « Max » à l'achat */
   availableCash?: number;
+  /**
+   * Compte sur marge, pour la vente à découvert : « Max », garantie bloquée,
+   * disponible après l'ordre et cours d'appel de marge
+   */
+  margin?: {
+    portfolio: Pick<PortfolioSummary, 'currentBalance' | 'totalValue' | 'shortLiability' | 'marginExcess' | 'availableCash'>;
+    /** Titres de cet actif déjà shortés */
+    shortQuantity: number;
+  };
   onClose: () => void;
   /** Appelé avec l'état de la partie renvoyé par l'ordre */
   onDone: (state?: GameState) => void;
@@ -102,6 +113,7 @@ export function TradeTicket({
   heldQuantity,
   averageCost,
   availableCash,
+  margin,
   onClose,
   onDone,
   inline = false,
@@ -168,9 +180,29 @@ export function TradeTicket({
           : null
       : null;
 
+  // Vente à découvert : effet de l'ordre sur le compte sur marge
+  const shortImpact =
+    action === 'short' && margin && quote && validQty
+      ? (() => {
+          const { portfolio } = margin;
+          const equity = portfolio.totalValue - fee;
+          const liability = portfolio.shortLiability + subtotal;
+          const callPrice = marginCallPrice({ equity, liability }, margin.shortQuantity + qty, quote.price);
+          return {
+            collateral: SHORT_MARGIN_RATIO * subtotal,
+            availableAfter: marginAccount(portfolio.currentBalance + subtotal - fee, equity, liability).available,
+            // Ramené au cours de cotation, celui de la courbe
+            callPrice: callPrice === null ? null : (callPrice * quote.assetPrice) / quote.price,
+          };
+        })()
+      : null;
+
   function fillMax() {
     if (heldQuantity !== undefined) {
       setQuantity(String(heldQuantity));
+    } else if (action === 'short' && margin && quote) {
+      // Garantie de 50 % et frais dans l'excédent de la valeur nette
+      setQuantity(String(maxShortQuantity(margin.portfolio, quote.price, feeRate)));
     } else if (quote && availableCash && availableCash > 0) {
       // Quantité entière maximale, frais compris
       const max = Math.floor(availableCash / (quote.price * (1 + feeRate / 100)));
@@ -348,6 +380,31 @@ export function TradeTicket({
             <dt className="text-paper">{debits ? t.debited : t.credited}</dt>
             <dd className="num text-brass">{f.currency(total, currency)}</dd>
           </div>
+          {shortImpact && (
+            <>
+              <div className="flex justify-between">
+                <dt className="text-paper-dim">{fmt(t.collateral, { ratio: f.percent(SHORT_MARGIN_RATIO * 100, 0, false) })}</dt>
+                <dd className="num text-paper">{f.currency(shortImpact.collateral, currency)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-paper-dim">{t.availableAfter}</dt>
+                <dd className={cn('num', shortImpact.availableAfter < -0.005 ? 'text-loss' : 'text-paper')}>
+                  {f.currency(shortImpact.availableAfter, currency)}
+                </dd>
+              </div>
+              {shortImpact.callPrice !== null && quote && (
+                <div className="flex justify-between">
+                  <dt className="text-paper-dim">{t.callAbove}</dt>
+                  <dd className="num text-loss">
+                    {f.currency(shortImpact.callPrice, quote.assetCurrency)}
+                    {quote.assetPrice > 0 && (
+                      <span className="text-paper-dim"> ({f.percent((shortImpact.callPrice / quote.assetPrice - 1) * 100, 1)})</span>
+                    )}
+                  </dd>
+                </div>
+              )}
+            </>
+          )}
           {action === 'short' && (
             <p className="pt-1 text-xs text-paper-dim">
               {t.shortNote}{' '}

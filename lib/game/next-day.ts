@@ -13,6 +13,8 @@ import { endGame, type EndReason } from './end';
 import { getScenario } from './scenarios';
 import { groupEndReason } from './groups';
 import { loadGameState, settleAction } from './state';
+import { applyMarginCall } from './margin-call-server';
+import type { ForcedOrder } from './margin-call';
 import { sessionGrants } from '@/lib/xp/hooks';
 import { mergeOutcomes, type XpOutcome } from '@/lib/xp/server';
 import type { GameState } from '@/types/game';
@@ -31,6 +33,8 @@ export interface NextDayResult {
   endReason?: EndReason;
   /** XP gagnée par la séance (et la fin de partie qu'elle a provoquée) */
   xp?: XpOutcome | null;
+  /** Appel de marge à l'ouverture : ordres passés d'office (vide : aucun) */
+  forcedOrders?: ForcedOrder[];
   error?: string;
 }
 
@@ -42,6 +46,7 @@ export interface NextDayResult {
  * Avancer d'un jour dans le game
  * - Prochain jour de bourse d'après la base prix (week-ends et fériés sautés)
  * - Compte la séance (retraite possible à partir de MIN_SESSIONS_TO_RETIRE)
+ * - Appel de marge au cours du jour : rachats et ventes d'office si la marge est trop faible
  * - Vérifie les achievements et renvoie l'état complet de la partie
  * - Termine la partie d'elle-même en cas de faillite, à la fin fixée par son groupe
  *   (partie de groupe), à la dernière séance d'une période imposée ou à la fin des
@@ -71,7 +76,7 @@ export async function advanceToNextDay(game: Game): Promise<NextDayResult> {
 
     // 3. Mettre à jour le game, seulement s'il est encore à la date lue
     //    (un double-clic ne fait pas sauter deux jours)
-    const [updatedGame] = await db
+    const [advancedGame] = await db
       .update(games)
       .set({
         currentDate: nextDate,
@@ -81,28 +86,29 @@ export async function advanceToNextDay(game: Game): Promise<NextDayResult> {
       .where(and(eq(games.id, game.id), eq(games.currentDate, game.currentDate)))
       .returning();
 
-    if (!updatedGame) {
+    if (!advancedGame) {
       return { success: false, error: api.alreadyAdvanced };
     }
 
-    // 4. Portfolio à la nouvelle date, succès et état de la partie
+    // 4. Appel de marge à l'ouverture de la séance
+    const marginCall = await applyMarginCall(advancedGame.id);
+    const updatedGame = marginCall?.game ?? advancedGame;
+    const forcedOrders = marginCall?.orders ?? [];
+
+    // 5. Portfolio à la nouvelle date, succès et état de la partie
     //    (la séance est passée même si l'état manque : la page le relira)
     const { state, achievementsUnlocked, xp } = await settleAction(
       updatedGame,
       await sessionGrants(updatedGame, game.currentDate).catch(() => [])
     );
 
-    // 5. Fins automatiques
-    const endReason = await automaticEnd(
-      updatedGame,
-      state?.portfolio.totalValue ?? null,
-      state?.portfolio.returnPercentage ?? null
-    );
+    // 6. Fins automatiques
+    const endReason = await automaticEnd(updatedGame, state);
     if (endReason) {
-      return finish(updatedGame, endReason, nextDate, achievementsUnlocked, xp);
+      return { ...(await finish(updatedGame, endReason, nextDate, achievementsUnlocked, xp)), forcedOrders };
     }
 
-    return { success: true, newDate: nextDate, state: state ?? undefined, achievementsUnlocked, xp };
+    return { success: true, newDate: nextDate, state: state ?? undefined, achievementsUnlocked, xp, forcedOrders };
   } catch (error) {
     console.error('[NextDay] Error:', error);
     return {
@@ -116,12 +122,10 @@ export async function advanceToNextDay(game: Game): Promise<NextDayResult> {
  * La séance qui vient de passer termine-t-elle la partie ?
  * Faillite d'abord, puis règles du groupe, puis dernière séance de la période ou des données
  */
-async function automaticEnd(
-  game: Game,
-  totalValue: number | null,
-  returnPercentage: number | null
-): Promise<EndReason | null> {
-  if (totalValue !== null && totalValue <= 0) {
+async function automaticEnd(game: Game, state: GameState | null): Promise<EndReason | null> {
+  const returnPercentage = state?.portfolio.returnPercentage ?? null;
+
+  if (state && isBankrupt(state)) {
     return 'bankrupt';
   }
 
@@ -149,6 +153,15 @@ async function automaticEnd(
 
   const coverage = await getPriceCoverage();
   return game.currentDate >= coverage.end ? 'data_end' : null;
+}
+
+/**
+ * Faillite : valeur nette nulle ou négative, et plus aucun moyen de se refaire.
+ * Après l'appel de marge, il ne reste alors aucune position cotée ; une position
+ * sans cours (actif suspendu) peut encore revenir : la partie continue.
+ */
+export function isBankrupt(state: Pick<GameState, 'portfolio' | 'holdings'>): boolean {
+  return state.portfolio.totalValue <= 0 && state.holdings.length === 0;
 }
 
 /** Clore la partie et renvoyer son état final (bilan) */

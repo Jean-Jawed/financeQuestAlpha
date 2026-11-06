@@ -82,6 +82,14 @@ export function TransactionHistory({ transactions, currency, framed = false }: T
                       >
                         {t[transaction.type]}
                       </span>
+                      {transaction.forced && (
+                        <span
+                          title={t.forcedHint}
+                          className="ml-1 inline-block rounded-sm bg-loss/15 px-1 font-label text-[10px] font-semibold uppercase tracking-[0.08em] text-loss"
+                        >
+                          {t.forced}
+                        </span>
+                      )}
                     </td>
                     <td className="num px-2 py-2.5 font-semibold text-paper">{transaction.symbol}</td>
                     <td className="num hidden px-2 py-2.5 text-right text-paper-dim sm:table-cell">

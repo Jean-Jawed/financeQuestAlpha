@@ -163,7 +163,7 @@ export const site = {
       },
       {
         title: 'Vendre à découvert se paie',
-        text: 'Le produit d’une vente à découvert reste bloqué en garantie. Votre valeur nette doit couvrir {margin} des positions à découvert : le levier est limité à deux fois.',
+        text: 'Le produit d’une vente à découvert est réservé au rachat, et {margin} de la dette est bloqué en garantie : avec 10 000 €, on peut shorter jusqu’à 20 000 €. La garantie suit le cours. Si la valeur nette tombe sous 30 % de la dette, le courtier rachète d’office à l’ouverture de la séance.',
       },
       {
         title: 'Le change compte aussi',

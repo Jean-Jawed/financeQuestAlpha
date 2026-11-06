@@ -12,6 +12,7 @@ import { TradeTicket, type TradeSelection } from '@/components/game/trade-ticket
 import { useI18n } from '@/lib/i18n/client';
 import { getScenario } from '@/lib/game/scenarios';
 import { cn } from '@/lib/utils/cn';
+import { marginCallPrice, type MarginBook } from '@/lib/game/margin-call';
 import type { HoldingWithValue } from '@/types/game';
 import type { GameState } from '@/types/game';
 
@@ -34,6 +35,8 @@ interface PositionsPanelProps {
   onSelect?: (selection: TradeSelection) => void;
   /** Posé sur le bois d'un cadre (écran de jeu) : sans fond ni bordure propres */
   framed?: boolean;
+  /** Valeur nette et dette des shorts : cours d'appel de marge de chaque découvert */
+  marginBook?: MarginBook;
 }
 
 // ==========================================
@@ -48,7 +51,9 @@ function PositionRow({
   onAction,
   compact = false,
   flash = false,
+  marginBook,
 }: {
+  marginBook?: MarginBook;
   /** Colonne étroite : sans le cours d'origine */
   compact?: boolean;
   /** Nouvelle séance : la ligne s'allume selon son mouvement du jour */
@@ -66,6 +71,13 @@ function PositionRow({
   const day = holding.openedToday ? null : (holding.dayChange ?? null);
   const dayUp = (day ?? 0) >= 0;
   const dayPercent = holding.sessionPercent ?? null;
+  // Découvert : cours d'appel de marge, ramené au cours de cotation
+  const callPrice =
+    holding.isShort && marginBook && holding.currentPrice > 0
+      ? marginCallPrice(marginBook, quantity, holding.currentPrice)
+      : null;
+  const callQuoted = callPrice !== null && holding.assetPrice > 0 ? (callPrice * holding.assetPrice) / holding.currentPrice : callPrice;
+  const callCurrency = holding.assetPrice > 0 ? holding.assetCurrency : currency;
 
   return (
     <li
@@ -82,6 +94,12 @@ function PositionRow({
         </p>
         <p className="num text-xs text-paper-dim">
           {f.quantity(quantity)} × {f.currency(parseFloat(holding.averageCost), currency)}
+          {holding.isShort && (
+            <span className="text-paper-faint">
+              {' · '}
+              {fmt(m.game.positions.proceeds, { amount: f.currency(quantity * parseFloat(holding.averageCost), currency) })}
+            </span>
+          )}
           {!compact && holding.assetCurrency !== currency && holding.assetPrice > 0 && (
             <span className="text-paper-faint">
               {' · '}
@@ -93,6 +111,7 @@ function PositionRow({
 
       <div className="text-right">
         <p className="num text-paper">
+          {holding.isShort && <span className="mr-1 font-sans text-[10px] text-paper-faint">{m.game.positions.buyback}</span>}
           {holding.isShort ? f.currency(holding.currentPrice * quantity, currency) : f.currency(holding.currentValue, currency)}
         </p>
         {/* La séance d'abord, en pastille ; la plus-value depuis l'achat en dessous, discrète */}
@@ -118,6 +137,14 @@ function PositionRow({
           </span>
         </p>
       </div>
+
+      {callQuoted !== null && (
+        <p className={cn('num col-span-2 text-[11px]', callPrice !== null && callPrice <= holding.currentPrice ? 'font-semibold text-loss' : 'text-paper-dim')}>
+          {callPrice !== null && callPrice <= holding.currentPrice
+            ? m.game.positions.callReached
+            : fmt(m.game.positions.callAbove, { price: f.currency(callQuoted, callCurrency) })}
+        </p>
+      )}
 
       {lockedLabel ? (
         <p className="col-span-2 font-label text-xs font-semibold uppercase tracking-label text-paper-faint">
@@ -150,6 +177,7 @@ export function PositionsPanel({
   onTradeComplete,
   onSelect,
   framed = false,
+  marginBook,
 }: PositionsPanelProps) {
   const allowed = getScenario(scenario).rules.actions;
   const { m, fmt } = useI18n();
@@ -227,6 +255,7 @@ export function PositionsPanel({
                     lockedLabel={allowed.includes('cover') ? undefined : t.locked}
                     onAction={() => pick(holding)}
                     compact={framed}
+                    marginBook={marginBook}
                   />
                 ))}
               </ul>

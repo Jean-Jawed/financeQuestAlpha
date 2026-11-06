@@ -164,7 +164,7 @@ export const site: SiteMessages = {
       },
       {
         title: 'Selling short has a cost',
-        text: 'The proceeds of a short sale stay locked as collateral. Your net value must cover {margin} of your short positions: leverage is capped at two.',
+        text: 'The proceeds of a short sale are reserved for the buyback, and {margin} of the debt is locked as collateral: with €10,000, you can short up to €20,000. The collateral follows the price. If your net value falls below 30% of the debt, the broker buys back on your behalf at the next open.',
       },
       {
         title: 'Exchange rates matter too',

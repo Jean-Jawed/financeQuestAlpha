@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   calculateTransactionPreview,
   checkShortMargin,
+  maxShortQuantity,
   valuePortfolio,
   type PositionInput,
 } from '@/lib/game/portfolio-math';
@@ -84,10 +85,14 @@ describe('valuePortfolio', () => {
     expect(p.returnPercentage).toBeLessThan(0);
   });
 
-  it('le produit du short est bloqué en garantie (pas de cash disponible en plus)', () => {
+  it('le produit du short est réservé au rachat et 50 % de la dette est bloqué en garantie', () => {
     const game = simulate();
     game.open('GOOGL', 10, 100, true);
-    expect(game.value().availableCash).toBeCloseTo(INITIAL - 2.5, 6);
+    const p = game.value();
+    expect(p.shortProceeds).toBeCloseTo(1000, 6);
+    expect(p.marginRequired).toBeCloseTo(500, 6);
+    // 10 000 − 2,50 de frais − 500 de garantie
+    expect(p.availableCash).toBeCloseTo(INITIAL - 2.5 - 500, 6);
   });
 
   it('short gagnant : la baisse du titre augmente la valeur', () => {
@@ -120,14 +125,17 @@ describe('valuePortfolio', () => {
     expect(after.availableCash).toBeCloseTo(after.currentBalance, 6);
   });
 
-  it('les sommes affichées tombent juste : dispo + longs + P&L shorts = total', () => {
+  it('les sommes affichées tombent juste : cash + longs − dette = total, dispo ≤ cash − dette', () => {
     const game = simulate();
     game.open('AAPL', 5, 200, false);
     game.open('TSLA', 4, 250, true);
     game.setPrice('AAPL', 210);
     game.setPrice('TSLA', 240);
     const p = game.value();
-    expect(p.availableCash + p.portfolioValueLong + p.shortPositionsPnl).toBeCloseTo(p.totalValue, 6);
+    expect(p.currentBalance + p.portfolioValueLong - p.shortLiability).toBeCloseTo(p.totalValue, 6);
+    expect(p.shortProceeds - p.shortLiability).toBeCloseTo(p.shortPositionsPnl, 6);
+    expect(p.availableCash).toBeLessThanOrEqual(p.currentBalance - p.shortLiability + 1e-9);
+    expect(p.availableCash).toBeLessThanOrEqual(p.marginExcess + 1e-9);
   });
 
   it('prix indisponible : long à 0, short neutre (jamais de gain fictif)', () => {
@@ -138,6 +146,71 @@ describe('valuePortfolio', () => {
     expect(p.portfolioValueLong).toBe(0);
     expect(p.shortPositionsPnl).toBe(0);
     expect(p.shortLiability).toBe(500);
+  });
+});
+
+describe('compte sur marge', () => {
+  /** 10 000 € de cash, short de 200 titres à 100 € (20 000 €), sans frais */
+  const shortAt = (price: number, longs: PositionInput[] = [], cash = 30_000) =>
+    valuePortfolio(cash, INITIAL, [{ quantity: 200, averageCost: 100, isShort: true, price }, ...longs]);
+
+  it('sans découvert : disponible = cash, même avec des titres', () => {
+    const p = valuePortfolio(4_000, INITIAL, [{ quantity: 60, averageCost: 100, isShort: false, price: 100 }]);
+    expect(p.availableCash).toBe(4_000);
+    expect(p.marginRequired).toBe(0);
+  });
+
+  it('10 000 € de cash, short de 20 000 € : tout est bloqué', () => {
+    const p = shortAt(100);
+    expect(p.currentBalance).toBe(30_000);
+    expect(p.shortLiability).toBe(20_000); // réservé au rachat
+    expect(p.marginRequired).toBe(10_000); // garantie
+    expect(p.availableCash).toBe(0);
+    expect(p.totalValue).toBe(10_000);
+  });
+
+  it('le titre baisse de 25 % : de la garantie se libère', () => {
+    const p = shortAt(75);
+    expect(p.shortLiability).toBe(15_000);
+    expect(p.marginRequired).toBe(7_500);
+    expect(p.availableCash).toBe(7_500);
+  });
+
+  it('le titre monte de 10 % : garantie insuffisante, disponible négatif', () => {
+    const p = shortAt(110);
+    expect(p.totalValue).toBe(8_000);
+    expect(p.marginRequired).toBe(11_000);
+    expect(p.availableCash).toBe(-3_000);
+  });
+
+  it('les titres détenus comptent dans la garantie', () => {
+    // 20 000 € au départ : 10 000 € de titres achetés, puis short de 20 000 €
+    const p = shortAt(100, [{ quantity: 100, averageCost: 100, isShort: false, price: 100 }]);
+    expect(p.totalValue).toBe(20_000);
+    expect(p.availableCash).toBe(10_000);
+  });
+
+  it('acheter tout le disponible ne met jamais la garantie en défaut', () => {
+    const game = simulate();
+    game.open('TSLA', 100, 100, true);
+    const before = game.value();
+    const quantity = Math.floor(before.availableCash / (50 * (1 + FEES / 100)));
+    game.open('AAPL', quantity, 50, false);
+    const after = game.value();
+    expect(after.availableCash).toBeGreaterThanOrEqual(0);
+    expect(after.marginExcess).toBeGreaterThanOrEqual(0);
+  });
+
+  it('Max à découvert : 2 × la valeur nette, frais compris', () => {
+    const p = valuePortfolio(INITIAL, INITIAL, []);
+    const quantity = maxShortQuantity(p, 100, FEES);
+    expect(quantity).toBe(199);
+    expect(checkShortMargin(p, quantity * 100, quantity * 100 * (FEES / 100))).toBeNull();
+    expect(checkShortMargin(p, (quantity + 1) * 100, (quantity + 1) * 100 * (FEES / 100))).not.toBeNull();
+  });
+
+  it('Max à découvert : nul quand la garantie est insuffisante', () => {
+    expect(maxShortQuantity(shortAt(110), 100, FEES)).toBe(0);
   });
 });
 
