@@ -133,3 +133,46 @@ export async function getPriceCoverage(): Promise<PriceCoverage> {
 
   return value;
 }
+
+// ==========================================
+// CALENDRIER COMPLET (cache mémoire)
+// ==========================================
+
+let calendarCache: { value: string[]; expiresAt: number } | null = null;
+
+/**
+ * Tous les jours de bourse de la base prix, triés (même critère que findTradingDate)
+ * Une requête par heure au plus : la base n'est mise à jour qu'à l'import
+ */
+export async function getTradingCalendar(): Promise<string[]> {
+  const now = Date.now();
+  if (calendarCache && calendarCache.expiresAt > now) return calendarCache.value;
+
+  const results = await marketQuery(sql`
+    SELECT p.date::text AS date
+    FROM prices p
+    JOIN assets a ON a.id = p.asset_id
+    JOIN asset_types t ON t.id = a.asset_type_id
+    WHERE t.code <> 'CRYPTO'
+    GROUP BY p.date
+    HAVING COUNT(*) >= (
+      SELECT COUNT(*) * ${MIN_QUOTED_SHARE}::numeric
+      FROM assets a2
+      JOIN asset_types t2 ON t2.id = a2.asset_type_id
+      WHERE t2.code <> 'CRYPTO' AND a2.is_active
+    )
+    ORDER BY p.date ASC
+  `);
+
+  const value = results.map((row) => String(row.date));
+  calendarCache = { value, expiresAt: now + COVERAGE_TTL_MS };
+  return value;
+}
+
+/**
+ * Jours de bourse strictement après `after` et jusqu'à `until` inclus
+ */
+export async function getTradingDatesBetween(after: string, until: string): Promise<string[]> {
+  const calendar = await getTradingCalendar();
+  return calendar.filter((date) => date > after && date <= until);
+}

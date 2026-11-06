@@ -58,7 +58,6 @@ export async function getUsdRates(date: string): Promise<UsdRates> {
   const cached = ratesCache.get(date);
   if (cached) return cached;
 
-  const symbols = Object.values(USD_PAIRS).map((pair) => pair.symbol);
   const results = await marketQuery(sql`
     SELECT a.symbol, p.close_price
     FROM assets a
@@ -70,11 +69,28 @@ export async function getUsdRates(date: string): Promise<UsdRates> {
       ORDER BY date DESC
       LIMIT 1
     ) p
-    WHERE a.symbol IN ${symbols}
+    WHERE a.symbol IN ${FX_PAIR_SYMBOLS}
   `);
 
-  const quoteBySymbol = new Map(results.map((row) => [row.symbol as string, Number(row.close_price)]));
+  const rates = ratesFromPairQuotes(new Map(results.map((row) => [row.symbol as string, Number(row.close_price)])));
 
+  if (ratesCache.size >= CACHE_MAX_DATES) {
+    const oldest = ratesCache.keys().next().value;
+    if (oldest !== undefined) ratesCache.delete(oldest);
+  }
+  ratesCache.set(date, rates);
+
+  return rates;
+}
+
+/** Symboles des paires de change contre le dollar */
+export const FX_PAIR_SYMBOLS = Object.values(USD_PAIRS).map((pair) => pair.symbol);
+
+/**
+ * Taux contre le dollar à partir des derniers cours des paires
+ * (symbole de paire → cours ; paire absente : taux de secours s'il existe)
+ */
+export function ratesFromPairQuotes(quoteBySymbol: Map<string, number>): UsdRates {
   const rates: UsdRates = { USD: 1 };
   for (const [currency, pair] of Object.entries(USD_PAIRS)) {
     const quote = quoteBySymbol.get(pair.symbol);
@@ -88,12 +104,5 @@ export async function getUsdRates(date: string): Promise<UsdRates> {
       }
     }
   }
-
-  if (ratesCache.size >= CACHE_MAX_DATES) {
-    const oldest = ratesCache.keys().next().value;
-    if (oldest !== undefined) ratesCache.delete(oldest);
-  }
-  ratesCache.set(date, rates);
-
   return rates;
 }

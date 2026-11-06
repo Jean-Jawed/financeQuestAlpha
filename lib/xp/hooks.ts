@@ -70,7 +70,17 @@ export async function sessionGrants(game: Game, previousDate: string): Promise<X
     if (game.sessionsPlayed === sessions) grants.push({ kind: 'milestone', ref: `${gameId}:${sessions}`, xp, gameId });
   }
 
-  // « J'y étais » : avec au moins une position ouverte ; « debout » : le portefeuille a monté
+  grants.push(...(await historicGrants(game, previousDate)));
+  return grants;
+}
+
+/**
+ * Moments historiques traversés depuis `previousDate` (cloche ou avance rapide)
+ * « J'y étais » : avec au moins une position ouverte ; « debout » : le portefeuille a monté
+ */
+export async function historicGrants(game: Game, previousDate: string): Promise<XpGrant[]> {
+  const gameId = game.id;
+  const grants: XpGrant[] = [];
   const moments = momentsCrossed(previousDate, game.currentDate);
   if (moments.length > 0) {
     const [{ open }] = await db.select({ open: count() }).from(holdings).where(eq(holdings.gameId, gameId));

@@ -122,7 +122,7 @@ export async function advanceToNextDay(game: Game): Promise<NextDayResult> {
  * La séance qui vient de passer termine-t-elle la partie ?
  * Faillite d'abord, puis règles du groupe, puis dernière séance de la période ou des données
  */
-async function automaticEnd(game: Game, state: GameState | null): Promise<EndReason | null> {
+export async function automaticEnd(game: Game, state: GameState | null): Promise<EndReason | null> {
   const returnPercentage = state?.portfolio.returnPercentage ?? null;
 
   if (state && isBankrupt(state)) {
@@ -165,7 +165,7 @@ export function isBankrupt(state: Pick<GameState, 'portfolio' | 'holdings'>): bo
 }
 
 /** Clore la partie et renvoyer son état final (bilan) */
-async function finish(
+export async function finish(
   game: Game,
   reason: EndReason,
   date: string,

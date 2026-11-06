@@ -44,6 +44,8 @@ interface NextDayButtonProps {
   layout?: 'desk' | 'bar';
   /** Instrument posé à côté du bouton (manomètre des liquidités) */
   aside?: React.ReactNode;
+  /** Bouton d'avance rapide, à côté de la cloche */
+  fastForward?: React.ReactNode;
 }
 
 // ==========================================
@@ -62,6 +64,7 @@ export function NextDayButton({
   onWaiting,
   layout = 'desk',
   aside,
+  fastForward,
 }: NextDayButtonProps) {
   const { toast } = useToast();
   const { m, f, fmt } = useI18n();
@@ -176,7 +179,17 @@ export function NextDayButton({
     </EnamelButton>
   );
 
-  if (layout === 'bar') return button;
+  // Barre mobile : à côté de la cloche ; pupitre : lien sous la frise (la cloche garde sa largeur)
+  if (layout === 'bar') {
+    return fastForward ? (
+      <div className="flex gap-2">
+        <div className="min-w-0 flex-1">{button}</div>
+        {fastForward}
+      </div>
+    ) : (
+      button
+    );
+  }
 
   return (
     <section aria-label={t.section} className="flex h-full items-center gap-4">
@@ -194,7 +207,7 @@ export function NextDayButton({
           </div>
           <div className="num mt-1 flex justify-between gap-2 whitespace-nowrap text-[10px] text-paper-dim" title={`${f.dateShort(startDate)} → ${f.dateShort(endDate)}`}>
             <span>{fmt(t.day, { elapsed: elapsedDays, total: totalDays })}</span>
-            <span className="max-xl:hidden">→ {f.dateShort(endDate)}</span>
+            {fastForward ?? <span className="max-xl:hidden">→ {f.dateShort(endDate)}</span>}
           </div>
         </div>
       </div>

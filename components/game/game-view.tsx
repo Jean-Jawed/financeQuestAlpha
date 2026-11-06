@@ -23,6 +23,7 @@ import { TickerTape } from '@/components/brand/ticker-tape';
 import { AssetList } from '@/components/game/asset-list';
 import { MarketJournal } from '@/components/game/market-journal';
 import { NextDayButton } from '@/components/game/next-day-button';
+import { FastForwardButton } from '@/components/game/fast-forward-button';
 import { TransactionHistory } from '@/components/game/transaction-history';
 import { MarginCallNotice } from '@/components/game/margin-call-notice';
 import { MarginAccount, MarginAlert } from '@/components/game/margin-account';
@@ -260,6 +261,20 @@ export function GameView({ gameId }: { gameId: string }) {
       sync={sync}
       onWaiting={() => groupView && setGroupView({ ...groupView, viewer: { ...groupView.viewer, ready: true } })}
       aside={layout === 'desk' ? <Gauge value={cashShare} label={t.cashShare} size={64} /> : undefined}
+      fastForward={
+        // Tempo synchronisé : la séance avance pour tout le groupe, pas d'avance rapide
+        sync ? undefined : (
+          <FastForwardButton
+            layout={layout}
+            gameId={game.id}
+            currentDate={game.currentDate}
+            currency={game.currency}
+            hasShorts={portfolio.shortLiability > 0}
+            inGroup={Boolean(game.groupId)}
+            onAdvanced={handleActionDone}
+          />
+        )
+      }
     />
   );
 
